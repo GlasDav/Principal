@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+node_modules/
+.env
+.DS_Store
+dist/
+build/
+coverage/
+*.log
+principal_v5.db.bak

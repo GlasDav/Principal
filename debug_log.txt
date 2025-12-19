@@ -1,0 +1,206 @@
+Register called
+Hashing password
+REGISTRATION ERROR:
+Traceback (most recent call last):
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\routers\auth.py", line 24, in register
+    hashed_password = auth.get_password_hash(user.password)
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\auth.py", line 23, in get_password_hash
+    return pwd_context.hash(password)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\context.py", line 2258, in hash
+    return record.hash(secret, **kwds)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\utils\handlers.py", line 779, in hash
+    self.checksum = self._calc_checksum(secret)
+                    ~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 591, in _calc_checksum
+    self._stub_requires_backend()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\utils\handlers.py", line 2254, in _stub_requires_backend
+    cls.set_backend()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\utils\handlers.py", line 2156, in set_backend
+    return owner.set_backend(name, dryrun=dryrun)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\utils\handlers.py", line 2163, in set_backend
+    return cls.set_backend(name, dryrun=dryrun)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\utils\handlers.py", line 2188, in set_backend
+    cls._set_backend(name, dryrun)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\utils\handlers.py", line 2311, in _set_backend
+    super(SubclassBackendMixin, cls)._set_backend(name, dryrun)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\utils\handlers.py", line 2224, in _set_backend
+    ok = loader(**kwds)
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 626, in _load_backend_mixin
+    return mixin_cls._finalize_backend_mixin(name, dryrun)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 421, in _finalize_backend_mixin
+    if detect_wrap_bug(IDENT_2A):
+       ~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 380, in detect_wrap_bug
+    if verify(secret, bug_hash):
+       ~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\utils\handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+                   ~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 655, in _calc_checksum
+    hash = _bcrypt.hashpw(secret, config)
+ValueError: password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
+Register called
+Hashing password
+Creating User object
+Adding to DB
+Committing
+Refreshing
+Register called
+Hashing password
+Creating User object
+Adding to DB
+Committing
+Refreshing
+Register called
+REGISTRATION ERROR:
+Traceback (most recent call last):
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\routers\auth.py", line 21, in register
+    raise HTTPException(status_code=400, detail="Email already registered")
+fastapi.exceptions.HTTPException: 400: Email already registered
+Register called
+Hashing password
+Creating User object
+Adding to DB
+Committing
+Refreshing
+Register called
+Hashing password
+REGISTRATION ERROR:
+Traceback (most recent call last):
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\routers\auth.py", line 24, in register
+    hashed_password = auth.get_password_hash(user.password)
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\auth.py", line 23, in get_password_hash
+    return pwd_context.hash(password)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\context.py", line 2258, in hash
+    return record.hash(secret, **kwds)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\handlers\argon2.py", line 664, in hash
+    cls._stub_requires_backend()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2254, in _stub_requires_backend
+    cls.set_backend()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2156, in set_backend
+    return owner.set_backend(name, dryrun=dryrun)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2176, in set_backend
+    raise default_error
+passlib.exc.MissingBackendError: argon2: no backends available -- recommend you install one (e.g. 'pip install argon2_cffi')
+Register called
+Hashing password
+REGISTRATION ERROR:
+Traceback (most recent call last):
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\routers\auth.py", line 24, in register
+    hashed_password = auth.get_password_hash(user.password)
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\auth.py", line 23, in get_password_hash
+    return pwd_context.hash(password)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\context.py", line 2258, in hash
+    return record.hash(secret, **kwds)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\handlers\argon2.py", line 664, in hash
+    cls._stub_requires_backend()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2254, in _stub_requires_backend
+    cls.set_backend()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2156, in set_backend
+    return owner.set_backend(name, dryrun=dryrun)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2176, in set_backend
+    raise default_error
+passlib.exc.MissingBackendError: argon2: no backends available -- recommend you install one (e.g. 'pip install argon2_cffi')
+Register called
+Hashing password
+REGISTRATION ERROR:
+Traceback (most recent call last):
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\routers\auth.py", line 24, in register
+    hashed_password = auth.get_password_hash(user.password)
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\auth.py", line 23, in get_password_hash
+    return pwd_context.hash(password)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\context.py", line 2258, in hash
+    return record.hash(secret, **kwds)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\handlers\argon2.py", line 664, in hash
+    cls._stub_requires_backend()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2254, in _stub_requires_backend
+    cls.set_backend()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2156, in set_backend
+    return owner.set_backend(name, dryrun=dryrun)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2176, in set_backend
+    raise default_error
+passlib.exc.MissingBackendError: argon2: no backends available -- recommend you install one (e.g. 'pip install argon2_cffi')
+Register called
+Hashing password
+REGISTRATION ERROR:
+Traceback (most recent call last):
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\routers\auth.py", line 24, in register
+    hashed_password = auth.get_password_hash(user.password)
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\auth.py", line 23, in get_password_hash
+    return pwd_context.hash(password)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\context.py", line 2258, in hash
+    return record.hash(secret, **kwds)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\handlers\argon2.py", line 664, in hash
+    cls._stub_requires_backend()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2254, in _stub_requires_backend
+    cls.set_backend()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2156, in set_backend
+    return owner.set_backend(name, dryrun=dryrun)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2176, in set_backend
+    raise default_error
+passlib.exc.MissingBackendError: argon2: no backends available -- recommend you install one (e.g. 'pip install argon2_cffi')
+Register called
+Hashing password
+REGISTRATION ERROR:
+Traceback (most recent call last):
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\routers\auth.py", line 24, in register
+    hashed_password = auth.get_password_hash(user.password)
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\auth.py", line 23, in get_password_hash
+    return pwd_context.hash(password)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\context.py", line 2258, in hash
+    return record.hash(secret, **kwds)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\handlers\argon2.py", line 664, in hash
+    cls._stub_requires_backend()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2254, in _stub_requires_backend
+    cls.set_backend()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2156, in set_backend
+    return owner.set_backend(name, dryrun=dryrun)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\David Glasser\AppData\Local\Programs\Python\Python313\Lib\site-packages\passlib\utils\handlers.py", line 2176, in set_backend
+    raise default_error
+passlib.exc.MissingBackendError: argon2: no backends available -- recommend you install one (e.g. 'pip install argon2_cffi')
+Register called
+REGISTRATION ERROR:
+Traceback (most recent call last):
+  File "C:\Users\David Glasser\OneDrive\Documents\Projects\Principal\backend\routers\auth.py", line 21, in register
+    raise HTTPException(status_code=400, detail="Email already registered")
+fastapi.exceptions.HTTPException: 400: Email already registered
+Register called
+Hashing password
+Creating User object
+Adding to DB
+Committing
+Refreshing

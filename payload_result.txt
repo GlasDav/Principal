@@ -1,0 +1,2 @@
+Status: 200
+Response: {"email":"test_script@example.com","is_couple_mode":true,"name_a":"You","name_b":"Partner","currency_symbol":"$","id":2,"buckets":[]}

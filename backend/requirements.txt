@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+pydantic-settings
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+pdfplumber
+pandas
+scikit-learn
+joblib
+pytest
+httpx
+yfinance
+argon2-cffi
