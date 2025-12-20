@@ -117,6 +117,12 @@ export default function Login() {
                         Sign up for free
                     </Link>
                 </div>
+
+                <div className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
+                    <Link to="/privacy" className="hover:text-indigo-500">Privacy Policy</Link>
+                    {' · '}
+                    <Link to="/terms" className="hover:text-indigo-500">Terms of Service</Link>
+                </div>
             </div>
         </div>
     );

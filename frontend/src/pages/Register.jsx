@@ -123,6 +123,13 @@ export default function Register() {
                         Log in
                     </Link>
                 </div>
+
+                <div className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
+                    By creating an account, you agree to our{' '}
+                    <Link to="/terms" className="text-indigo-500 hover:text-indigo-600">Terms of Service</Link>
+                    {' '}and{' '}
+                    <Link to="/privacy" className="text-indigo-500 hover:text-indigo-600">Privacy Policy</Link>
+                </div>
             </div>
         </div>
     );

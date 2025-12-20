@@ -13,6 +13,8 @@ import DebtVisualizer from './pages/DebtVisualizer';
 import Insights from './pages/Insights';
 import Goals from './pages/Goals';
 import TaxCalculator from './pages/TaxCalculator';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -112,6 +114,8 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
 
               {/* Protected Routes */}
               <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
