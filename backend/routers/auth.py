@@ -5,9 +5,14 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Body, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from .. import models, schemas, auth, database
 
 logger = logging.getLogger(__name__)
+
+# Rate limiter - gets limiter from app state
+limiter = Limiter(key_func=get_remote_address)
 
 # Google OAuth Client ID (from environment variable)
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "960936173044-v5ufgg0q3hvqlh44u0g8uh70rd9lsd22.apps.googleusercontent.com")
@@ -55,7 +60,8 @@ def create_default_user_setup(user: models.User, db: Session):
 
 
 @router.post("/register", response_model=schemas.User)
-def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
+@limiter.limit("10/minute")  # Prevent registration spam
+def register(request: Request, user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     """Register a new user account."""
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
@@ -81,7 +87,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     return new_user
 
 @router.post("/token", response_model=schemas.Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
+@limiter.limit("5/minute")  # Strict rate limit to prevent brute force
+def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
     """Authenticate user and return access/refresh tokens."""
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
@@ -102,7 +109,8 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 @router.post("/refresh", response_model=schemas.Token)
-def refresh_token(refresh_token: str = Body(..., embed=True), db: Session = Depends(database.get_db)):
+@limiter.limit("30/minute")  # Allow more refreshes for legitimate session renewal
+def refresh_token(request: Request, refresh_token: str = Body(..., embed=True), db: Session = Depends(database.get_db)):
     """Refresh an expired access token using a valid refresh token."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -130,7 +138,8 @@ def refresh_token(refresh_token: str = Body(..., embed=True), db: Session = Depe
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 @router.post("/google", response_model=schemas.Token)
-async def google_login(token: str = Body(..., embed=True), db: Session = Depends(database.get_db)):
+@limiter.limit("10/minute")  # Prevent OAuth abuse
+async def google_login(request: Request, token: str = Body(..., embed=True), db: Session = Depends(database.get_db)):
     """
     Google OAuth login - verifies Google access token and creates/returns user.
     """
