@@ -22,6 +22,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import PrivateRoute from './components/PrivateRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import { LogOut, Calculator } from 'lucide-react';
 
 const queryClient = new QueryClient();
@@ -95,9 +96,11 @@ function Layout() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - wrapped in error boundary */}
       <div className="flex-1 overflow-auto">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </div>
     </div>
   );

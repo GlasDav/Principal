@@ -17,6 +17,43 @@ router = APIRouter(
     tags=["auth"]
 )
 
+
+def create_default_user_setup(user: models.User, db: Session):
+    """Create default accounts and buckets for a new user."""
+    
+    # Default Balance Sheet Accounts
+    default_accounts = [
+        {"name": "Checking Account", "type": "checking", "category": "Cash"},
+        {"name": "Savings Account", "type": "savings", "category": "Cash"},
+        {"name": "Credit Card", "type": "credit_card", "category": "Credit Card"},
+    ]
+    
+    for account_data in default_accounts:
+        account = models.Account(
+            user_id=user.id,
+            name=account_data["name"],
+            type=account_data["type"],
+            category=account_data["category"],
+            is_active=True
+        )
+        db.add(account)
+    
+    # Default "Transfers" bucket (excluded from spending analytics)
+    transfers_bucket = models.BudgetBucket(
+        user_id=user.id,
+        name="Transfers",
+        icon_name="ArrowLeftRight",
+        group="Non-Discretionary",
+        is_transfer=True,  # Key flag to exclude from analytics
+        monthly_limit_a=0.0,
+        monthly_limit_b=0.0
+    )
+    db.add(transfers_bucket)
+    
+    db.commit()
+    logger.info(f"Created default accounts and Transfer bucket for user {user.email}")
+
+
 @router.post("/register", response_model=schemas.User)
 def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     """Register a new user account."""
@@ -36,6 +73,9 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    
+    # Create default accounts and buckets
+    create_default_user_setup(new_user, db)
     
     logger.info(f"New user registered: {user.email}")
     return new_user
@@ -145,6 +185,10 @@ async def google_login(token: str = Body(..., embed=True), db: Session = Depends
             db.add(user)
             db.commit()
             db.refresh(user)
+            
+            # Create default accounts and buckets for new Google users
+            create_default_user_setup(user, db)
+            
             logger.info(f"New user registered via Google: {email}")
         else:
             logger.info(f"User logged in via Google: {email}")
