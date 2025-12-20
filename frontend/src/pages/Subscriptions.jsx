@@ -220,6 +220,7 @@ export default function Subscriptions() {
             amount: sub.amount,
             frequency: sub.frequency,
             next_due_date: new Date(sub.next_due).toISOString().split('T')[0],
+            description_keyword: sub.description_keyword, // Preserve original for future matching
             is_active: true
         });
     };

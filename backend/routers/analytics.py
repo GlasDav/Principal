@@ -342,10 +342,14 @@ def get_suggested_subscriptions(
 ):
     user = current_user
     # 0. Get Existing Subscriptions to filter out
-    existing_names = set()
+    # Use description_keyword for matching (not name) so renamed subscriptions still exclude properly
+    existing_keywords = set()
     if exclude_existing:
         subs = db.query(models.Subscription).filter(models.Subscription.user_id == user.id).all()
-        existing_names = {s.name.lower() for s in subs}
+        for s in subs:
+            # Use description_keyword if set, otherwise fall back to name
+            keyword = (s.description_keyword or s.name).lower()
+            existing_keywords.add(keyword)
 
     # 1. Fetch last 12 months of expenses
     one_year_ago = datetime.now() - timedelta(days=365)
@@ -371,8 +375,8 @@ def get_suggested_subscriptions(
     for name, items in groups.items():
         if len(items) < 3: continue # Need at least 3 to form pattern
         
-        # Check against existing
-        if exclude_existing and name in existing_names:
+        # Check against existing keywords (matches on description_keyword or name)
+        if exclude_existing and name in existing_keywords:
             continue
         
         # Sort by date
@@ -420,6 +424,7 @@ def get_suggested_subscriptions(
             
             subscriptions.append({
                 "name": items[0].description, # use display name
+                "description_keyword": name, # original search key for future matching
                 "amount": avg_amount,
                 "frequency": frequency,
                 "annual_cost": avg_amount * (12 if frequency == "Monthly" else 52 if frequency == "Weekly" else 1),
