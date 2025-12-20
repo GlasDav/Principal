@@ -72,6 +72,7 @@ export default function NetWorth() {
     // --- Add Account Form (Inline) ---
     const [newAccountName, setNewAccountName] = useState("");
     const [newAccountType, setNewAccountType] = useState("Asset");
+    const [newAccountCategory, setNewAccountCategory] = useState("Cash");
     // Category state is removed as per previous refactor, but we need the handle function
 
     const handleAddAccount = (e) => {
@@ -319,12 +320,10 @@ export default function NetWorth() {
                             </div>
                             <form onSubmit={(e) => {
                                 e.preventDefault();
-                                // Auto-assign category based on type for simplicity
-                                const defaultCategory = newAccountType === 'Asset' ? 'Cash' : 'Loan';
                                 createAccountMutation.mutate({
                                     name: newAccountName,
                                     type: newAccountType,
-                                    category: defaultCategory
+                                    category: newAccountCategory
                                 });
                                 setNewAccountName("");
                             }} className="flex flex-col md:flex-row gap-4">
@@ -339,15 +338,42 @@ export default function NetWorth() {
                                         onChange={(e) => setNewAccountName(e.target.value)}
                                     />
                                 </div>
-                                <div className="w-full md:w-48">
+                                <div className="w-full md:w-36">
                                     <label className="block text-xs font-medium text-slate-500 mb-1">Type</label>
                                     <select
                                         className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
                                         value={newAccountType}
-                                        onChange={(e) => setNewAccountType(e.target.value)}
+                                        onChange={(e) => {
+                                            setNewAccountType(e.target.value);
+                                            // Reset category when type changes
+                                            setNewAccountCategory(e.target.value === 'Asset' ? 'Cash' : 'Loan');
+                                        }}
                                     >
                                         <option value="Asset">Asset</option>
                                         <option value="Liability">Liability</option>
+                                    </select>
+                                </div>
+                                <div className="w-full md:w-36">
+                                    <label className="block text-xs font-medium text-slate-500 mb-1">Category</label>
+                                    <select
+                                        className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+                                        value={newAccountCategory}
+                                        onChange={(e) => setNewAccountCategory(e.target.value)}
+                                    >
+                                        {newAccountType === 'Asset' ? (
+                                            <>
+                                                <option value="Cash">Cash</option>
+                                                <option value="Savings">Savings</option>
+                                                <option value="Investment">Investment (Stocks)</option>
+                                                <option value="Property">Property</option>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <option value="Loan">Loan</option>
+                                                <option value="Mortgage">Mortgage</option>
+                                                <option value="Credit Card">Credit Card</option>
+                                            </>
+                                        )}
                                     </select>
                                 </div>
                                 <div className="flex items-end">
@@ -357,6 +383,11 @@ export default function NetWorth() {
                                     </button>
                                 </div>
                             </form>
+                            {newAccountType === 'Asset' && newAccountCategory === 'Investment' && (
+                                <p className="mt-3 text-xs text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-2 rounded-lg">
+                                    💡 <strong>Investment accounts</strong> let you track individual stocks, ETFs, and their current prices!
+                                </p>
+                            )}
                         </div>
                     )
                 }
