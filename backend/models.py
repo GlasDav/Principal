@@ -29,6 +29,7 @@ class BudgetBucket(Base):
     monthly_limit_b = Column(Float, default=0.0) # For Partner B (if couple)
     is_shared = Column(Boolean, default=False)
     is_rollover = Column(Boolean, default=False) # New: Sinking Funds
+    is_transfer = Column(Boolean, default=False)  # Transfer buckets excluded from spending analytics
     group = Column(String, default="Discretionary") # 'Discretionary' (Wants) or 'Non-Discretionary' (Needs)
     
     # Goal Fields

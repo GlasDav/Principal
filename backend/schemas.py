@@ -24,6 +24,7 @@ class BudgetBucketBase(BaseModel):
     is_shared: bool = False
     group: str = "Discretionary"
     is_rollover: bool = False
+    is_transfer: bool = False  # Transfer buckets excluded from spending analytics
     tags: List[str] = []
     target_amount: Optional[float] = None
     target_date: Optional[date] = None

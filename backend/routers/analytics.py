@@ -111,8 +111,10 @@ def get_dashboard_data(
     if spender != "Combined":
         totals_query = totals_query.filter(models.Transaction.spender == spender)
 
-    # Exclude "Transfer" bucket
-    totals_query = totals_query.filter(~models.Transaction.bucket.has(models.BudgetBucket.name == "Transfer"))
+    # Exclude Transfer buckets from totals
+    totals_query = totals_query.filter(
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+    )
 
     totals_res = totals_query.first()
     total_expenses = abs(totals_res.expenses or 0.0)
@@ -238,7 +240,9 @@ def get_analytics_history(
              pass
 
         # Exclude Transfers from History too
-        query = query.filter(~models.Transaction.bucket.has(models.BudgetBucket.name == "Transfer"))
+        query = query.filter(
+            ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+        )
              
         spent = query.scalar() or 0.0
         spent = abs(spent)
@@ -616,8 +620,10 @@ def get_sankey_data(
     if spender != "Combined":
         totals_query = totals_query.filter(models.Transaction.spender == spender)
 
-    # Exclude Transfers
-    totals_query = totals_query.filter(~models.Transaction.bucket.has(models.BudgetBucket.name == "Transfer"))
+    # Exclude Transfer buckets
+    totals_query = totals_query.filter(
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+    )
         
     totals_res = totals_query.first()
     total_expenses = abs(totals_res.expenses or 0.0)
@@ -638,8 +644,10 @@ def get_sankey_data(
     if spender != "Combined":
         expense_query = expense_query.filter(models.Transaction.spender == spender)
 
-    # Exclude Transfers
-    expense_query = expense_query.filter(~models.Transaction.bucket.has(models.BudgetBucket.name == "Transfer"))
+    # Exclude Transfer buckets
+    expense_query = expense_query.filter(
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+    )
         
     expense_results = expense_query.group_by(models.Transaction.bucket_id).all()
     
