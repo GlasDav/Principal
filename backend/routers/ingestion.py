@@ -40,12 +40,20 @@ async def validate_file_size(file: UploadFile) -> bytes:
 def process_and_save_transactions(extracted_data, user, db, spender):
     """
     Shared logic to categorize and save extracted transaction data.
+    Uses a multi-stage approach:
+    1. User's smart rules (highest priority)
+    2. Bucket tags/keywords
+    3. Global keyword matching
+    4. AI prediction for remaining uncategorized (NEW)
     """
+    from ..services.ai_categorizer import get_ai_categorizer
+    
     # Fetch Buckets with Tags for Mapping
     buckets = db.query(models.BudgetBucket).options(joinedload(models.BudgetBucket.tags)).filter(models.BudgetBucket.user_id == user.id).all()
     
     # 1. Build Bucket Map (Name -> ID)
     bucket_map = {b.name.lower(): b.id for b in buckets}
+    bucket_names = [b.name for b in buckets]  # Keep original casing for AI
     
     # 2. Build Legacy Rules Map (Tag/Keyword -> Bucket Name)
     rules_map = {}
@@ -56,8 +64,11 @@ def process_and_save_transactions(extracted_data, user, db, spender):
     # 3. Fetch Smart Rules (Prioritized)
     smart_rules = db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == user.id).order_by(models.CategorizationRule.priority.desc()).all()
 
-    saved_transactions = []
-    for data in extracted_data:
+    # First pass: Apply rule-based categorization
+    pending_transactions = []  # Store (index, data, clean_desc) for AI fallback
+    categorization_results = []  # Store (bucket_id, confidence, is_verified) per transaction
+    
+    for i, data in enumerate(extracted_data):
         # Pre-clean description for better matching
         clean_desc = categorizer.clean_description(data["description"])
         
@@ -70,7 +81,7 @@ def process_and_save_transactions(extracted_data, user, db, spender):
         if rule_bucket_id:
             bucket_id = rule_bucket_id
             confidence = 1.0
-            is_verified = True # Explicit rule match = Verified
+            is_verified = True  # Explicit rule match = Verified
         else:
             # B. Legacy Tag Prediction
             predicted_category, conf = categorizer.predict(clean_desc, rules_map)
@@ -83,20 +94,64 @@ def process_and_save_transactions(extracted_data, user, db, spender):
                 if guessed_bucket_id:
                     bucket_id = guessed_bucket_id
                     confidence = guess_conf
+        
+        # Track result
+        categorization_results.append({
+            'bucket_id': bucket_id,
+            'confidence': confidence,
+            'is_verified': is_verified,
+            'clean_desc': clean_desc
+        })
+        
+        # If still uncategorized, queue for AI
+        if bucket_id is None:
+            pending_transactions.append({
+                'index': i,
+                'description': clean_desc,
+                'raw_description': data["description"],
+                'amount': data["amount"]
+            })
+    
+    # Second pass: AI categorization for uncategorized transactions
+    if pending_transactions and bucket_names:
+        ai_categorizer = get_ai_categorizer()
+        try:
+            ai_predictions = ai_categorizer.categorize_batch_sync(pending_transactions, bucket_names)
             
-        # Create Transaction Object
-        # Note: clean_desc re-calculated or reused? It's reused.
+            # Apply AI predictions
+            for txn_data in pending_transactions:
+                idx = txn_data['index']
+                local_idx = pending_transactions.index(txn_data)
+                
+                if local_idx in ai_predictions:
+                    predicted_bucket, ai_confidence = ai_predictions[local_idx]
+                    # Match to bucket ID
+                    matched_bucket_id = bucket_map.get(predicted_bucket.lower())
+                    if matched_bucket_id:
+                        categorization_results[idx]['bucket_id'] = matched_bucket_id
+                        categorization_results[idx]['confidence'] = ai_confidence
+                        # AI predictions should NOT be auto-verified - user should review
+                        categorization_results[idx]['is_verified'] = False
+                        
+            logger.info(f"AI categorized {len(ai_predictions)}/{len(pending_transactions)} transactions")
+        except Exception as e:
+            logger.warning(f"AI categorization failed, falling back to uncategorized: {e}")
+    
+    # Create and save all transactions
+    saved_transactions = []
+    for i, data in enumerate(extracted_data):
+        result = categorization_results[i]
         
         db_txn = models.Transaction(
             date=data["date"],
-            description=clean_desc,
-            raw_description=data["description"], # Keep original as raw
+            description=result['clean_desc'],
+            raw_description=data["description"],
             amount=data["amount"],
             user_id=user.id,
-            category_confidence=confidence,
-            bucket_id=bucket_id, # Assign bucket if found
-            is_verified=is_verified,
-            spender=spender # Use selected spender
+            category_confidence=result['confidence'],
+            bucket_id=result['bucket_id'],
+            is_verified=result['is_verified'],
+            spender=spender
         )
         db.add(db_txn)
         saved_transactions.append(db_txn)

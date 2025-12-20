@@ -528,9 +528,13 @@ export default function Ingest() {
                                             {txn.amount.toFixed(2)}
                                         </td>
                                         <td className="p-4">
-                                            {txn.category_confidence > 0.8 ? (
+                                            {txn.category_confidence >= 0.9 ? (
                                                 <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                                                     Auto-Matched
+                                                </span>
+                                            ) : txn.category_confidence >= 0.5 && txn.bucket_id ? (
+                                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                                                    AI Suggested
                                                 </span>
                                             ) : (
                                                 <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
