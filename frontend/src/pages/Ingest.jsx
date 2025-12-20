@@ -23,6 +23,7 @@ export default function Ingest() {
     const [transactions, setTransactions] = useState([]);
     const [editingId, setEditingId] = useState(null); // Track which row is being edited
     const [error, setError] = useState(null);
+    const [skipDuplicates, setSkipDuplicates] = useState(true);  // NEW: duplicate detection
     const queryClient = useQueryClient();
 
     // Fetch User Settings for Names
@@ -127,6 +128,9 @@ export default function Ingest() {
             } else {
                 formData.append("map_amount", mapping.amount);
             }
+
+            // Add skip duplicates flag
+            formData.append("skip_duplicates", skipDuplicates);
 
             const res = await api.post("/ingest/csv", formData);
             return res.data;
@@ -417,21 +421,46 @@ export default function Ingest() {
                         </table>
                     </div>
 
-                    <div className="flex justify-end gap-3">
-                        <button
-                            onClick={() => { setFile(null); setPreviewData(null); }}
-                            className="px-4 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 font-medium"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={() => ingestCsvMutation.mutate()}
-                            disabled={!mapping.date || !mapping.description || (mapping.mode === 'split' ? (!mapping.debit && !mapping.credit) : !mapping.amount) || ingestCsvMutation.isPending}
-                            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium flex items-center gap-2 disabled:opacity-50"
-                        >
-                            {ingestCsvMutation.isPending ? "Importing..." : "Run Import"}
-                            <ArrowRight size={16} />
-                        </button>
+                    {/* Import Options */}
+                    <div className="flex justify-between items-center">
+                        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                            <input
+                                type="checkbox"
+                                checked={skipDuplicates}
+                                onChange={(e) => setSkipDuplicates(e.target.checked)}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            Skip duplicate transactions
+                            <span className="text-xs text-slate-400">(recommended)</span>
+                        </label>
+
+                        <div className="flex gap-3 items-center">
+                            {ingestCsvMutation.isPending && (
+                                <span className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">
+                                    ⏳ AI is categorizing transactions... This may take 1-2 minutes.
+                                </span>
+                            )}
+                            <button
+                                onClick={() => { setFile(null); setPreviewData(null); }}
+                                className="px-4 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 font-medium"
+                                disabled={ingestCsvMutation.isPending}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => ingestCsvMutation.mutate()}
+                                disabled={!mapping.date || !mapping.description || (mapping.mode === 'split' ? (!mapping.debit && !mapping.credit) : !mapping.amount) || ingestCsvMutation.isPending}
+                                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {ingestCsvMutation.isPending ? (
+                                    <>
+                                        <div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent" />
+                                        Importing...
+                                    </>
+                                ) : "Run Import"}
+                                {!ingestCsvMutation.isPending && <ArrowRight size={16} />}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -529,16 +558,16 @@ export default function Ingest() {
                                         </td>
                                         <td className="p-4">
                                             {txn.category_confidence >= 0.9 ? (
-                                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                                    Auto-Matched
+                                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 whitespace-nowrap">
+                                                    ✓ Matched
                                                 </span>
                                             ) : txn.category_confidence >= 0.5 && txn.bucket_id ? (
-                                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
-                                                    AI Suggested
+                                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 whitespace-nowrap">
+                                                    ✨ AI
                                                 </span>
                                             ) : (
-                                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-                                                    Review
+                                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 whitespace-nowrap">
+                                                    ⚠ Review
                                                 </span>
                                             )}
                                         </td>

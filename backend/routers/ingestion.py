@@ -2,6 +2,7 @@ import logging
 import shutil
 import os
 import tempfile
+import hashlib
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
 from sqlalchemy.orm import Session, joinedload
@@ -27,6 +28,16 @@ router = APIRouter(
 categorizer = Categorizer()
 
 
+def generate_transaction_hash(user_id: int, date, raw_description: str, amount: float) -> str:
+    """
+    Generate a unique fingerprint for duplicate detection.
+    Uses: user_id + date + raw_description + absolute amount
+    """
+    date_str = date.isoformat() if hasattr(date, 'isoformat') else str(date)
+    key = f"{user_id}|{date_str}|{raw_description.lower().strip()}|{abs(round(amount, 2))}"
+    return hashlib.sha256(key.encode()).hexdigest()[:16]
+
+
 async def validate_file_size(file: UploadFile) -> bytes:
     """Read and validate file size. Returns file content if valid."""
     content = await file.read()
@@ -37,16 +48,61 @@ async def validate_file_size(file: UploadFile) -> bytes:
         )
     return content
 
-def process_and_save_transactions(extracted_data, user, db, spender):
+def process_and_save_transactions(extracted_data, user, db, spender, skip_duplicates=True):
     """
     Shared logic to categorize and save extracted transaction data.
     Uses a multi-stage approach:
-    1. User's smart rules (highest priority)
-    2. Bucket tags/keywords
-    3. Global keyword matching
-    4. AI prediction for remaining uncategorized (NEW)
+    1. Duplicate detection (if skip_duplicates=True)
+    2. User's smart rules (highest priority)
+    3. Bucket tags/keywords
+    4. Global keyword matching
+    5. AI prediction for remaining uncategorized
+    
+    Returns: (saved_transactions, duplicate_count)
     """
     from ..services.ai_categorizer import get_ai_categorizer
+    
+    # === DUPLICATE DETECTION ===
+    duplicate_count = 0
+    non_duplicate_data = []
+    
+    if skip_duplicates and extracted_data:
+        # Generate hashes for incoming transactions
+        incoming_hashes = {}
+        for i, data in enumerate(extracted_data):
+            txn_hash = generate_transaction_hash(
+                user.id, 
+                data["date"], 
+                data["description"],  # raw description
+                data["amount"]
+            )
+            incoming_hashes[i] = txn_hash
+        
+        # Fetch existing hashes for this user
+        existing_hashes = set(
+            h[0] for h in db.query(models.Transaction.transaction_hash)
+            .filter(
+                models.Transaction.user_id == user.id,
+                models.Transaction.transaction_hash.isnot(None)
+            ).all()
+        )
+        
+        # Filter out duplicates
+        for i, data in enumerate(extracted_data):
+            if incoming_hashes[i] not in existing_hashes:
+                non_duplicate_data.append((data, incoming_hashes[i]))
+            else:
+                duplicate_count += 1
+        
+        logger.info(f"Duplicate detection: {duplicate_count} duplicates skipped, {len(non_duplicate_data)} new transactions")
+    else:
+        # No duplicate checking - process all
+        for data in extracted_data:
+            txn_hash = generate_transaction_hash(user.id, data["date"], data["description"], data["amount"])
+            non_duplicate_data.append((data, txn_hash))
+    
+    if not non_duplicate_data:
+        return [], duplicate_count
     
     # Fetch Buckets with Tags for Mapping
     buckets = db.query(models.BudgetBucket).options(joinedload(models.BudgetBucket.tags)).filter(models.BudgetBucket.user_id == user.id).all()
@@ -68,7 +124,7 @@ def process_and_save_transactions(extracted_data, user, db, spender):
     pending_transactions = []  # Store (index, data, clean_desc) for AI fallback
     categorization_results = []  # Store (bucket_id, confidence, is_verified) per transaction
     
-    for i, data in enumerate(extracted_data):
+    for i, (data, txn_hash) in enumerate(non_duplicate_data):
         # Pre-clean description for better matching
         clean_desc = categorizer.clean_description(data["description"])
         
@@ -95,12 +151,13 @@ def process_and_save_transactions(extracted_data, user, db, spender):
                     bucket_id = guessed_bucket_id
                     confidence = guess_conf
         
-        # Track result
+        # Track result (include hash for later)
         categorization_results.append({
             'bucket_id': bucket_id,
             'confidence': confidence,
             'is_verified': is_verified,
-            'clean_desc': clean_desc
+            'clean_desc': clean_desc,
+            'txn_hash': txn_hash
         })
         
         # If still uncategorized, queue for AI
@@ -139,7 +196,7 @@ def process_and_save_transactions(extracted_data, user, db, spender):
     
     # Create and save all transactions
     saved_transactions = []
-    for i, data in enumerate(extracted_data):
+    for i, (data, txn_hash) in enumerate(non_duplicate_data):
         result = categorization_results[i]
         
         db_txn = models.Transaction(
@@ -151,7 +208,8 @@ def process_and_save_transactions(extracted_data, user, db, spender):
             category_confidence=result['confidence'],
             bucket_id=result['bucket_id'],
             is_verified=result['is_verified'],
-            spender=spender
+            spender=spender,
+            transaction_hash=result['txn_hash']  # Save hash for future duplicate detection
         )
         db.add(db_txn)
         saved_transactions.append(db_txn)
@@ -161,11 +219,12 @@ def process_and_save_transactions(extracted_data, user, db, spender):
     # Reload with Eager Loading
     txn_ids = [t.id for t in saved_transactions]
     if txn_ids:
-        return db.query(models.Transaction)\
+        loaded = db.query(models.Transaction)\
             .options(joinedload(models.Transaction.bucket))\
             .filter(models.Transaction.id.in_(txn_ids))\
             .all()
-    return []
+        return loaded, duplicate_count
+    return [], duplicate_count
 
 @router.post("/csv/preview")
 async def preview_csv(file: UploadFile = File(...)):
@@ -192,6 +251,7 @@ async def ingest_csv(
     map_debit: str = Form(None), # New
     map_credit: str = Form(None), # New
     spender: str = Form("Joint"),
+    skip_duplicates: bool = Form(True),  # New: duplicate detection
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(auth.get_current_user)
 ):
@@ -211,8 +271,16 @@ async def ingest_csv(
         
     if not extracted_data:
         return []
-        
-    return process_and_save_transactions(extracted_data, current_user, db, spender)
+    
+    transactions, duplicate_count = process_and_save_transactions(
+        extracted_data, current_user, db, spender, skip_duplicates
+    )
+    
+    # Log duplicate info
+    if duplicate_count > 0:
+        logger.info(f"Skipped {duplicate_count} duplicate transactions")
+    
+    return transactions
 
 
 @router.post("/upload", response_model=List[schemas.Transaction])
@@ -247,7 +315,14 @@ async def upload_statement(
     if not extracted_data:
         return []
 
-    return process_and_save_transactions(extracted_data, current_user, db, spender)
+    transactions, duplicate_count = process_and_save_transactions(
+        extracted_data, current_user, db, spender, skip_duplicates=True
+    )
+    
+    if duplicate_count > 0:
+        logger.info(f"Skipped {duplicate_count} duplicate transactions")
+    
+    return transactions
 
 
 @router.post("/confirm", response_model=List[schemas.Transaction])

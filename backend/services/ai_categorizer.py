@@ -13,22 +13,29 @@ import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
-# Configure Gemini API
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
 class AICategorizer:
     """AI-powered transaction categorization using Gemini."""
     
     def __init__(self):
         self.model = None
         self.enabled = False
+        self._initialized = False
+    
+    def _ensure_initialized(self):
+        """Lazily initialize the API on first use (after .env is loaded)."""
+        if self._initialized:
+            return
         
-        if GEMINI_API_KEY:
+        self._initialized = True
+        api_key = os.getenv("GEMINI_API_KEY")
+        
+        if api_key:
             try:
-                genai.configure(api_key=GEMINI_API_KEY)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                genai.configure(api_key=api_key)
+                # Use the latest Gemini 3 Flash (released Dec 2025)
+                self.model = genai.GenerativeModel('gemini-3-flash-preview')
                 self.enabled = True
-                logger.info("AI Categorizer initialized successfully")
+                logger.info("AI Categorizer initialized successfully with Gemini API")
             except Exception as e:
                 logger.warning(f"Failed to initialize Gemini API: {e}")
         else:
@@ -70,19 +77,38 @@ class AICategorizer:
         transactions: List[Dict], 
         bucket_names: List[str]
     ) -> Dict[int, Tuple[str, float]]:
-        """Synchronous version for non-async contexts."""
+        """Synchronous version that processes ALL transactions in batches of 50."""
+        self._ensure_initialized()
+        
         if not self.enabled or not transactions:
+            logger.info(f"AI categorization skipped: enabled={self.enabled}, txn_count={len(transactions)}")
             return {}
         
-        batch = transactions[:50]
-        prompt = self._build_prompt(batch, bucket_names)
+        logger.info(f"AI categorizing {len(transactions)} transactions across {(len(transactions) + 49) // 50} batches")
         
-        try:
-            response = self.model.generate_content(prompt)
-            return self._parse_response(response.text, len(batch), bucket_names)
-        except Exception as e:
-            logger.error(f"AI categorization failed: {e}")
-            return {}
+        all_results = {}
+        batch_size = 50
+        
+        # Process all transactions in batches
+        for batch_start in range(0, len(transactions), batch_size):
+            batch = transactions[batch_start:batch_start + batch_size]
+            prompt = self._build_prompt(batch, bucket_names)
+            
+            try:
+                response = self.model.generate_content(prompt)
+                batch_results = self._parse_response(response.text, len(batch), bucket_names)
+                
+                # Map batch indices back to global indices
+                for local_idx, (bucket, conf) in batch_results.items():
+                    global_idx = batch_start + local_idx
+                    all_results[global_idx] = (bucket, conf)
+                    
+                logger.info(f"Batch {batch_start//batch_size + 1}: categorized {len(batch_results)}/{len(batch)} transactions")
+            except Exception as e:
+                logger.error(f"AI batch {batch_start//batch_size + 1} failed: {e}")
+        
+        logger.info(f"AI total: categorized {len(all_results)}/{len(transactions)} transactions")
+        return all_results
     
     def _build_prompt(self, transactions: List[Dict], bucket_names: List[str]) -> str:
         """Build the categorization prompt for Gemini."""

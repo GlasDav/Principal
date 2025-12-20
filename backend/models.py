@@ -78,6 +78,7 @@ class Transaction(Base):
     goal_id = Column(Integer, ForeignKey("goals.id"), nullable=True) # New: Goal Tracking
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True) # Linked Bank Account
     external_id = Column(String, unique=True, nullable=True) # Basiq Transaction ID
+    transaction_hash = Column(String, index=True, nullable=True)  # Duplicate detection fingerprint
     
     account = relationship("Account")
 
