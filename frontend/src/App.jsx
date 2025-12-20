@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, TrendingDown, Zap, Target } from 'lucide-react';
+import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, TrendingDown, Zap, Target, TrendingUp } from 'lucide-react';
 import Settings from './pages/Settings';
 import Ingest from './pages/Ingest';
 import Transactions from './pages/Transactions';
@@ -26,6 +26,32 @@ import { LogOut, Calculator } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
+// Enhanced NavItem component with left accent indicator
+function NavItem({ to, icon: Icon, children, end = false }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) => `
+        relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
+        ${isActive
+          ? 'bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/30 dark:to-transparent text-indigo-600 dark:text-indigo-400 font-medium'
+          : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-700 dark:hover:text-slate-300'
+        }
+      `}
+    >
+      {({ isActive }) => (
+        <>
+          {/* Left accent indicator */}
+          <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-full transition-all duration-200 ${isActive ? 'h-6 bg-gradient-to-b from-indigo-500 to-violet-500' : 'h-0 bg-transparent'}`}></div>
+          <Icon size={20} className={isActive ? 'text-indigo-500' : ''} />
+          {children}
+        </>
+      )}
+    </NavLink>
+  );
+}
+
 // Sidebar + Layout
 function Layout() {
   const { logout, user } = useAuth();
@@ -34,62 +60,34 @@ function Layout() {
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans">
       {/* Sidebar */}
       <div className="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
+        {/* Logo */}
         <div className="p-6 border-b border-slate-100 dark:border-slate-700">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Principal</h1>
-
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <TrendingUp className="text-white" size={20} />
+            </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Principal</h1>
+          </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          <NavLink to="/" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-            <LayoutDashboard size={20} />
-            Dashboard
-          </NavLink>
-          <NavLink to="/net-worth" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-            <LineChart size={20} />
-            Net Worth
-          </NavLink>
-          <NavLink to="/transactions" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-            <List size={20} />
-            Transactions
-          </NavLink>
-          <NavLink to="/ingest" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-            <UploadCloud size={20} />
-            Import Data
-          </NavLink>
-          <NavLink to="/calendar" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-            <Calendar size={20} />
-            Calendar
-          </NavLink>
-          <NavLink to="/subscriptions" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-            <CreditCard size={20} />
-            Subscriptions
-          </NavLink>
-          <NavLink to="/goals" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-            <Target size={20} />
-            Goals
-          </NavLink>
-          <NavLink to="/debt" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-            <TrendingDown size={20} />
-            Debt Visualizer
-          </NavLink>
-          <NavLink to="/insights" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-            <Zap size={20} />
-            Insights
-          </NavLink>
-          <NavLink to="/settings" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-            <SettingsIcon size={20} />
-            Settings
-          </NavLink>
-          <NavLink to="/taxes" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-            <Calculator size={20} />
-            Taxes
-          </NavLink>
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <NavItem to="/" icon={LayoutDashboard} end>Dashboard</NavItem>
+          <NavItem to="/net-worth" icon={LineChart}>Net Worth</NavItem>
+          <NavItem to="/transactions" icon={List}>Transactions</NavItem>
+          <NavItem to="/ingest" icon={UploadCloud}>Import Data</NavItem>
+          <NavItem to="/calendar" icon={Calendar}>Calendar</NavItem>
+          <NavItem to="/subscriptions" icon={CreditCard}>Subscriptions</NavItem>
+          <NavItem to="/goals" icon={Target}>Goals</NavItem>
+          <NavItem to="/debt" icon={TrendingDown}>Debt Visualizer</NavItem>
+          <NavItem to="/insights" icon={Zap}>Insights</NavItem>
+          <NavItem to="/settings" icon={SettingsIcon}>Settings</NavItem>
+          <NavItem to="/taxes" icon={Calculator}>Taxes</NavItem>
         </nav>
 
         <div className="p-4 border-t border-slate-100 dark:border-slate-700">
           <button
             onClick={logout}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
           >
             <LogOut size={20} />
             Sign Out

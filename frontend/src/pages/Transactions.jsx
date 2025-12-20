@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getBuckets, getSettings, getGoals } from '../services/api';
-import { Trash2, Search, Filter, Pencil, Split } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { Trash2, Search, Filter, Pencil, Split, UploadCloud, FileText, Loader2 } from 'lucide-react';
+import { useSearchParams, Link } from 'react-router-dom';
 import SplitTransactionModal from '../components/SplitTransactionModal';
+import EmptyState from '../components/EmptyState';
 
 export default function Transactions() {
     const queryClient = useQueryClient();
@@ -168,125 +169,159 @@ export default function Transactions() {
                 }}
             />
 
-            < div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden" >
-                <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
-                        <tr>
-                            <th className="p-4 w-12">
-                                <input
-                                    type="checkbox"
-                                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                    checked={filteredTxns.length > 0 && selectedIds.size === filteredTxns.length}
-                                    onChange={toggleSelectAll}
-                                />
-                            </th>
-                            <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Date</th>
-                            <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Description</th>
-                            <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Category</th>
-                            <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Goal</th>
-                            <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Who?</th>
-                            <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 text-right">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                        {isLoading ? (
-                            <tr><td colSpan="6" className="p-8 text-center text-slate-500">Loading...</td></tr>
-                        ) : filteredTxns.length === 0 ? (
-                            <tr><td colSpan="6" className="p-8 text-center text-slate-500">No transactions found.</td></tr>
-                        ) : (
-                            filteredTxns.map((txn) => (
-                                <tr key={txn.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition group">
-                                    <td className="p-4">
-                                        <input
-                                            type="checkbox"
-                                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                            checked={selectedIds.has(txn.id)}
-                                            onChange={() => toggleSelect(txn.id)}
-                                        />
-                                    </td>
-                                    <td className="p-4 text-sm text-slate-800 dark:text-slate-200 font-mono">
-                                        {new Date(txn.date).toLocaleDateString('en-AU')}
-                                    </td>
-                                    <td className="p-4 text-sm text-slate-700 dark:text-slate-300 group/cell">
-                                        {editingId === txn.id ? (
-                                            <input
-                                                autoFocus
-                                                type="text"
-                                                defaultValue={txn.description}
-                                                onBlur={(e) => {
-                                                    updateMutation.mutate({ id: txn.id, description: e.target.value });
-                                                    setEditingId(null);
-                                                }}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.currentTarget.blur();
-                                                    }
-                                                }}
-                                                className="w-full bg-slate-50 dark:bg-slate-700 border-0 rounded px-2 py-1 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 font-medium"
-                                                onClick={(e) => e.stopPropagation()}
-                                            />
-                                        ) : (
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 cursor-pointer" onClick={() => setEditingId(txn.id)} title={`Original: ${txn.raw_description}`}>
-                                                    <span className="font-medium text-slate-900 dark:text-white">{txn.description}</span>
-                                                    <Pencil size={14} className="text-slate-400 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
-                                                </div>
-
-                                                {/* Split Action */}
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); setTransactionToSplit(txn); setSplitModalOpen(true); }}
-                                                    className="opacity-0 group-hover/cell:opacity-100 p-1 text-slate-400 hover:text-indigo-500 transition"
-                                                    title="Split Transaction"
-                                                >
-                                                    <Split size={16} />
-                                                </button>
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td className="p-4">
-                                        <select
-                                            className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                                            value={txn.bucket_id || ""}
-                                            onChange={(e) => updateMutation.mutate({ id: txn.id, bucket_id: parseInt(e.target.value) })}
-                                        >
-                                            <option value="">Uncategorized</option>
-                                            {buckets.map(b => (
-                                                <option key={b.id} value={b.id}>{b.name}</option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td className="p-4">
-                                        <select
-                                            className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                                            value={txn.goal_id || ""}
-                                            onChange={(e) => updateMutation.mutate({ id: txn.id, goal_id: e.target.value ? parseInt(e.target.value) : null })}
-                                        >
-                                            <option value="">-</option>
-                                            {goals.map(g => (
-                                                <option key={g.id} value={g.id}>{g.name}</option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td className="p-4">
-                                        <select
-                                            className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                                            value={txn.spender || "Joint"}
-                                            onChange={(e) => updateMutation.mutate({ id: txn.id, spender: e.target.value })}
-                                        >
-                                            <option value="Joint">Joint</option>
-                                            <option value="User A">{userSettings?.name_a || "User A"}</option>
-                                            <option value="User B">{userSettings?.name_b || "User B"}</option>
-                                        </select>
-                                    </td>
-                                    <td className={`p-4 text-sm font-semibold text-right ${txn.amount < 0 ? 'text-slate-900 dark:text-white' : 'text-green-600'}`}>
-                                        {txn.amount.toFixed(2)}
+            {/* Show empty state if no transactions at all */}
+            {!isLoading && transactions.length === 0 ? (
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 py-8">
+                    <EmptyState
+                        icon={FileText}
+                        title="No transactions yet"
+                        description="Import your bank statements to start tracking your spending. We support CSV files and PDF statements from most major banks."
+                        actionText="Import Data"
+                        actionLink="/ingest"
+                    />
+                </div>
+            ) : (
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden" >
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                            <tr>
+                                <th className="p-4 w-12">
+                                    <input
+                                        type="checkbox"
+                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        checked={filteredTxns.length > 0 && selectedIds.size === filteredTxns.length}
+                                        onChange={toggleSelectAll}
+                                    />
+                                </th>
+                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Date</th>
+                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Description</th>
+                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Category</th>
+                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Goal</th>
+                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Who?</th>
+                                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan="7" className="p-12 text-center">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <Loader2 className="animate-spin text-indigo-500" size={32} />
+                                            <span className="text-slate-500">Loading transactions...</span>
+                                        </div>
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div >
-        </div >
+                            ) : filteredTxns.length === 0 ? (
+                                <tr>
+                                    <td colSpan="7" className="p-8 text-center">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Search className="text-slate-400" size={24} />
+                                            <span className="text-slate-500 font-medium">No transactions match your search</span>
+                                            <button
+                                                onClick={() => setSearch('')}
+                                                className="text-indigo-500 text-sm hover:text-indigo-600"
+                                            >
+                                                Clear search
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredTxns.map((txn) => (
+                                    <tr key={txn.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition group">
+                                        <td className="p-4">
+                                            <input
+                                                type="checkbox"
+                                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                checked={selectedIds.has(txn.id)}
+                                                onChange={() => toggleSelect(txn.id)}
+                                            />
+                                        </td>
+                                        <td className="p-4 text-sm text-slate-800 dark:text-slate-200 font-mono">
+                                            {new Date(txn.date).toLocaleDateString('en-AU')}
+                                        </td>
+                                        <td className="p-4 text-sm text-slate-700 dark:text-slate-300 group/cell">
+                                            {editingId === txn.id ? (
+                                                <input
+                                                    autoFocus
+                                                    type="text"
+                                                    defaultValue={txn.description}
+                                                    onBlur={(e) => {
+                                                        updateMutation.mutate({ id: txn.id, description: e.target.value });
+                                                        setEditingId(null);
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.currentTarget.blur();
+                                                        }
+                                                    }}
+                                                    className="w-full bg-slate-50 dark:bg-slate-700 border-0 rounded px-2 py-1 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 font-medium"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                            ) : (
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => setEditingId(txn.id)} title={`Original: ${txn.raw_description}`}>
+                                                        <span className="font-medium text-slate-900 dark:text-white">{txn.description}</span>
+                                                        <Pencil size={14} className="text-slate-400 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
+                                                    </div>
+
+                                                    {/* Split Action */}
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setTransactionToSplit(txn); setSplitModalOpen(true); }}
+                                                        className="opacity-0 group-hover/cell:opacity-100 p-1 text-slate-400 hover:text-indigo-500 transition"
+                                                        title="Split Transaction"
+                                                    >
+                                                        <Split size={16} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="p-4">
+                                            <select
+                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                                value={txn.bucket_id || ""}
+                                                onChange={(e) => updateMutation.mutate({ id: txn.id, bucket_id: parseInt(e.target.value) })}
+                                            >
+                                                <option value="">Uncategorized</option>
+                                                {buckets.map(b => (
+                                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td className="p-4">
+                                            <select
+                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                                value={txn.goal_id || ""}
+                                                onChange={(e) => updateMutation.mutate({ id: txn.id, goal_id: e.target.value ? parseInt(e.target.value) : null })}
+                                            >
+                                                <option value="">-</option>
+                                                {goals.map(g => (
+                                                    <option key={g.id} value={g.id}>{g.name}</option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td className="p-4">
+                                            <select
+                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                                value={txn.spender || "Joint"}
+                                                onChange={(e) => updateMutation.mutate({ id: txn.id, spender: e.target.value })}
+                                            >
+                                                <option value="Joint">Joint</option>
+                                                <option value="User A">{userSettings?.name_a || "User A"}</option>
+                                                <option value="User B">{userSettings?.name_b || "User B"}</option>
+                                            </select>
+                                        </td>
+                                        <td className={`p-4 text-sm font-semibold text-right ${txn.amount < 0 ? 'text-slate-900 dark:text-white' : 'text-green-600'}`}>
+                                            {txn.amount.toFixed(2)}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
     );
 }
+
