@@ -130,6 +130,22 @@ export default function Transactions() {
         }
     });
 
+    // Batch Update Transactions
+    const batchUpdateMutation = useMutation({
+        mutationFn: async (data) => {
+            const res = await api.post('/transactions/batch-update', data);
+            return res.data;
+        },
+        onSuccess: (data) => {
+            setSelectedIds(new Set());
+            queryClient.invalidateQueries(['transactions']);
+        },
+        onError: (err) => {
+            console.error('Batch update failed:', err);
+            alert(`Failed to update: ${err.response?.data?.detail || err.message}`);
+        }
+    });
+
     // Selection Handlers
     const toggleSelectAll = () => {
         if (selectedIds.size === transactions.length) {
@@ -210,19 +226,63 @@ export default function Transactions() {
                             {deleteAllMutation.isPending ? 'Deleting...' : 'Delete All'}
                         </button>
                     )}
-                    {/* Delete Selected Button */}
+                    {/* Bulk Actions for Selected */}
                     {selectedIds.size > 0 && (
-                        <button
-                            onClick={() => {
-                                if (window.confirm(`Delete ${selectedIds.size} transactions?`)) {
-                                    deleteBatchMutation.mutate(Array.from(selectedIds));
-                                }
-                            }}
-                            className="bg-red-50 text-red-600 px-4 py-2 rounded-lg font-medium hover:bg-red-100 transition flex items-center gap-2"
-                        >
-                            <Trash2 size={16} />
-                            Delete ({selectedIds.size})
-                        </button>
+                        <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-2 rounded-lg">
+                            <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                                {selectedIds.size} selected:
+                            </span>
+                            {/* Bulk Category Change */}
+                            <select
+                                onChange={(e) => {
+                                    if (e.target.value) {
+                                        batchUpdateMutation.mutate({
+                                            ids: Array.from(selectedIds),
+                                            bucket_id: parseInt(e.target.value)
+                                        });
+                                        e.target.value = "";
+                                    }
+                                }}
+                                className="px-2 py-1 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white"
+                                disabled={batchUpdateMutation.isPending}
+                            >
+                                <option value="">Set Category...</option>
+                                {buckets.map(b => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                            </select>
+                            {/* Bulk Spender Change */}
+                            <select
+                                onChange={(e) => {
+                                    if (e.target.value) {
+                                        batchUpdateMutation.mutate({
+                                            ids: Array.from(selectedIds),
+                                            spender: e.target.value
+                                        });
+                                        e.target.value = "";
+                                    }
+                                }}
+                                className="px-2 py-1 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white"
+                                disabled={batchUpdateMutation.isPending}
+                            >
+                                <option value="">Set Who...</option>
+                                <option value="Joint">Joint</option>
+                                <option value="User A">{userSettings?.name_a || 'User A'}</option>
+                                <option value="User B">{userSettings?.name_b || 'User B'}</option>
+                            </select>
+                            {/* Delete Button */}
+                            <button
+                                onClick={() => {
+                                    if (window.confirm(`Delete ${selectedIds.size} transactions?`)) {
+                                        deleteBatchMutation.mutate(Array.from(selectedIds));
+                                    }
+                                }}
+                                className="px-2 py-1 text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition flex items-center gap-1"
+                            >
+                                <Trash2 size={14} />
+                                Delete
+                            </button>
+                        </div>
                     )}
                     {bucketIdParam && (
                         <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium">

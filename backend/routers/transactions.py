@@ -197,3 +197,38 @@ def batch_delete_transactions(
     ).delete(synchronize_session=False)
     db.commit()
     return {"message": f"Deleted {len(transaction_ids)} transactions"}
+
+@router.post("/batch-update")
+def batch_update_transactions(
+    data: dict = Body(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Update multiple transactions at once.
+    Body: { "ids": [1,2,3], "bucket_id": 5, "spender": "User A", "is_verified": true }
+    """
+    transaction_ids = data.get("ids", [])
+    if not transaction_ids:
+        raise HTTPException(status_code=400, detail="No transaction IDs provided")
+    
+    # Build update dict with only provided fields
+    update_fields = {}
+    if "bucket_id" in data:
+        update_fields["bucket_id"] = data["bucket_id"]
+    if "spender" in data:
+        update_fields["spender"] = data["spender"]
+    if "is_verified" in data:
+        update_fields["is_verified"] = data["is_verified"]
+    
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No update fields provided")
+    
+    # Update all matching transactions
+    count = db.query(models.Transaction).filter(
+        models.Transaction.id.in_(transaction_ids),
+        models.Transaction.user_id == current_user.id
+    ).update(update_fields, synchronize_session=False)
+    
+    db.commit()
+    return {"message": f"Updated {count} transactions", "count": count}
