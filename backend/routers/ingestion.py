@@ -410,12 +410,13 @@ def process_transactions_preview_with_progress(
         
         # Progress update every 50 transactions
         if (i + 1) % 50 == 0 or i == total - 1:
-            categorized = total - len(pending_transactions)
-            report_progress(i + 1, f"Rule processing: {i + 1}/{total} ({categorized} categorized)")
+            categorized = i + 1 - len(pending_transactions)
+            report_progress(i + 1, f"Applying rules: {categorized}/{i+1} auto-categorized")
     
     # AI categorization for uncategorized
     if pending_transactions and bucket_names:
-        report_progress(total, f"AI categorizing {len(pending_transactions)} transactions...")
+        categorized_by_rules = total - len(pending_transactions)
+        report_progress(total, f"Done: {categorized_by_rules} by rules. AI processing {len(pending_transactions)} remaining...")
         ai_categorizer = get_ai_categorizer()
         try:
             ai_predictions = ai_categorizer.categorize_batch_sync(pending_transactions, bucket_names)
@@ -434,7 +435,7 @@ def process_transactions_preview_with_progress(
             logger.info(f"AI categorized {len(ai_predictions)}/{len(pending_transactions)} transactions")
         except Exception as e:
             logger.warning(f"AI categorization failed: {e}")
-            report_progress(total, f"AI failed, {len(pending_transactions)} uncategorized")
+            report_progress(total, f"Complete (AI unavailable, {len(pending_transactions)} uncategorized)")
     
     # Build preview transactions
     preview_transactions = []
