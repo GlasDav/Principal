@@ -6,10 +6,11 @@ This document provides a comprehensive overview of the features currently implem
 The dashboard serves as the central hub for financial oversight.
 
 -   **Cash Flow Sankey Diagram**: A dynamic visual representation of money flow.
-    -   **3-Layer Hierarchy**: Income → Groups (Discretionary/Non-Discretionary) → Buckets.
+    -   **3-Layer Hierarchy**: Income → Groups (Discretionary/Non-Discretionary/Savings/Investments) → Buckets.
     -   **Dynamic Sizing**: Automatically adjusts height based on the number of categories to prevent overflow.
     -   **Empty State Handling**: Gracefully handles periods with no data.
     -   **Transfer Exclusion**: Transfers between accounts are automatically excluded from spending analytics.
+    -   **Investment Flow** *(New)*: Investments appear as a separate flow from Income, excluded from expense totals.
 -   **Summary Cards**: High-level metrics for the selected period.
     -   Total Income
     -   Total Expenses (excludes transfers)
@@ -52,13 +53,22 @@ The dashboard serves as the central hub for financial oversight.
     -   Shows duplicate count and categorization status.
     -   Cancel button to abort in-progress imports.
 
-### Transfer Handling *(New)*
--   **Transfer Buckets**: Mark any budget bucket as a "transfer" category.
+### Transfer Handling
+-   **Transfer Buckets**: A default "Transfers" bucket is automatically created for all users.
 -   **Analytics Exclusion**: Transfer buckets are automatically excluded from:
     -   Dashboard spending totals
     -   Spending history charts
     -   Sankey diagram flows
 -   **Common Keywords**: AI and rule-based categorization recognize transfer patterns ("internal transfer", "credit card payment", "payment to", etc.)
+-   **Protected Category**: Transfer bucket cannot be deleted (system-protected).
+-   **Visual Distinction**: Orange background in Settings table.
+
+### Investment Tracking *(New)*
+-   **Investment Buckets**: A default "Investments" bucket is automatically created for all users.
+-   **Separate Sankey Flow**: Investment transactions flow from Income → Investments → Investment Contributions.
+-   **Expense Exclusion**: Investment transactions are excluded from expense totals (they increase net worth, not reduce it).
+-   **Protected Category**: Investment bucket cannot be deleted (system-protected).
+-   **Visual Distinction**: Green background in Settings table.
 
 ## 3. Wealth Management
 ### Net Worth
@@ -111,6 +121,7 @@ The dashboard serves as the central hub for financial oversight.
     -   Shared toggle to combine limits for joint expenses.
 -   **Rollover Toggle**: Enable/disable budget rollover per category.
 -   **Transfer Flag**: Mark buckets as "transfer" to exclude from spending analytics.
+-   **Investment Flag** *(New)*: Mark buckets as "investment" to track separately in Sankey without counting as expenses.
 
 ### Smart Rules (Auto-Learning)
 -   **Automatic Rule Creation**: When you manually categorize a transaction, a Smart Rule is auto-created.
