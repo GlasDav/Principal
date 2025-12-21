@@ -416,10 +416,19 @@ def process_transactions_preview_with_progress(
     # AI categorization for uncategorized
     if pending_transactions and bucket_names:
         categorized_by_rules = total - len(pending_transactions)
-        report_progress(total, f"Done: {categorized_by_rules} by rules. AI processing {len(pending_transactions)} remaining...")
+        ai_pending_count = len(pending_transactions)
+        
+        def ai_progress(processed, ai_total, batch_num, num_batches):
+            report_progress(total, f"AI: batch {batch_num}/{num_batches} ({processed}/{ai_total} processed)")
+        
+        report_progress(total, f"Rules done ({categorized_by_rules} matched). AI starting on {ai_pending_count}...")
         ai_categorizer = get_ai_categorizer()
         try:
-            ai_predictions = ai_categorizer.categorize_batch_sync(pending_transactions, bucket_names)
+            ai_predictions = ai_categorizer.categorize_batch_sync(
+                pending_transactions, 
+                bucket_names,
+                progress_callback=ai_progress
+            )
             
             for txn_data in pending_transactions:
                 idx = txn_data['index']

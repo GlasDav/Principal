@@ -75,7 +75,8 @@ class AICategorizer:
     def categorize_batch_sync(
         self, 
         transactions: List[Dict], 
-        bucket_names: List[str]
+        bucket_names: List[str],
+        progress_callback=None  # Optional: progress_callback(processed_count, total_count, batch_num)
     ) -> Dict[int, Tuple[str, float]]:
         """Synchronous version that processes ALL transactions in batches of 50."""
         self._ensure_initialized()
@@ -84,14 +85,18 @@ class AICategorizer:
             logger.info(f"AI categorization skipped: enabled={self.enabled}, txn_count={len(transactions)}")
             return {}
         
-        logger.info(f"AI categorizing {len(transactions)} transactions across {(len(transactions) + 49) // 50} batches")
+        total_count = len(transactions)
+        batch_size = 50
+        num_batches = (total_count + batch_size - 1) // batch_size
+        
+        logger.info(f"AI categorizing {total_count} transactions across {num_batches} batches")
         
         all_results = {}
-        batch_size = 50
         
         # Process all transactions in batches
-        for batch_start in range(0, len(transactions), batch_size):
+        for batch_start in range(0, total_count, batch_size):
             batch = transactions[batch_start:batch_start + batch_size]
+            batch_num = batch_start // batch_size + 1
             prompt = self._build_prompt(batch, bucket_names)
             
             try:
@@ -100,9 +105,9 @@ class AICategorizer:
                     prompt,
                     generation_config=genai.types.GenerationConfig(
                         max_output_tokens=2048,
-                        temperature=0.3,  # Lower for more deterministic output
+                        temperature=0.3,
                     ),
-                    request_options={"timeout": 30}  # 30 second timeout per batch
+                    request_options={"timeout": 30}
                 )
                 batch_results = self._parse_response(response.text, len(batch), bucket_names)
                 
@@ -111,12 +116,19 @@ class AICategorizer:
                     global_idx = batch_start + local_idx
                     all_results[global_idx] = (bucket, conf)
                     
-                logger.info(f"Batch {batch_start//batch_size + 1}: categorized {len(batch_results)}/{len(batch)} transactions")
+                logger.info(f"Batch {batch_num}/{num_batches}: categorized {len(batch_results)}/{len(batch)} transactions")
+                
+                # Report progress after each batch
+                if progress_callback:
+                    progress_callback(batch_start + len(batch), total_count, batch_num, num_batches)
+                    
             except Exception as e:
-                logger.error(f"AI batch {batch_start//batch_size + 1} failed: {e}")
-                # Continue with other batches even if one fails
+                logger.error(f"AI batch {batch_num}/{num_batches} failed: {e}")
+                # Report progress even on failure
+                if progress_callback:
+                    progress_callback(batch_start + len(batch), total_count, batch_num, num_batches)
         
-        logger.info(f"AI total: categorized {len(all_results)}/{len(transactions)} transactions")
+        logger.info(f"AI total: categorized {len(all_results)}/{total_count} transactions")
         return all_results
     
     def _build_prompt(self, transactions: List[Dict], bucket_names: List[str]) -> str:
