@@ -48,9 +48,9 @@ async def validate_file_size(file: UploadFile) -> bytes:
         )
     return content
 
-def process_and_save_transactions(extracted_data, user, db, spender, skip_duplicates=True):
+def process_transactions_preview(extracted_data, user, db, spender, skip_duplicates=True):
     """
-    Shared logic to categorize and save extracted transaction data.
+    Categorize transactions for preview WITHOUT saving to database.
     Uses a multi-stage approach:
     1. Duplicate detection (if skip_duplicates=True)
     2. User's smart rules (highest priority)
@@ -58,7 +58,8 @@ def process_and_save_transactions(extracted_data, user, db, spender, skip_duplic
     4. Global keyword matching
     5. AI prediction for remaining uncategorized
     
-    Returns: (saved_transactions, duplicate_count)
+    Returns: (preview_transactions, duplicate_count)
+    Preview transactions are dicts with temp IDs for frontend use.
     """
     from ..services.ai_categorizer import get_ai_categorizer
     
@@ -106,6 +107,7 @@ def process_and_save_transactions(extracted_data, user, db, spender, skip_duplic
     
     # Fetch Buckets with Tags for Mapping
     buckets = db.query(models.BudgetBucket).options(joinedload(models.BudgetBucket.tags)).filter(models.BudgetBucket.user_id == user.id).all()
+    bucket_by_id = {b.id: b for b in buckets}
     
     # 1. Build Bucket Map (Name -> ID)
     bucket_map = {b.name.lower(): b.id for b in buckets}
@@ -157,7 +159,8 @@ def process_and_save_transactions(extracted_data, user, db, spender, skip_duplic
             'confidence': confidence,
             'is_verified': is_verified,
             'clean_desc': clean_desc,
-            'txn_hash': txn_hash
+            'txn_hash': txn_hash,
+            'raw_data': data
         })
         
         # If still uncategorized, queue for AI
@@ -194,37 +197,29 @@ def process_and_save_transactions(extracted_data, user, db, spender, skip_duplic
         except Exception as e:
             logger.warning(f"AI categorization failed, falling back to uncategorized: {e}")
     
-    # Create and save all transactions
-    saved_transactions = []
-    for i, (data, txn_hash) in enumerate(non_duplicate_data):
-        result = categorization_results[i]
+    # Build preview transactions (NOT saved to DB)
+    # Use negative temp IDs to distinguish from real DB IDs
+    preview_transactions = []
+    for i, result in enumerate(categorization_results):
+        data = result['raw_data']
+        bucket = bucket_by_id.get(result['bucket_id']) if result['bucket_id'] else None
         
-        db_txn = models.Transaction(
-            date=data["date"],
-            description=result['clean_desc'],
-            raw_description=data["description"],
-            amount=data["amount"],
-            user_id=user.id,
-            category_confidence=result['confidence'],
-            bucket_id=result['bucket_id'],
-            is_verified=result['is_verified'],
-            spender=spender,
-            transaction_hash=result['txn_hash']  # Save hash for future duplicate detection
-        )
-        db.add(db_txn)
-        saved_transactions.append(db_txn)
+        preview_txn = {
+            'id': -(i + 1),  # Negative temp ID
+            'date': data["date"].isoformat() if hasattr(data["date"], 'isoformat') else str(data["date"]),
+            'description': result['clean_desc'],
+            'raw_description': data["description"],
+            'amount': data["amount"],
+            'bucket_id': result['bucket_id'],
+            'bucket': {'id': bucket.id, 'name': bucket.name, 'icon_name': bucket.icon_name} if bucket else None,
+            'category_confidence': result['confidence'],
+            'is_verified': result['is_verified'],
+            'spender': spender,
+            'transaction_hash': result['txn_hash']
+        }
+        preview_transactions.append(preview_txn)
     
-    db.commit()
-    
-    # Reload with Eager Loading
-    txn_ids = [t.id for t in saved_transactions]
-    if txn_ids:
-        loaded = db.query(models.Transaction)\
-            .options(joinedload(models.Transaction.bucket))\
-            .filter(models.Transaction.id.in_(txn_ids))\
-            .all()
-        return loaded, duplicate_count
-    return [], duplicate_count
+    return preview_transactions, duplicate_count
 
 @router.post("/csv/preview")
 async def preview_csv(file: UploadFile = File(...)):
@@ -272,15 +267,16 @@ async def ingest_csv(
     if not extracted_data:
         return []
     
-    transactions, duplicate_count = process_and_save_transactions(
+    # Preview only - no DB save
+    preview_txns, duplicate_count = process_transactions_preview(
         extracted_data, current_user, db, spender, skip_duplicates
     )
     
     # Log duplicate info
     if duplicate_count > 0:
-        logger.info(f"Skipped {duplicate_count} duplicate transactions")
+        logger.info(f"Skipped {duplicate_count} duplicate transactions during preview")
     
-    return transactions
+    return preview_txns
 
 
 @router.post("/upload", response_model=List[schemas.Transaction])
@@ -315,67 +311,113 @@ async def upload_statement(
     if not extracted_data:
         return []
 
-    transactions, duplicate_count = process_and_save_transactions(
+    # Preview only - no DB save
+    preview_txns, duplicate_count = process_transactions_preview(
         extracted_data, current_user, db, spender, skip_duplicates=True
     )
     
     if duplicate_count > 0:
-        logger.info(f"Skipped {duplicate_count} duplicate transactions")
+        logger.info(f"Skipped {duplicate_count} duplicate transactions during preview")
     
-    return transactions
+    return preview_txns
 
 
 @router.post("/confirm", response_model=List[schemas.Transaction])
 def confirm_transactions(updates: List[schemas.TransactionConfirm], db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     """
     Bulk confirm transactions.
-    Updates bucket_id and marks is_verified=True.
+    - For preview transactions (id < 0): Creates new transactions in DB
+    - For existing transactions (id > 0): Updates bucket_id and marks is_verified=True
     """
+    from datetime import datetime
+    
     confirmed_ids = []
+    
     for update in updates:
-        txn = db.query(models.Transaction).filter(models.Transaction.id == update.id, models.Transaction.user_id == current_user.id).first()
-        if txn:
-            original_bucket_id = txn.bucket_id
+        if update.id < 0:
+            # NEW TRANSACTION FROM PREVIEW - Create in DB
+            if not all([update.date, update.description, update.amount is not None]):
+                logger.warning(f"Skipping preview transaction {update.id}: missing required fields")
+                continue
             
-            # Update Transaction
-            txn.bucket_id = update.bucket_id
-            if update.spender:
-                txn.spender = update.spender
-            txn.is_verified = True
-            confirmed_ids.append(txn.id)
+            # Parse date
+            try:
+                txn_date = datetime.fromisoformat(update.date.replace('Z', '+00:00'))
+            except:
+                txn_date = datetime.strptime(update.date, "%Y-%m-%d")
             
-            # --- Auto-Learning ---
-            # If the user manually assigned a bucket (or changed it), learn this pattern.
-            # We skip if the system already had it right (bucket_id didn't change and was high confidence)
-            # But here we assume updates contains ALL transactions being confirmed.
-            # We only learn if it wasn't already confidently matched to this bucket.
+            # Create new transaction
+            db_txn = models.Transaction(
+                date=txn_date,
+                description=update.description,
+                raw_description=update.raw_description or update.description,
+                amount=update.amount,
+                user_id=current_user.id,
+                bucket_id=update.bucket_id,
+                is_verified=True,  # User confirmed = verified
+                spender=update.spender or "Joint",
+                transaction_hash=update.transaction_hash,
+                category_confidence=update.category_confidence or 0.0,
+                goal_id=update.goal_id
+            )
+            db.add(db_txn)
+            db.flush()  # Get the ID without committing
+            confirmed_ids.append(db_txn.id)
             
-            if txn.bucket_id:
-                # 1. Clean description
-                clean_desc = categorizer.clean_description(txn.description)
-                if len(clean_desc) < 3: continue # Skip very short descriptions
+            # Auto-learning for new transactions
+            if db_txn.bucket_id and db_txn.description:
+                clean_desc = categorizer.clean_description(db_txn.description)
+                if len(clean_desc) >= 3:
+                    existing_rule = db.query(models.CategorizationRule).filter(
+                        models.CategorizationRule.user_id == current_user.id,
+                        models.CategorizationRule.bucket_id == db_txn.bucket_id,
+                        models.CategorizationRule.keywords == clean_desc
+                    ).first()
+                    
+                    if not existing_rule:
+                        new_rule = models.CategorizationRule(
+                            user_id=current_user.id,
+                            bucket_id=db_txn.bucket_id,
+                            keywords=clean_desc,
+                            priority=10
+                        )
+                        db.add(new_rule)
+        else:
+            # EXISTING TRANSACTION - Update
+            txn = db.query(models.Transaction).filter(
+                models.Transaction.id == update.id, 
+                models.Transaction.user_id == current_user.id
+            ).first()
+            
+            if txn:
+                txn.bucket_id = update.bucket_id
+                if update.spender:
+                    txn.spender = update.spender
+                txn.is_verified = True
+                confirmed_ids.append(txn.id)
                 
-                # 2. Check if this rule already exists to prevent duplicates
-                existing_rule = db.query(models.CategorizationRule).filter(
-                    models.CategorizationRule.user_id == current_user.id,
-                    models.CategorizationRule.bucket_id == txn.bucket_id,
-                    models.CategorizationRule.keywords == clean_desc
-                ).first()
-                
-                if not existing_rule:
-                    # 3. Create new Smart Rule
-                    # Default priority 10 so it overrides generic tags
-                    new_rule = models.CategorizationRule(
-                        user_id=current_user.id,
-                        bucket_id=txn.bucket_id,
-                        keywords=clean_desc,
-                        priority=10
-                    )
-                    db.add(new_rule)
-            
+                # Auto-learning for existing transactions
+                if txn.bucket_id:
+                    clean_desc = categorizer.clean_description(txn.description)
+                    if len(clean_desc) >= 3:
+                        existing_rule = db.query(models.CategorizationRule).filter(
+                            models.CategorizationRule.user_id == current_user.id,
+                            models.CategorizationRule.bucket_id == txn.bucket_id,
+                            models.CategorizationRule.keywords == clean_desc
+                        ).first()
+                        
+                        if not existing_rule:
+                            new_rule = models.CategorizationRule(
+                                user_id=current_user.id,
+                                bucket_id=txn.bucket_id,
+                                keywords=clean_desc,
+                                priority=10
+                            )
+                            db.add(new_rule)
+    
     db.commit()
     
-    # Return updated transactions
+    # Return confirmed transactions
     if confirmed_ids:
         results = db.query(models.Transaction)\
             .options(joinedload(models.Transaction.bucket))\

@@ -143,15 +143,21 @@ export default function Ingest() {
         onError: (err) => setError(err.response?.data?.detail || "CSV Import failed")
     });
 
-    // ... confirm mutation (unchanged) ...
+    // Confirm mutation - saves preview transactions to DB
     const confirmMutation = useMutation({
         mutationFn: async (txns) => {
             const payload = txns.map(t => ({
                 id: t.id,
-                id: t.id,
-                bucket_id: t.bucket_id || t.bucket?.id, // Use bucket_id if manually set, else existing bucket object's id
+                bucket_id: t.bucket_id || t.bucket?.id,
                 is_verified: true,
-                spender: t.spender
+                spender: t.spender,
+                // Include all fields for preview transactions (negative IDs)
+                date: t.date,
+                description: t.description,
+                raw_description: t.raw_description,
+                amount: t.amount,
+                transaction_hash: t.transaction_hash,
+                category_confidence: t.category_confidence
             }));
             const res = await api.post('/ingest/confirm', payload);
             return res.data;

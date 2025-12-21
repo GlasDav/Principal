@@ -13,6 +13,7 @@ class User(Base):
     name_a = Column(String, default="You")
     name_b = Column(String, default="Partner")
     currency_symbol = Column(String, default="AUD") # Default: AUD
+    is_email_verified = Column(Boolean, default=False)  # Email verification status
     
     buckets = relationship("BudgetBucket", back_populates="user")
     transactions = relationship("Transaction", back_populates="user")
@@ -201,3 +202,30 @@ class TaxSettings(Base):
 
 # Update User relationship below (handled via back_populates)
 
+
+class PasswordResetToken(Base):
+    """Token for password reset flow. Token is hashed before storage."""
+    __tablename__ = "password_reset_tokens"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    token_hash = Column(String, index=True)  # Hashed token for security
+    expires_at = Column(DateTime)
+    used_at = Column(DateTime, nullable=True)  # Null until used
+    created_at = Column(DateTime, default=func.now())
+    
+    user = relationship("User")
+
+
+class EmailVerificationToken(Base):
+    """Token for email verification flow. Token is hashed before storage."""
+    __tablename__ = "email_verification_tokens"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    token_hash = Column(String, index=True)  # Hashed token for security
+    expires_at = Column(DateTime)
+    used_at = Column(DateTime, nullable=True)  # Null until used
+    created_at = Column(DateTime, default=func.now())
+    
+    user = relationship("User")

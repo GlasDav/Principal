@@ -27,31 +27,21 @@ const cleanKeywords = (str) => {
     return [...new Set(str.split(',').map(k => k.trim()).filter(k => k))].join(', ');
 };
 
-const BucketCard = ({ bucket, userSettings, updateBucketMutation, deleteBucketMutation }) => {
+// Bucket Table Row Component - compact inline editing
+const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBucketMutation, isNew = false, onCancelNew }) => {
     const Icon = ICON_MAP[bucket.icon_name] || Wallet;
-    const [localLimitA, setLocalLimitA] = useState(bucket.monthly_limit_a);
-    const [localLimitB, setLocalLimitB] = useState(bucket.monthly_limit_b);
-    const [localName, setLocalName] = useState(bucket.name);
+    const [localName, setLocalName] = useState(bucket.name || '');
+    const [localLimitA, setLocalLimitA] = useState(bucket.monthly_limit_a || 0);
+    const [localLimitB, setLocalLimitB] = useState(bucket.monthly_limit_b || 0);
+    const [showTags, setShowTags] = useState(false);
+    const [newTag, setNewTag] = useState('');
     const currencySymbol = CURRENCY_MAP[userSettings?.currency_symbol] || userSettings?.currency_symbol || '$';
 
-    // Sync local state when prop updates (e.g. from server refresh)
     useEffect(() => {
-        setLocalLimitA(bucket.monthly_limit_a);
-        setLocalLimitB(bucket.monthly_limit_b);
-        setLocalName(bucket.name);
-    }, [bucket.monthly_limit_a, bucket.monthly_limit_b, bucket.name]);
-
-    const handleBlurA = () => {
-        if (localLimitA !== bucket.monthly_limit_a) {
-            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, monthly_limit_a: parseFloat(localLimitA) || 0 } });
-        }
-    };
-
-    const handleBlurB = () => {
-        if (localLimitB !== bucket.monthly_limit_b) {
-            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, monthly_limit_b: parseFloat(localLimitB) || 0 } });
-        }
-    };
+        setLocalName(bucket.name || '');
+        setLocalLimitA(bucket.monthly_limit_a || 0);
+        setLocalLimitB(bucket.monthly_limit_b || 0);
+    }, [bucket.name, bucket.monthly_limit_a, bucket.monthly_limit_b]);
 
     const handleBlurName = () => {
         if (localName !== bucket.name && localName.trim()) {
@@ -59,16 +49,27 @@ const BucketCard = ({ bucket, userSettings, updateBucketMutation, deleteBucketMu
         }
     };
 
-    const handleAddTag = (e) => {
-        if (e.key === 'Enter') {
-            const tagName = e.target.value.trim();
-            if (!tagName) return;
-            const currentTags = bucket.tags || [];
-            if (currentTags.some(t => t.name.toLowerCase() === tagName.toLowerCase())) return;
+    const handleBlurLimitA = () => {
+        const val = parseFloat(localLimitA) || 0;
+        if (val !== bucket.monthly_limit_a) {
+            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, monthly_limit_a: val } });
+        }
+    };
 
-            const newTags = [...currentTags, { name: tagName }];
-            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: newTags } });
-            e.target.value = '';
+    const handleBlurLimitB = () => {
+        const val = parseFloat(localLimitB) || 0;
+        if (val !== bucket.monthly_limit_b) {
+            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, monthly_limit_b: val } });
+        }
+    };
+
+    const handleAddTag = (e) => {
+        if (e.key === 'Enter' && newTag.trim()) {
+            const currentTags = bucket.tags || [];
+            if (!currentTags.some(t => t.name.toLowerCase() === newTag.toLowerCase())) {
+                updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: [...currentTags, { name: newTag.trim() }] } });
+            }
+            setNewTag('');
         }
     };
 
@@ -77,15 +78,19 @@ const BucketCard = ({ bucket, userSettings, updateBucketMutation, deleteBucketMu
         updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: newTags } });
     };
 
+    const tags = bucket.tags || [];
+    const visibleTags = tags.slice(0, 2);
+    const hiddenCount = tags.length - visibleTags.length;
+
     return (
-        <div className="bg-white dark:bg-slate-800 h-full flex flex-col p-3 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 space-y-2 hover:shadow-md transition-shadow">
-            {/* Header: Icon + Name */}
-            <div className="flex items-center gap-3">
+        <tr className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group">
+            {/* Icon */}
+            <td className="p-2 w-12">
                 <Menu as="div" className="relative">
-                    <Menu.Button className="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition">
-                        <Icon size={20} />
+                    <Menu.Button className="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition">
+                        <Icon size={16} />
                     </Menu.Button>
-                    <Menu.Items className="absolute left-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 p-2 grid grid-cols-5 gap-1 z-10 focus:outline-none">
+                    <Menu.Items className="absolute left-0 mt-1 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-2 grid grid-cols-5 gap-1 z-20">
                         {AVAILABLE_ICONS.map(iconName => {
                             const I = ICON_MAP[iconName];
                             return (
@@ -93,152 +98,231 @@ const BucketCard = ({ bucket, userSettings, updateBucketMutation, deleteBucketMu
                                     {({ active }) => (
                                         <button
                                             onClick={() => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, icon_name: iconName } })}
-                                            className={`p-2 rounded-lg flex justify-center items-center ${active ? 'bg-indigo-50 dark:bg-slate-700 text-indigo-600' : 'text-slate-500 dark:text-slate-400'}`}
+                                            className={`p-1.5 rounded flex justify-center ${active ? 'bg-indigo-50 dark:bg-slate-700 text-indigo-600' : 'text-slate-500'}`}
                                         >
-                                            <I size={18} />
+                                            <I size={16} />
                                         </button>
                                     )}
                                 </Menu.Item>
-                            )
+                            );
                         })}
                     </Menu.Items>
                 </Menu>
+            </td>
 
-                <div className="flex flex-col flex-1 gap-1">
+            {/* Name */}
+            <td className="p-2">
+                <input
+                    className="w-full font-medium text-slate-800 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none transition text-sm py-1"
+                    value={localName}
+                    onChange={(e) => setLocalName(e.target.value)}
+                    onBlur={handleBlurName}
+                    placeholder="Category name..."
+                />
+            </td>
+
+            {/* Limit A */}
+            <td className="p-2 w-28">
+                <div className="relative">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencySymbol}</span>
                     <input
-                        className="font-semibold text-slate-800 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-indigo-500 outline-none transition px-1"
-                        value={localName}
-                        onChange={(e) => setLocalName(e.target.value)}
-                        onBlur={handleBlurName}
+                        type="number"
+                        className="w-full pl-6 pr-2 py-1 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        value={localLimitA}
+                        onChange={(e) => setLocalLimitA(e.target.value)}
+                        onBlur={handleBlurLimitA}
                     />
                 </div>
+            </td>
 
-                <button onClick={() => deleteBucketMutation.mutate(bucket.id)} className="text-slate-300 hover:text-red-400 transition self-start">
-                    <Trash2 size={16} />
-                </button>
-            </div>
+            {/* Limit B (Couple Mode) */}
+            {userSettings?.is_couple_mode && (
+                <td className="p-2 w-28">
+                    <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencySymbol}</span>
+                        <input
+                            type="number"
+                            className={`w-full pl-6 pr-2 py-1 text-sm border rounded focus:border-indigo-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${bucket.is_shared
+                                ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-slate-400'
+                                : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200'
+                                }`}
+                            value={localLimitB}
+                            onChange={(e) => setLocalLimitB(e.target.value)}
+                            onBlur={handleBlurLimitB}
+                            disabled={bucket.is_shared}
+                        />
+                    </div>
+                </td>
+            )}
 
-            {/* Type Toggle & Group Select */}
-            <div className="flex items-center justify-end gap-2">
-                <select
-                    className="text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg px-2 py-1 border-none text-center appearance-none"
-                    value={bucket.group || "Discretionary"}
-                    onChange={(e) => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, group: e.target.value } })}
-                >
-                    <option value="Non-Discretionary">Non-Discretionary</option>
-                    <option value="Discretionary">Discretionary</option>
-                    <option value="Income">Income</option>
-                </select>
-                <div className="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
+            {/* Shared Toggle (Couple Mode) */}
+            {userSettings?.is_couple_mode && (
+                <td className="p-2 w-16 text-center">
+                    <button
+                        onClick={() => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, is_shared: !bucket.is_shared } })}
+                        className={`mx-auto w-5 h-5 rounded border-2 flex items-center justify-center transition ${bucket.is_shared
+                            ? 'bg-indigo-500 border-indigo-500 text-white'
+                            : 'border-slate-300 dark:border-slate-600 hover:border-indigo-400'
+                            }`}
+                    >
+                        {bucket.is_shared && <span className="text-xs">✓</span>}
+                    </button>
+                </td>
+            )}
+
+            {/* Rollover */}
+            <td className="p-2 w-20 text-center">
                 <button
                     onClick={() => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, is_rollover: !bucket.is_rollover } })}
-                    className={`text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors ${bucket.is_rollover
-                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border-transparent'
+                    className={`mx-auto w-5 h-5 rounded border-2 flex items-center justify-center transition ${bucket.is_rollover
+                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                        : 'border-slate-300 dark:border-slate-600 hover:border-emerald-400'
                         }`}
                 >
-                    Rollover
+                    {bucket.is_rollover && <span className="text-xs">✓</span>}
                 </button>
-                {userSettings?.is_couple_mode && (
-                    <>
-                        <div className="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
-                        <button
-                            onClick={() => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, is_shared: !bucket.is_shared } })}
-                            className={`text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors ${bucket.is_shared
-                                ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
-                                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600'
-                                }`}
-                        >
-                            {bucket.is_shared ? 'Shared' : 'Individual'}
-                        </button>
-                    </>
-                )}
-            </div>
-
-            {/* Inputs */}
-            {/* Inputs Container with Min-Height for Equality (32px * 2 + 8px gap = 72px) */}
-            <div className="space-y-2 min-h-[72px] flex flex-col justify-center">
-                {userSettings?.is_couple_mode && bucket.is_shared ? (
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-slate-500 w-12 text-right">Shared</span>
-                        <div className="relative flex-1">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-800 dark:text-slate-200 font-medium text-sm">{currencySymbol}</span>
-                            <input
-                                type="number"
-                                placeholder="Limit"
-                                className="w-full pl-9 pr-3 h-8 border rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition text-sm font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                value={localLimitA}
-                                onChange={(e) => setLocalLimitA(e.target.value)}
-                                onBlur={handleBlurA}
-                            />
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-slate-500 w-12 text-right truncate" title={userSettings?.name_a || "User A"}>
-                                {userSettings?.name_a || "User A"}
-                            </span>
-                            <div className="relative flex-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-800 dark:text-slate-200 font-medium text-sm">{currencySymbol}</span>
-                                <input
-                                    type="number"
-                                    placeholder="Limit"
-                                    className="w-full pl-9 pr-3 h-8 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition text-sm font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    value={localLimitA}
-                                    onChange={(e) => setLocalLimitA(e.target.value)}
-                                    onBlur={handleBlurA}
-                                />
-                            </div>
-                        </div>
-                        {userSettings?.is_couple_mode && (
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium text-slate-500 w-12 text-right truncate" title={userSettings?.name_b || "User B"}>
-                                    {userSettings?.name_b || "User B"}
-                                </span>
-                                <div className="relative flex-1">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-800 dark:text-slate-200 font-medium text-sm">{currencySymbol}</span>
-                                    <input
-                                        type="number"
-                                        placeholder="Limit"
-                                        className="w-full pl-9 pr-3 h-8 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition text-sm font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        value={localLimitB}
-                                        onChange={(e) => setLocalLimitB(e.target.value)}
-                                        onBlur={handleBlurB}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )}
-
-
-
-            </div>
+            </td>
 
             {/* Tags */}
-            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-50 dark:border-slate-700">
-                {bucket.tags?.map((tag, idx) => (
-                    <span key={idx} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide font-bold bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
-                        {tag.name}
+            <td className="p-2 relative">
+                <div className="flex flex-wrap gap-1 items-center">
+                    {visibleTags.map((tag, idx) => (
+                        <span key={idx} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                            {tag.name}
+                            {showTags && (
+                                <button onClick={() => handleRemoveTag(tag.name)} className="ml-1 hover:text-red-500">×</button>
+                            )}
+                        </span>
+                    ))}
+                    {hiddenCount > 0 && (
                         <button
-                            onClick={() => handleRemoveTag(tag.name)}
-                            className="ml-1 hover:text-red-500"
+                            onClick={() => setShowTags(!showTags)}
+                            className="text-[10px] text-indigo-500 hover:text-indigo-700 font-medium"
                         >
-                            ×
+                            +{hiddenCount} more
                         </button>
-                    </span>
-                ))}
-                <div className="relative group/tag">
-                    <button className="text-slate-300 hover:text-indigo-500 p-0.5"><Plus size={14} /></button>
-                    {/* Quick Tag Input */}
-                    <input
-                        type="text"
-                        className="absolute bottom-full left-0 mb-1 w-24 px-2 py-1 text-xs border rounded shadow-sm opacity-0 group-hover/tag:opacity-100 focus:opacity-100 transition-opacity outline-none z-10 bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"
-                        placeholder="Add Tag"
-                        onKeyDown={handleAddTag}
-                    />
+                    )}
+                    <button
+                        onClick={() => setShowTags(!showTags)}
+                        className="text-slate-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition"
+                    >
+                        <Plus size={12} />
+                    </button>
                 </div>
+
+                {/* Expanded Tags Dropdown */}
+                {showTags && (
+                    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-2 z-20 min-w-[200px]">
+                        <div className="flex flex-wrap gap-1 mb-2">
+                            {tags.map((tag, idx) => (
+                                <span key={idx} className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                    {tag.name}
+                                    <button onClick={() => handleRemoveTag(tag.name)} className="ml-1.5 hover:text-red-500">×</button>
+                                </span>
+                            ))}
+                        </div>
+                        <input
+                            type="text"
+                            className="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white outline-none focus:border-indigo-500"
+                            placeholder="Add tag and press Enter"
+                            value={newTag}
+                            onChange={(e) => setNewTag(e.target.value)}
+                            onKeyDown={handleAddTag}
+                            autoFocus
+                        />
+                    </div>
+                )}
+            </td>
+
+            {/* Delete */}
+            <td className="p-2 w-10">
+                <button
+                    onClick={() => {
+                        if (confirm(`Delete "${bucket.name}"?`)) {
+                            deleteBucketMutation.mutate(bucket.id);
+                        }
+                    }}
+                    className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                >
+                    <Trash2 size={14} />
+                </button>
+            </td>
+        </tr>
+    );
+};
+
+// Bucket Table Section Component - one per group
+const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, createBucketMutation, updateBucketMutation, deleteBucketMutation, groupName }) => {
+    const [showNewRow, setShowNewRow] = useState(false);
+
+    const handleAddNew = () => {
+        createBucketMutation.mutate({ name: "New Category", group: groupName, is_shared: false });
+    };
+
+    return (
+        <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+                <SectionIcon size={18} className="text-slate-500 dark:text-slate-400" />
+                <h3 className="font-semibold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wider">{title}</h3>
+                <span className="bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full text-xs">{buckets.length}</span>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                        <tr>
+                            <th className="p-2 w-12"></th>
+                            <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400">Name</th>
+                            <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-28">
+                                {userSettings?.is_couple_mode ? (userSettings?.name_a || 'User A') : 'Limit'}
+                            </th>
+                            {userSettings?.is_couple_mode && (
+                                <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-28">
+                                    {userSettings?.name_b || 'User B'}
+                                </th>
+                            )}
+                            {userSettings?.is_couple_mode && (
+                                <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-16 text-center">Shared</th>
+                            )}
+                            <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-20 text-center">Rollover</th>
+                            <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400">Tags</th>
+                            <th className="p-2 w-10"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {/* Existing Buckets */}
+                        {buckets.map(bucket => (
+                            <BucketTableRow
+                                key={bucket.id}
+                                bucket={bucket}
+                                userSettings={userSettings}
+                                updateBucketMutation={updateBucketMutation}
+                                deleteBucketMutation={deleteBucketMutation}
+                            />
+                        ))}
+
+                        {buckets.length === 0 && (
+                            <tr>
+                                <td colSpan={userSettings?.is_couple_mode ? 8 : 6} className="p-6 text-center text-slate-400 text-sm">
+                                    No categories yet
+                                </td>
+                            </tr>
+                        )}
+
+                        {/* Add New Row - at bottom */}
+                        <tr className="border-t border-slate-100 dark:border-slate-700 bg-slate-25 dark:bg-slate-800/30">
+                            <td colSpan={userSettings?.is_couple_mode ? 8 : 6} className="p-2">
+                                <button
+                                    onClick={handleAddNew}
+                                    className="w-full py-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center justify-center gap-2 text-sm font-medium"
+                                >
+                                    <Plus size={14} />
+                                    Add new category
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     );
@@ -852,54 +936,47 @@ function SettingsContent() {
                     </div>
                 </section>
 
-                {/* Budget Buckets - Columnar Layout */}
+                {/* Budget Buckets - Table Layout */}
                 <section>
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-bold text-slate-800 dark:text-white">Budget Categories</h2>
                     </div>
 
-                    <div className="flex overflow-x-auto pb-8 gap-6 snap-x">
-                        {Object.entries(groupedBuckets).map(([tag, groupBuckets]) => (
-                            <div key={tag} className="min-w-[320px] w-[320px] shrink-0 snap-start">
-                                <div className="flex items-center justify-center mb-4 px-1">
-                                    <h3 className="font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider text-sm flex items-center gap-2">
-                                        {tag === "Income" && <DollarSign size={16} />}
-                                        {tag === "Non-Discretionary" && <Home size={16} />}
-                                        {(tag === "Discretionary" || !["Income", "Non-Discretionary"].includes(tag)) && <ShoppingBag size={16} />}
+                    {/* Income Section */}
+                    <BucketTableSection
+                        title="Income"
+                        icon={DollarSign}
+                        buckets={groupedBuckets["Income"] || []}
+                        userSettings={userSettings}
+                        createBucketMutation={createBucketMutation}
+                        updateBucketMutation={updateBucketMutation}
+                        deleteBucketMutation={deleteBucketMutation}
+                        groupName="Income"
+                    />
 
-                                        {tag === "Income" ? "Income" : (tag === "Non-Discretionary" ? "Non-Discretionary" : "Discretionary")}
-                                        <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full text-xs">{groupBuckets.length}</span>
-                                    </h3>
-                                </div>
+                    {/* Non-Discretionary Section */}
+                    <BucketTableSection
+                        title="Non-Discretionary"
+                        icon={Home}
+                        buckets={groupedBuckets["Non-Discretionary"] || []}
+                        userSettings={userSettings}
+                        createBucketMutation={createBucketMutation}
+                        updateBucketMutation={updateBucketMutation}
+                        deleteBucketMutation={deleteBucketMutation}
+                        groupName="Non-Discretionary"
+                    />
 
-                                <div className="space-y-4">
-                                    {groupBuckets.map(bucket => (
-                                        <BucketCard
-                                            key={bucket.id}
-                                            bucket={bucket}
-                                            userSettings={userSettings}
-                                            updateBucketMutation={updateBucketMutation}
-                                            deleteBucketMutation={deleteBucketMutation}
-                                        />
-                                    ))}
-
-                                    {groupBuckets.length === 0 && (
-                                        <div className="h-24 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-center text-slate-400 text-sm">
-                                            Empty
-                                        </div>
-                                    )}
-
-                                    <button
-                                        onClick={() => createBucketMutation.mutate({ name: "New Category", group: tag, is_shared: false })}
-                                        className="w-full py-3 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200 dark:hover:border-indigo-800 transition flex items-center justify-center gap-2 font-medium text-sm"
-                                    >
-                                        <Plus size={16} />
-                                        Add {tag === "Non-Discretionary" ? "Needs" : (tag === "Discretionary" ? "Wants" : tag)}
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    {/* Discretionary Section */}
+                    <BucketTableSection
+                        title="Discretionary"
+                        icon={ShoppingBag}
+                        buckets={groupedBuckets["Discretionary"] || []}
+                        userSettings={userSettings}
+                        createBucketMutation={createBucketMutation}
+                        updateBucketMutation={updateBucketMutation}
+                        deleteBucketMutation={deleteBucketMutation}
+                        groupName="Discretionary"
+                    />
                 </section>
 
                 {/* Net Worth Accounts (Moved above Smart Rules) */}
@@ -955,6 +1032,55 @@ function SettingsContent() {
                         <h2 className="text-xl font-bold text-slate-800 dark:text-white">Smart Rules</h2>
                     </div>
                     <RulesSection buckets={buckets} />
+                </section>
+
+                {/* Danger Zone */}
+                <section className="mt-12">
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl p-6">
+                        <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">Danger Zone</h2>
+                        <p className="text-sm text-red-600/70 dark:text-red-400/70 mb-4">
+                            Irreversible actions that will permanently affect your account.
+                        </p>
+
+                        <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-lg border border-red-200 dark:border-red-900/50">
+                            <div>
+                                <p className="font-semibold text-slate-800 dark:text-white">Delete Account</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                    Permanently delete your account and all data. This cannot be undone.
+                                </p>
+                            </div>
+                            <button
+                                onClick={async () => {
+                                    const password = prompt("To confirm deletion, please enter your password:");
+                                    if (!password) return;
+
+                                    if (!window.confirm("⚠️ FINAL WARNING ⚠️\n\nThis will permanently delete:\n• All transactions\n• All accounts\n• All budget categories\n• All goals and subscriptions\n• Your entire account\n\nThis action CANNOT be undone.\n\nAre you absolutely sure?")) {
+                                        return;
+                                    }
+
+                                    try {
+                                        await api.axiosInstance.delete('/auth/account', {
+                                            data: { password }
+                                        });
+                                        alert("Your account has been deleted. Goodbye!");
+                                        localStorage.removeItem('token');
+                                        localStorage.removeItem('refreshToken');
+                                        window.location.href = '/login';
+                                    } catch (err) {
+                                        const detail = err.response?.data?.detail;
+                                        if (typeof detail === 'string') {
+                                            alert(`Error: ${detail}`);
+                                        } else {
+                                            alert("Failed to delete account. Please try again.");
+                                        }
+                                    }
+                                }}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition"
+                            >
+                                Delete My Account
+                            </button>
+                        </div>
+                    </div>
                 </section>
             </div>
         </div>

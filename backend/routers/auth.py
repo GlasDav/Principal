@@ -1,7 +1,9 @@
 import logging
 import os
 import httpx
-from datetime import timedelta
+import secrets
+import hashlib
+from datetime import timedelta, datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Body, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -16,6 +18,10 @@ limiter = Limiter(key_func=get_remote_address)
 
 # Google OAuth Client ID (from environment variable)
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "960936173044-v5ufgg0q3hvqlh44u0g8uh70rd9lsd22.apps.googleusercontent.com")
+
+# Token expiry settings
+PASSWORD_RESET_EXPIRE_HOURS = 1
+EMAIL_VERIFICATION_EXPIRE_HOURS = 24
 
 router = APIRouter(
     prefix="/auth",
@@ -189,7 +195,8 @@ async def google_login(request: Request, token: str = Body(..., embed=True), db:
                 hashed_password=hashed_password,
                 name_a=user_info.get("given_name", "You"),
                 name_b="Partner",
-                is_couple_mode=False
+                is_couple_mode=False,
+                is_email_verified=True  # Google already verified this email
             )
             db.add(user)
             db.commit()
@@ -225,3 +232,285 @@ async def google_login(request: Request, token: str = Body(..., embed=True), db:
 async def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
     """Get current authenticated user's profile."""
     return current_user
+
+
+# ============================================
+# PASSWORD RESET ENDPOINTS
+# ============================================
+
+def generate_secure_token() -> tuple[str, str]:
+    """Generate a secure token and its hash."""
+    token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    return token, token_hash
+
+
+@router.post("/forgot-password", response_model=schemas.MessageResponse)
+@limiter.limit("3/minute")  # Strict rate limit to prevent abuse
+def forgot_password(
+    request: Request,
+    body: schemas.ForgotPasswordRequest,
+    db: Session = Depends(database.get_db)
+):
+    """
+    Request a password reset email.
+    Always returns success to prevent email enumeration attacks.
+    """
+    user = db.query(models.User).filter(models.User.email == body.email).first()
+    
+    if user:
+        # Invalidate any existing reset tokens for this user
+        db.query(models.PasswordResetToken).filter(
+            models.PasswordResetToken.user_id == user.id,
+            models.PasswordResetToken.used_at == None
+        ).delete()
+        
+        # Generate new token
+        token, token_hash = generate_secure_token()
+        expires_at = datetime.utcnow() + timedelta(hours=PASSWORD_RESET_EXPIRE_HOURS)
+        
+        reset_token = models.PasswordResetToken(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=expires_at
+        )
+        db.add(reset_token)
+        db.commit()
+        
+        # Log token for development (replace with email service in production)
+        logger.info("=" * 60)
+        logger.info(f"PASSWORD RESET TOKEN for {body.email}")
+        logger.info(f"Token: {token}")
+        logger.info(f"Reset URL: http://localhost:5173/reset-password?token={token}")
+        logger.info(f"Expires: {expires_at}")
+        logger.info("=" * 60)
+    else:
+        logger.info(f"Password reset requested for non-existent email: {body.email}")
+    
+    # Always return success to prevent email enumeration
+    return {"message": "If an account exists with this email, you will receive a password reset link."}
+
+
+@router.post("/reset-password", response_model=schemas.MessageResponse)
+@limiter.limit("5/minute")
+def reset_password(
+    request: Request,
+    body: schemas.ResetPasswordRequest,
+    db: Session = Depends(database.get_db)
+):
+    """Reset password using a valid reset token."""
+    token_hash = hashlib.sha256(body.token.encode()).hexdigest()
+    
+    reset_token = db.query(models.PasswordResetToken).filter(
+        models.PasswordResetToken.token_hash == token_hash,
+        models.PasswordResetToken.used_at == None,
+        models.PasswordResetToken.expires_at > datetime.utcnow()
+    ).first()
+    
+    if not reset_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token"
+        )
+    
+    # Update password
+    user = reset_token.user
+    user.hashed_password = auth.get_password_hash(body.new_password)
+    
+    # Mark token as used
+    reset_token.used_at = datetime.utcnow()
+    
+    db.commit()
+    
+    logger.info(f"Password reset successful for user: {user.email}")
+    return {"message": "Password has been reset successfully. You can now log in."}
+
+
+# ============================================
+# EMAIL VERIFICATION ENDPOINTS
+# ============================================
+
+@router.post("/verify-email", response_model=schemas.MessageResponse)
+@limiter.limit("10/minute")
+def verify_email(
+    request: Request,
+    body: schemas.VerifyEmailRequest,
+    db: Session = Depends(database.get_db)
+):
+    """Verify email using a verification token."""
+    token_hash = hashlib.sha256(body.token.encode()).hexdigest()
+    
+    verification_token = db.query(models.EmailVerificationToken).filter(
+        models.EmailVerificationToken.token_hash == token_hash,
+        models.EmailVerificationToken.used_at == None,
+        models.EmailVerificationToken.expires_at > datetime.utcnow()
+    ).first()
+    
+    if not verification_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification token"
+        )
+    
+    # Mark user as verified
+    user = verification_token.user
+    user.is_email_verified = True
+    
+    # Mark token as used
+    verification_token.used_at = datetime.utcnow()
+    
+    db.commit()
+    
+    logger.info(f"Email verified for user: {user.email}")
+    return {"message": "Email verified successfully!"}
+
+
+@router.post("/resend-verification", response_model=schemas.MessageResponse)
+@limiter.limit("3/minute")
+def resend_verification(
+    request: Request,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """Resend email verification for the current user."""
+    if current_user.is_email_verified:
+        return {"message": "Email is already verified."}
+    
+    # Invalidate existing verification tokens
+    db.query(models.EmailVerificationToken).filter(
+        models.EmailVerificationToken.user_id == current_user.id,
+        models.EmailVerificationToken.used_at == None
+    ).delete()
+    
+    # Generate new token
+    token, token_hash = generate_secure_token()
+    expires_at = datetime.utcnow() + timedelta(hours=EMAIL_VERIFICATION_EXPIRE_HOURS)
+    
+    verification_token = models.EmailVerificationToken(
+        user_id=current_user.id,
+        token_hash=token_hash,
+        expires_at=expires_at
+    )
+    db.add(verification_token)
+    db.commit()
+    
+    # Log token for development (replace with email service in production)
+    logger.info("=" * 60)
+    logger.info(f"EMAIL VERIFICATION TOKEN for {current_user.email}")
+    logger.info(f"Token: {token}")
+    logger.info(f"Verify URL: http://localhost:5173/verify-email?token={token}")
+    logger.info(f"Expires: {expires_at}")
+    logger.info("=" * 60)
+    
+    return {"message": "Verification email sent. Please check your inbox."}
+
+
+# ============================================
+# ACCOUNT DELETION ENDPOINT
+# ============================================
+
+@router.delete("/account", response_model=schemas.MessageResponse)
+@limiter.limit("3/minute")
+def delete_account(
+    request: Request,
+    body: schemas.DeleteAccountRequest,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Permanently delete the user account and all associated data.
+    Requires password confirmation for security.
+    """
+    # Verify password
+    if not auth.verify_password(body.password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password"
+        )
+    
+    user_id = current_user.id
+    user_email = current_user.email
+    
+    # Delete all related data in order (respecting foreign keys)
+    # Note: Order matters to avoid FK violations
+    
+    # Delete password reset tokens
+    db.query(models.PasswordResetToken).filter(
+        models.PasswordResetToken.user_id == user_id
+    ).delete()
+    
+    # Delete email verification tokens
+    db.query(models.EmailVerificationToken).filter(
+        models.EmailVerificationToken.user_id == user_id
+    ).delete()
+    
+    # Delete transactions (need to handle parent-child relationship)
+    db.query(models.Transaction).filter(
+        models.Transaction.user_id == user_id
+    ).delete()
+    
+    # Delete categorization rules
+    db.query(models.CategorizationRule).filter(
+        models.CategorizationRule.user_id == user_id
+    ).delete()
+    
+    # Delete subscriptions
+    db.query(models.Subscription).filter(
+        models.Subscription.user_id == user_id
+    ).delete()
+    
+    # Delete goals
+    db.query(models.Goal).filter(
+        models.Goal.user_id == user_id
+    ).delete()
+    
+    # Delete tax settings
+    db.query(models.TaxSettings).filter(
+        models.TaxSettings.user_id == user_id
+    ).delete()
+    
+    # Get account IDs before deleting
+    account_ids = [a.id for a in db.query(models.Account).filter(
+        models.Account.user_id == user_id
+    ).all()]
+    
+    # Delete investment holdings
+    if account_ids:
+        db.query(models.InvestmentHolding).filter(
+            models.InvestmentHolding.account_id.in_(account_ids)
+        ).delete(synchronize_session=False)
+    
+    # Delete account balances (snapshots first)
+    snapshot_ids = [s.id for s in db.query(models.NetWorthSnapshot).filter(
+        models.NetWorthSnapshot.user_id == user_id
+    ).all()]
+    
+    if snapshot_ids:
+        db.query(models.AccountBalance).filter(
+            models.AccountBalance.snapshot_id.in_(snapshot_ids)
+        ).delete(synchronize_session=False)
+    
+    # Delete net worth snapshots
+    db.query(models.NetWorthSnapshot).filter(
+        models.NetWorthSnapshot.user_id == user_id
+    ).delete()
+    
+    # Delete accounts
+    db.query(models.Account).filter(
+        models.Account.user_id == user_id
+    ).delete()
+    
+    # Delete budget buckets
+    db.query(models.BudgetBucket).filter(
+        models.BudgetBucket.user_id == user_id
+    ).delete()
+    
+    # Finally, delete the user
+    db.query(models.User).filter(
+        models.User.id == user_id
+    ).delete()
+    
+    db.commit()
+    
+    logger.info(f"Account deleted: {user_email}")
+    return {"message": "Your account and all data have been permanently deleted."}

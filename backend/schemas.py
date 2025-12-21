@@ -76,11 +76,18 @@ class TransactionSplitCreate(BaseModel):
     items: List[TransactionCreate]
 
 class TransactionConfirm(BaseModel):
-    id: int
+    id: int  # Negative for preview, positive for existing
     bucket_id: Optional[int] = None
     is_verified: bool = True
     spender: Optional[str] = None
     goal_id: Optional[int] = None
+    # Fields required for creating new transactions from preview
+    date: Optional[str] = None  # ISO date string
+    description: Optional[str] = None
+    raw_description: Optional[str] = None
+    amount: Optional[float] = None
+    transaction_hash: Optional[str] = None
+    category_confidence: Optional[float] = None
 
 class TransactionUpdate(BaseModel):
     bucket_id: Optional[int] = None
@@ -290,3 +297,40 @@ class TaxEstimation(BaseModel):
     marginal_rate: float
     brackets_breakdown: List[TaxBracket]
 
+
+# Password Reset & Email Verification Schemas
+class ForgotPasswordRequest(BaseModel):
+    """Request schema for forgot password endpoint."""
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """Request schema for password reset endpoint."""
+    token: str
+    new_password: str
+    
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        if not re.search(r'[A-Za-z]', v):
+            raise ValueError('Password must contain at least one letter')
+        if not re.search(r'[0-9]', v):
+            raise ValueError('Password must contain at least one number')
+        return v
+
+
+class VerifyEmailRequest(BaseModel):
+    """Request schema for email verification endpoint."""
+    token: str
+
+
+class MessageResponse(BaseModel):
+    """Generic message response."""
+    message: str
+
+
+class DeleteAccountRequest(BaseModel):
+    """Request schema for account deletion - requires password confirmation."""
+    password: str
