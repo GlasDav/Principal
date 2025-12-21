@@ -369,7 +369,7 @@ export default function Transactions() {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : filteredTxns.length === 0 ? (
+                            ) : transactions.length === 0 ? (
                                 <tr>
                                     <td colSpan="7" className="p-8 text-center">
                                         <div className="flex flex-col items-center gap-2">
@@ -385,7 +385,7 @@ export default function Transactions() {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredTxns.map((txn) => (
+                                transactions.map((txn) => (
                                     <tr key={txn.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition group">
                                         <td className="p-4">
                                             <input
