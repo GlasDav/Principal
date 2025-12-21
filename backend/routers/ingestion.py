@@ -737,8 +737,9 @@ def confirm_transactions(updates: List[schemas.TransactionConfirm], db: Session 
             db.flush()  # Get the ID without committing
             confirmed_ids.append(db_txn.id)
             
-            # Auto-learning for new transactions
-            if db_txn.bucket_id and db_txn.description:
+            # Auto-learning: only for manually categorized (high confidence) transactions
+            # AI predictions are capped at 0.85, so >0.9 means manual or strong rule match
+            if db_txn.bucket_id and db_txn.description and (update.category_confidence or 0) > 0.9:
                 clean_desc = categorizer.clean_description(db_txn.description)
                 if len(clean_desc) >= 3:
                     existing_rule = db.query(models.CategorizationRule).filter(
@@ -769,24 +770,8 @@ def confirm_transactions(updates: List[schemas.TransactionConfirm], db: Session 
                 txn.is_verified = True
                 confirmed_ids.append(txn.id)
                 
-                # Auto-learning for existing transactions
-                if txn.bucket_id:
-                    clean_desc = categorizer.clean_description(txn.description)
-                    if len(clean_desc) >= 3:
-                        existing_rule = db.query(models.CategorizationRule).filter(
-                            models.CategorizationRule.user_id == current_user.id,
-                            models.CategorizationRule.bucket_id == txn.bucket_id,
-                            models.CategorizationRule.keywords == clean_desc
-                        ).first()
-                        
-                        if not existing_rule:
-                            new_rule = models.CategorizationRule(
-                                user_id=current_user.id,
-                                bucket_id=txn.bucket_id,
-                                keywords=clean_desc,
-                                priority=10
-                            )
-                            db.add(new_rule)
+                # Note: No auto-learning for existing transaction updates
+                # These are often corrections, not patterns to learn from
     
     db.commit()
     
