@@ -63,6 +63,12 @@ def update_job_progress(user_id: int, job_id: str, progress: int, message: str =
             if message:
                 _job_store[user_id][job_id]['message'] = message
 
+def update_job_total(user_id: int, job_id: str, total: int):
+    """Update job total when actual count is known."""
+    with _job_lock:
+        if user_id in _job_store and job_id in _job_store[user_id]:
+            _job_store[user_id][job_id]['total'] = total
+
 def complete_job(user_id: int, job_id: str, result: list, duplicate_count: int = 0):
     """Mark job as complete with results."""
     with _job_lock:
@@ -546,6 +552,8 @@ def process_csv_background(
             complete_job(user_id, job_id, [], 0)
             return
         
+        # Update job total with actual count
+        update_job_total(user_id, job_id, len(extracted_data))
         update_job_progress(user_id, job_id, 0, f"Processing {len(extracted_data)} transactions...")
         
         # Process with progress updates
