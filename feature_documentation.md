@@ -46,9 +46,11 @@ The dashboard serves as the central hub for financial oversight.
     -   Hash-based fingerprinting detects previously imported transactions.
     -   Automatically skips duplicates when re-importing overlapping statements.
     -   "Skip duplicate transactions" checkbox (enabled by default).
--   **Import Progress Indicator**:
-    -   Loading spinner and time estimate during AI categorization.
-    -   "⏳ AI is categorizing transactions... This may take 1-2 minutes."
+-   **Import Progress Indicator** *(Updated)*:
+    -   Async background processing for large imports.
+    -   Real-time progress bar showing batch completion.
+    -   Shows duplicate count and categorization status.
+    -   Cancel button to abort in-progress imports.
 
 ### Transfer Handling *(New)*
 -   **Transfer Buckets**: Mark any budget bucket as a "transfer" category.
@@ -136,12 +138,16 @@ The dashboard serves as the central hub for financial oversight.
     -   **Automatic Token Rotation**: The frontend automatically detects expired sessions and refreshes them in the background.
 -   **Environment Configuration**: Sensitive data like `SECRET_KEY` and API credentials are managed via `.env` files and never hardcoded.
 
-## 7. AI & Machine Learning *(New Section)*
+## 7. AI & Machine Learning *(Updated)*
 -   **Gemini 3 Flash Integration**: Transaction categorization powered by Google's latest Gemini model.
--   **Batch Processing**: AI processes transactions in batches of 50 for efficiency.
+-   **Async Background Processing**: Large imports processed in background with real-time progress updates.
+-   **Parallel Batch Processing**: 5 concurrent API calls for faster categorization (~2 min for 500 transactions).
+-   **Compact JSON Optimization**: Prompt engineered for minimal token usage, preventing response truncation.
+-   **Automatic Retry Logic**: Failed JSON parses automatically retry once, improving success rate to ~80-90%.
 -   **Confidence Scoring**: AI predictions capped at 0.85 confidence to encourage user review.
 -   **Fallback Strategy**: AI only activated when rule-based methods fail, preserving deterministic behavior.
 
 ---
 
 *Last Updated: December 2025*
+
