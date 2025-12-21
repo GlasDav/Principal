@@ -379,16 +379,16 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
             </div>
 
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <table className="w-full text-left">
+                <table className="w-full text-left table-fixed">
                     <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                         <tr>
                             <th className="p-2 w-12"></th>
-                            <SortHeader field="name">Name</SortHeader>
-                            <SortHeader field="limitA" className="w-28">
+                            <SortHeader field="name" className="w-40">Name</SortHeader>
+                            <SortHeader field="limitA" className="w-24">
                                 {userSettings?.is_couple_mode ? (userSettings?.name_a || 'User A') : 'Limit'}
                             </SortHeader>
                             {userSettings?.is_couple_mode && (
-                                <SortHeader field="limitB" className="w-28">
+                                <SortHeader field="limitB" className="w-24">
                                     {userSettings?.name_b || 'User B'}
                                 </SortHeader>
                             )}
@@ -396,7 +396,7 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
                                 <th className="p-2 text-xs font-semibold text-slate-500 dark:text-slate-400 w-16 text-center">Shared</th>
                             )}
                             <SortHeader field="rollover" className="w-20 text-center">Rollover</SortHeader>
-                            <SortHeader field="tags">Tags</SortHeader>
+                            <SortHeader field="tags" className="w-32">Tags</SortHeader>
                             <th className="p-2 w-10"></th>
                         </tr>
                     </thead>
