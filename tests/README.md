@@ -19,13 +19,13 @@ pytest tests/test_auth.py::TestLogin -v
 ## Test Structure
 
 - `conftest.py` - Shared fixtures (test database, auth helpers, sample data)
-- `test_auth.py` - Authentication tests (27 tests)
+- `test_auth.py` - Authentication tests (33 tests - includes MFA)
 - `test_transactions.py` - Transaction CRUD and filtering (12 tests)
 - `test_analytics.py` - Dashboard and reporting (13 tests)
 - `test_settings.py` - User settings and bucket management (11 tests)
 - `test_security.py` - XSS protection and input sanitization (17 tests)
 
-**Total: 80 tests**
+**Total: 86 tests**
 
 ## Key Fixtures
 

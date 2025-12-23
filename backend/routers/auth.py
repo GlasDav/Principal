@@ -767,3 +767,343 @@ def change_email(
     logger.info(f"Email changed for user from {old_email} to {new_email}")
     return {"message": "Email changed successfully. Please verify your new email and log in again."}
 
+
+# ============================================
+# MULTI-FACTOR AUTHENTICATION (MFA) ENDPOINTS
+# ============================================
+
+@router.get("/mfa/status")
+def get_mfa_status(
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Get current MFA status for the user."""
+    return {
+        "mfa_enabled": getattr(current_user, 'mfa_enabled', False) or False,
+        "has_backup_codes": bool(getattr(current_user, 'mfa_backup_codes', None))
+    }
+
+
+@router.post("/mfa/setup")
+@limiter.limit("5/minute")
+def setup_mfa(
+    request: Request,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Initialize MFA setup. Returns a secret and provisioning URI for authenticator apps.
+    User must call /mfa/verify to complete setup.
+    """
+    try:
+        import pyotp
+    except ImportError:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="MFA not available. Please install pyotp."
+        )
+    
+    # Check if MFA is already enabled
+    if getattr(current_user, 'mfa_enabled', False):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="MFA is already enabled. Disable it first to set up again."
+        )
+    
+    # Generate new TOTP secret
+    secret = pyotp.random_base32()
+    
+    # Store the secret (not yet enabled)
+    current_user.mfa_secret = secret
+    db.commit()
+    
+    # Create provisioning URI for authenticator apps
+    totp = pyotp.TOTP(secret)
+    provisioning_uri = totp.provisioning_uri(
+        name=current_user.email,
+        issuer_name="Principal Finance"
+    )
+    
+    # Generate QR code as base64 (optional - client can generate from URI)
+    qr_code_base64 = None
+    try:
+        import qrcode
+        import io
+        import base64
+        
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
+        qr.add_data(provisioning_uri)
+        qr.make(fit=True)
+        
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+    except ImportError:
+        pass  # QR code generation is optional
+    
+    return {
+        "secret": secret,
+        "provisioning_uri": provisioning_uri,
+        "qr_code_base64": qr_code_base64,
+        "message": "Scan the QR code with your authenticator app, then verify with a code."
+    }
+
+
+@router.post("/mfa/verify", response_model=schemas.MessageResponse)
+@limiter.limit("10/minute")
+def verify_mfa_setup(
+    request: Request,
+    body: dict = Body(...),
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Verify TOTP code to complete MFA setup and enable MFA.
+    """
+    try:
+        import pyotp
+    except ImportError:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="MFA not available."
+        )
+    
+    code = body.get("code")
+    if not code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification code is required"
+        )
+    
+    # Check if secret exists
+    secret = getattr(current_user, 'mfa_secret', None)
+    if not secret:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="MFA setup not started. Call /mfa/setup first."
+        )
+    
+    # Verify the TOTP code
+    totp = pyotp.TOTP(secret)
+    if not totp.verify(code, valid_window=1):  # Allow 30 second window
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification code. Please try again."
+        )
+    
+    # Generate backup codes
+    backup_codes = [secrets.token_hex(4).upper() for _ in range(8)]
+    hashed_codes = [hashlib.sha256(code.encode()).hexdigest() for code in backup_codes]
+    
+    # Enable MFA and store backup codes
+    current_user.mfa_enabled = True
+    current_user.mfa_backup_codes = ",".join(hashed_codes)
+    
+    # Increment token version to require re-login on other devices
+    current_token_version = getattr(current_user, 'token_version', 0) or 0
+    current_user.token_version = current_token_version + 1
+    
+    db.commit()
+    
+    logger.info(f"MFA enabled for user: {current_user.email}")
+    
+    return {
+        "message": "MFA successfully enabled. Save your backup codes securely.",
+        "backup_codes": backup_codes  # Only shown once!
+    }
+
+
+@router.post("/mfa/disable", response_model=schemas.MessageResponse)
+@limiter.limit("5/minute")
+def disable_mfa(
+    request: Request,
+    body: dict = Body(...),
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Disable MFA. Requires password verification.
+    """
+    password = body.get("password")
+    if not password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password is required to disable MFA"
+        )
+    
+    # Verify password
+    if not auth.verify_password(password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Password is incorrect"
+        )
+    
+    # Disable MFA
+    current_user.mfa_enabled = False
+    current_user.mfa_secret = None
+    current_user.mfa_backup_codes = None
+    
+    db.commit()
+    
+    logger.info(f"MFA disabled for user: {current_user.email}")
+    return {"message": "MFA has been disabled."}
+
+
+@router.post("/mfa/validate", response_model=schemas.Token)
+@limiter.limit("10/minute")
+def validate_mfa_code(
+    request: Request,
+    body: dict = Body(...),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Validate MFA code during login. Called after password verification
+    when MFA is enabled. Returns tokens if successful.
+    """
+    try:
+        import pyotp
+    except ImportError:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="MFA not available."
+        )
+    
+    email = body.get("email")
+    code = body.get("code")
+    mfa_token = body.get("mfa_token")  # Temporary token from login
+    
+    if not email or not code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email and code are required"
+        )
+    
+    # Find the user
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials"
+        )
+    
+    # Check if MFA is enabled
+    if not getattr(user, 'mfa_enabled', False):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="MFA is not enabled for this account"
+        )
+    
+    secret = getattr(user, 'mfa_secret', None)
+    if not secret:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="MFA configuration error"
+        )
+    
+    # Try TOTP code first
+    totp = pyotp.TOTP(secret)
+    is_valid = totp.verify(code, valid_window=1)
+    
+    # If TOTP fails, try backup codes
+    if not is_valid:
+        backup_codes = getattr(user, 'mfa_backup_codes', '') or ''
+        if backup_codes:
+            code_hash = hashlib.sha256(code.upper().encode()).hexdigest()
+            codes_list = backup_codes.split(',')
+            
+            if code_hash in codes_list:
+                # Remove used backup code
+                codes_list.remove(code_hash)
+                user.mfa_backup_codes = ','.join(codes_list)
+                db.commit()
+                is_valid = True
+                logger.info(f"Backup code used for user: {user.email}")
+    
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid verification code"
+        )
+    
+    # Generate tokens
+    token_version = getattr(user, 'token_version', 0) or 0
+    
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user.email, "tv": token_version},
+        expires_delta=access_token_expires
+    )
+    refresh_token = auth.create_refresh_token(
+        data={"sub": user.email, "tv": token_version}
+    )
+    
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
+
+
+@router.post("/mfa/regenerate-backup-codes", response_model=schemas.MessageResponse)
+@limiter.limit("3/minute")
+def regenerate_backup_codes(
+    request: Request,
+    body: dict = Body(...),
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Regenerate backup codes. Requires password and current TOTP code.
+    """
+    try:
+        import pyotp
+    except ImportError:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="MFA not available."
+        )
+    
+    password = body.get("password")
+    code = body.get("code")
+    
+    if not password or not code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password and current TOTP code are required"
+        )
+    
+    # Verify password
+    if not auth.verify_password(password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Password is incorrect"
+        )
+    
+    # Verify TOTP code
+    secret = getattr(current_user, 'mfa_secret', None)
+    if not secret:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="MFA is not enabled"
+        )
+    
+    totp = pyotp.TOTP(secret)
+    if not totp.verify(code, valid_window=1):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid TOTP code"
+        )
+    
+    # Generate new backup codes
+    backup_codes = [secrets.token_hex(4).upper() for _ in range(8)]
+    hashed_codes = [hashlib.sha256(code.encode()).hexdigest() for code in backup_codes]
+    
+    current_user.mfa_backup_codes = ",".join(hashed_codes)
+    db.commit()
+    
+    logger.info(f"Backup codes regenerated for user: {current_user.email}")
+    
+    return {
+        "message": "New backup codes generated. Save them securely.",
+        "backup_codes": backup_codes  # Only shown once!
+    }

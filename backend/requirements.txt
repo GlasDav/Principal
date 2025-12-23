@@ -20,6 +20,8 @@ python-jose[cryptography]==3.5.0
 passlib[bcrypt]==1.7.4
 argon2-cffi==25.1.0
 python-multipart==0.0.20
+pyotp==2.9.0
+qrcode==7.4.2
 
 # PDF Processing
 pdfplumber==0.11.8

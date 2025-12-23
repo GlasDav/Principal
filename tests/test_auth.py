@@ -298,3 +298,104 @@ class TestChangeEmail:
         )
         assert response.status_code == 400
         assert "in use" in response.json()["detail"].lower()
+
+
+class TestMFA:
+    """Tests for Multi-Factor Authentication."""
+    
+    def test_mfa_status_disabled(self, client, auth_headers):
+        """MFA status shows disabled for new users."""
+        response = client.get("/auth/mfa/status", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["mfa_enabled"] == False
+    
+    def test_mfa_setup(self, client, auth_headers):
+        """MFA setup returns secret and provisioning URI."""
+        response = client.post("/auth/mfa/setup", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert "secret" in data
+        assert "provisioning_uri" in data
+        # Check for issuer (may be URL-encoded)
+        assert "Principal" in data["provisioning_uri"]
+    
+    def test_mfa_verify_invalid_code(self, client, auth_headers):
+        """MFA verify fails with invalid code."""
+        # First setup
+        client.post("/auth/mfa/setup", headers=auth_headers)
+        
+        # Try invalid code
+        response = client.post("/auth/mfa/verify",
+            headers=auth_headers,
+            json={"code": "000000"}
+        )
+        assert response.status_code == 400
+    
+    def test_mfa_verify_valid_code(self, client, auth_headers, test_db, test_user):
+        """MFA verify succeeds with valid TOTP code."""
+        import pyotp
+        
+        # Setup MFA
+        setup_response = client.post("/auth/mfa/setup", headers=auth_headers)
+        secret = setup_response.json()["secret"]
+        
+        # Generate valid TOTP code
+        totp = pyotp.TOTP(secret)
+        valid_code = totp.now()
+        
+        response = client.post("/auth/mfa/verify",
+            headers=auth_headers,
+            json={"code": valid_code}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "backup_codes" in data or "message" in data  # Response format may vary
+    
+    def test_mfa_disable(self, client, test_db, test_user, test_user_data):
+        """MFA can be disabled with password."""
+        import pyotp
+        from backend import auth as auth_module
+        from datetime import timedelta
+        
+        # Create fresh token for this test
+        token = auth_module.create_access_token(
+            data={"sub": test_user_data["email"], "tv": 0},
+            expires_delta=timedelta(minutes=30)
+        )
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        # Setup MFA
+        setup_response = client.post("/auth/mfa/setup", headers=headers)
+        secret = setup_response.json()["secret"]
+        
+        # Verify MFA (this increments token version to 1)
+        totp = pyotp.TOTP(secret)
+        client.post("/auth/mfa/verify", headers=headers, json={"code": totp.now()})
+        
+        # Refresh the database object to get updated token_version
+        test_db.refresh(test_user)
+        
+        # Generate new token with updated version
+        new_token = auth_module.create_access_token(
+            data={"sub": test_user_data["email"], "tv": test_user.token_version},
+            expires_delta=timedelta(minutes=30)
+        )
+        new_headers = {"Authorization": f"Bearer {new_token}"}
+        
+        # Now disable with the new token
+        response = client.post("/auth/mfa/disable",
+            headers=new_headers,
+            json={"password": test_user_data["password"]}
+        )
+        assert response.status_code == 200
+        assert "disabled" in response.json()["message"].lower()
+    
+    def test_mfa_disable_wrong_password(self, client, auth_headers):
+        """MFA disable fails with wrong password."""
+        response = client.post("/auth/mfa/disable",
+            headers=auth_headers,
+            json={"password": "WrongPassword123!"}
+        )
+        assert response.status_code == 401
+

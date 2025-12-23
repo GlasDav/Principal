@@ -16,6 +16,11 @@ class User(Base):
     is_email_verified = Column(Boolean, default=False)  # Email verification status
     token_version = Column(Integer, default=0)  # Incremented to invalidate all tokens
     
+    # MFA Fields
+    mfa_enabled = Column(Boolean, default=False)  # Is MFA active?
+    mfa_secret = Column(String, nullable=True)  # TOTP secret (encrypted in production)
+    mfa_backup_codes = Column(String, nullable=True)  # Comma-separated hashed backup codes
+    
     buckets = relationship("BudgetBucket", back_populates="user")
     transactions = relationship("Transaction", back_populates="user")
     tax_settings = relationship("TaxSettings", back_populates="user", uselist=False)

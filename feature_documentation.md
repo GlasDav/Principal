@@ -178,6 +178,12 @@ Dedicated reporting section for deeper financial analysis.
 -   **Self-Service Credential Updates** *(New)*:
     -   **Change Password**: Users can update their password (requires current password verification).
     -   **Change Email**: Users can update their email address (resets email verification status).
+-   **Multi-Factor Authentication (MFA)** *(New)*:
+    -   **TOTP Support**: Time-based One-Time Passwords compatible with Google Authenticator, Authy, etc.
+    -   **QR Code Setup**: Scan QR code to add account to authenticator app.
+    -   **Backup Codes**: 8 one-time backup codes generated on setup for account recovery.
+    -   **MFA Validation**: Required at login when enabled; supports both TOTP and backup codes.
+    -   **Disable with Verification**: MFA can only be disabled with password verification.
 -   **Account Deletion**: Users can permanently delete their account from Settings.
 -   **Session Management**:
     -   **Short-lived Access Tokens**: Access tokens expire after 60 minutes for enhanced security.

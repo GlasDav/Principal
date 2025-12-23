@@ -15,12 +15,12 @@
 
 ---
 
-## Phase 2: 🟠 Core Experience Improvements ✅
+## Phase 2: ✅ Core Experience Improvements
 
-**Nearly complete! Only MFA remaining.**
+**COMPLETE! All items implemented.**
 
 ### Security & Sessions
-- [ ] **Multi-Factor Authentication** - TOTP/SMS second factor
+- [x] **Multi-Factor Authentication** - TOTP/SMS second factor (pyotp, QR codes, backup codes)
 - [x] **Session Management** - Token revocation ("Log out everywhere")
 - [x] **Change Email/Password** - Self-service credential updates
 
