@@ -34,6 +34,7 @@
 ### Budget Enhancements
 - [x] **Budget by Group Option** - Group spending endpoint (/analytics/group-spending)
 - [x] **Category History Preview** - Show history when editing budget (/analytics/category-history/{id})
+- [x] **Hierarchical Categories** - Parent/Child structure with expandable tree view and styling
 
 ### Rules Improvements
 - [x] **Rule Preview** - Preview which transactions would be affected before saving a rule

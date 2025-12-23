@@ -48,3 +48,71 @@ Tasks
         - Download account balances
         - Remove card access
         - Delete transactions
+
+- Default categories
+    - Income
+        - Salaries
+        - Interest
+        - Business
+        - Other
+    - Expenses
+        - Household Expenses
+            - Gas & Electricity
+            - Water
+            - Internet
+            - Mortgage/Rent
+            - Strata Levies
+            - Council Rates
+            - Subscriptions
+            - Maintenance
+            - Household General
+            - Other
+        - Vehicle
+            - Petrol
+            - Insurance & Registration
+            - Maintenance
+            - Other
+        - Food
+            - Groceries
+            - Dining Out
+            - Coffee
+            - Snacks
+        - Lifestyle
+            - Personal
+            - Homewares
+            - Beauty
+            - Health & Fitness
+            - Clothing
+            - Leisure
+            - Dates
+            - Gifts
+            - Parking & Tolls
+            - Public Transport
+            - Taxi & Rideshare
+            - Other
+        - Health & Wellness
+            - Medical
+            - Dental
+            - Pharmacy
+            - Fitness
+        - Kids
+            - Childcare
+            - Education
+            - Kids Expenses
+            - Investing
+            - Activities
+        - Rollover/Non-Monthly
+            - Donations
+            - Renovations
+            - Other
+        - Financial
+            - Cash & ATM Fees
+            - Financial Fees
+            - Investment Contributions
+            - Accounting
+        - Other
+            - Work Expenses
+            - Business Expenses
+            - Miscellaneous
+            - Uncategorised
+            - Transfers

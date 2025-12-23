@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, Zap, Target, TrendingUp, Wrench, PiggyBank, Users, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, Zap, Target, TrendingUp, Wrench, PiggyBank, Users, BarChart3, MessageCircle } from 'lucide-react';
 import Settings from './pages/Settings';
 import Ingest from './pages/Ingest';
 import Transactions from './pages/Transactions';
@@ -29,6 +29,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import PrivateRoute from './components/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import Footer from './components/Footer';
+import { FeedbackModal, FeedbackButton } from './components/FeedbackModal';
 import { LogOut } from 'lucide-react';
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ function NavItem({ to, icon: Icon, children, end = false }) {
 // Sidebar + Layout
 function Layout() {
   const { logout, user } = useAuth();
+  const [showFeedback, setShowFeedback] = useState(false);
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans">
@@ -95,6 +97,13 @@ function Layout() {
 
         <div className="p-3 border-t border-slate-100 dark:border-slate-700">
           <button
+            onClick={() => setShowFeedback(true)}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 w-full transition-all duration-200 mb-1"
+          >
+            <MessageCircle size={18} />
+            Send Feedback
+          </button>
+          <button
             onClick={logout}
             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition-all duration-200"
           >
@@ -115,6 +124,9 @@ function Layout() {
           <Footer />
         </div>
       </div>
+
+      {/* Feedback Modal */}
+      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
     </div>
   );
 }

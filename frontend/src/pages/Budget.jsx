@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Menu } from '@headlessui/react';
-import { Trash2, Plus, DollarSign, Wallet, ShoppingBag, Home, Tag as TagIcon, Save, Play } from 'lucide-react';
+import { Trash2, Plus, DollarSign, Wallet, ShoppingBag, Home, Tag as TagIcon, Save, Play, ChevronDown, ChevronRight, CornerDownRight } from 'lucide-react';
 import * as api from '../services/api';
 import { ICON_MAP } from '../utils/icons';
 
@@ -24,7 +24,7 @@ const cleanKeywords = (str) => {
 };
 
 // === BUCKET TABLE ROW ===
-const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBucketMutation, allTags = [] }) => {
+const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBucketMutation, createBucketMutation, allTags = [], depth = 0, isExpanded = false, onToggleExpand = () => { }, hasChildren = false }) => {
     const Icon = ICON_MAP[bucket.icon_name] || Wallet;
     const [localName, setLocalName] = useState(bucket.name || '');
     const [localLimitA, setLocalLimitA] = useState(bucket.monthly_limit_a || 0);
@@ -101,41 +101,85 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
         updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: newTags } });
     };
 
+    const handleAddSubCategory = () => {
+        createBucketMutation.mutate({
+            name: "New Sub-Category",
+            group: bucket.group,
+            parent_id: bucket.id,
+            is_shared: bucket.is_shared
+        });
+        if (!isExpanded) onToggleExpand();
+    };
+
     const tags = bucket.tags || [];
     const visibleTags = tags.slice(0, 2);
     const hiddenCount = tags.length - visibleTags.length;
     const currentTagNames = tags.map(t => t.name.toLowerCase());
     const suggestions = allTags.filter(t => !currentTagNames.includes(t.toLowerCase()));
 
+    const isParent = depth === 0;
+    const rowBgClass = isParent
+        ? 'bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold'
+        : `hover:bg-slate-50 dark:hover:bg-slate-800/50 ${bucket.is_transfer ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''} ${bucket.is_investment ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`;
+
     return (
-        <tr className={`border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group ${bucket.is_transfer ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''} ${bucket.is_investment ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`}>
-            <td className="p-2 w-12">
-                <Menu as="div" className="relative">
-                    <Menu.Button className="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition">
-                        <Icon size={16} />
-                    </Menu.Button>
-                    <Menu.Items className="absolute left-0 mt-1 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-2 grid grid-cols-5 gap-1 z-20">
-                        {AVAILABLE_ICONS.map(iconName => {
-                            const I = ICON_MAP[iconName];
-                            return (
-                                <Menu.Item key={iconName}>
-                                    {({ active }) => (
-                                        <button
-                                            onClick={() => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, icon_name: iconName } })}
-                                            className={`p-1.5 rounded flex justify-center ${active ? 'bg-indigo-50 dark:bg-slate-700 text-indigo-600' : 'text-slate-500'}`}
-                                        >
-                                            <I size={16} />
-                                        </button>
-                                    )}
-                                </Menu.Item>
-                            );
-                        })}
-                    </Menu.Items>
-                </Menu>
+        <tr className={`border-b border-slate-100 dark:border-slate-700 transition group ${rowBgClass}`}>
+            <td className="p-2 w-12 relative">
+                <div className="flex items-center" style={{ paddingLeft: depth * 20 }}>
+                    {depth > 0 && <CornerDownRight size={12} className="text-slate-300 absolute left-4 top-1/2 -translate-y-1/2" style={{ left: (depth * 20) - 10 }} />}
+
+                    {/* Expand/Collapse Toggle for Parents */}
+                    {hasChildren && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
+                            className="absolute -left-1 text-slate-400 hover:text-indigo-500 p-0.5 z-10"
+                            style={{ left: (depth * 20) - 18 }}
+                        >
+                            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </button>
+                    )}
+
+                    <Menu as="div" className="relative">
+                        <Menu.Button className={`p-1.5 rounded-lg transition relative ${isParent ? 'bg-white dark:bg-slate-700 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600 text-indigo-600 dark:text-indigo-400' : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'}`}>
+                            <Icon size={16} />
+                            {/* Add Child Button Overlay */}
+                            {depth < 2 && (
+                                <div
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        handleAddSubCategory();
+                                    }}
+                                    className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-sm hover:scale-110 cursor-pointer"
+                                    title="Add Sub-Category"
+                                >
+                                    <Plus size={10} />
+                                </div>
+                            )}
+                        </Menu.Button>
+                        <Menu.Items className="absolute left-0 mt-1 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 p-2 grid grid-cols-5 gap-1 z-20">
+                            {AVAILABLE_ICONS.map(iconName => {
+                                const I = ICON_MAP[iconName];
+                                return (
+                                    <Menu.Item key={iconName}>
+                                        {({ active }) => (
+                                            <button
+                                                onClick={() => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, icon_name: iconName } })}
+                                                className={`p-1.5 rounded flex justify-center ${active ? 'bg-indigo-50 dark:bg-slate-700 text-indigo-600' : 'text-slate-500'}`}
+                                            >
+                                                <I size={16} />
+                                            </button>
+                                        )}
+                                    </Menu.Item>
+                                );
+                            })}
+                        </Menu.Items>
+                    </Menu>
+                </div>
             </td>
             <td className="p-2">
                 <input
-                    className="w-full font-medium text-slate-800 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none transition text-sm py-1"
+                    className={`w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none transition text-sm py-1 ${isParent ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-800 dark:text-slate-100'}`}
                     value={localName}
                     onChange={(e) => setLocalName(e.target.value)}
                     onBlur={handleBlurName}
@@ -281,10 +325,91 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
 const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, createBucketMutation, updateBucketMutation, deleteBucketMutation, groupName, allTags = [] }) => {
     const [sortField, setSortField] = useState('name');
     const [sortDir, setSortDir] = useState('asc');
+    const [expandedIds, setExpandedIds] = useState(new Set());
+
+    useEffect(() => {
+        if (buckets && buckets.length > 0) {
+            setExpandedIds(prev => {
+                if (prev.size === 0) return new Set(buckets.map(b => b.id));
+                return prev;
+            });
+        }
+    }, [buckets]);
 
     const handleAddNew = () => {
         createBucketMutation.mutate({ name: "New Category", group: groupName, is_shared: false });
     };
+
+    const handleToggleExpand = (id) => {
+        const newExpanded = new Set(expandedIds);
+        if (newExpanded.has(id)) {
+            newExpanded.delete(id);
+        } else {
+            newExpanded.add(id);
+        }
+        setExpandedIds(newExpanded);
+    };
+
+    // --- Tree Logic ---
+    const visibleRows = React.useMemo(() => {
+        if (!buckets || buckets.length === 0) return [];
+
+        // 1. Map buckets by ID and add children array
+        const bucketMap = new Map();
+        buckets.forEach(b => bucketMap.set(String(b.id), { ...b, children: [] }));
+
+
+
+        // 2. Identify roots and link children to parents
+        const roots = [];
+
+        buckets.forEach(b => {
+            const strId = String(b.id);
+            const strParentId = b.parent_id ? String(b.parent_id) : null;
+
+            if (strParentId && bucketMap.has(strParentId)) {
+                bucketMap.get(strParentId).children.push(bucketMap.get(strId));
+            } else {
+                roots.push(bucketMap.get(strId));
+            }
+        });
+
+        // 3. Helper to sort nodes
+        const sortNodes = (nodes) => {
+            return [...nodes].sort((a, b) => {
+                let aVal, bVal;
+                switch (sortField) {
+                    case 'name': aVal = (a.name || '').toLowerCase(); bVal = (b.name || '').toLowerCase(); break;
+                    case 'limitA': aVal = a.monthly_limit_a || 0; bVal = b.monthly_limit_a || 0; break;
+                    case 'limitB': aVal = a.monthly_limit_b || 0; bVal = b.monthly_limit_b || 0; break;
+                    case 'rollover': aVal = a.is_rollover ? 1 : 0; bVal = b.is_rollover ? 1 : 0; break;
+                    default: aVal = (a.name || '').toLowerCase(); bVal = (b.name || '').toLowerCase();
+                }
+                if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+                return 0;
+            });
+        };
+
+        // 4. Recursive flatten
+        const flatten = (nodes, depth = 0) => {
+            const sorted = sortNodes(nodes);
+            let flat = [];
+            for (const node of sorted) {
+                const hasChildren = node.children && node.children.length > 0;
+                flat.push({ ...node, depth, hasChildren });
+
+                if (hasChildren && expandedIds.has(node.id)) {
+                    flat = flat.concat(flatten(node.children, depth + 1));
+                }
+            }
+            return flat;
+        };
+
+        return flatten(roots);
+
+    }, [buckets, sortField, sortDir, expandedIds]);
+
 
     const handleSort = (field) => {
         if (sortField === field) {
@@ -294,38 +419,6 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
             setSortDir('asc');
         }
     };
-
-    const sortedBuckets = [...buckets].sort((a, b) => {
-        let aVal, bVal;
-        switch (sortField) {
-            case 'name':
-                aVal = (a.name || '').toLowerCase();
-                bVal = (b.name || '').toLowerCase();
-                break;
-            case 'limitA':
-                aVal = a.monthly_limit_a || 0;
-                bVal = b.monthly_limit_a || 0;
-                break;
-            case 'limitB':
-                aVal = a.monthly_limit_b || 0;
-                bVal = b.monthly_limit_b || 0;
-                break;
-            case 'rollover':
-                aVal = a.is_rollover ? 1 : 0;
-                bVal = b.is_rollover ? 1 : 0;
-                break;
-            case 'tags':
-                aVal = (a.tags || []).length;
-                bVal = (b.tags || []).length;
-                break;
-            default:
-                aVal = (a.name || '').toLowerCase();
-                bVal = (b.name || '').toLowerCase();
-        }
-        if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
-        if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
-        return 0;
-    });
 
     const SortHeader = ({ field, children, className = '' }) => (
         <th
@@ -374,14 +467,19 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
                         </tr>
                     </thead>
                     <tbody>
-                        {sortedBuckets.map(bucket => (
+                        {visibleRows.map(bucket => (
                             <BucketTableRow
                                 key={bucket.id}
                                 bucket={bucket}
                                 userSettings={userSettings}
                                 updateBucketMutation={updateBucketMutation}
                                 deleteBucketMutation={deleteBucketMutation}
+                                createBucketMutation={createBucketMutation}
                                 allTags={allTags}
+                                depth={bucket.depth}
+                                isExpanded={expandedIds.has(bucket.id)}
+                                onToggleExpand={() => handleToggleExpand(bucket.id)}
+                                hasChildren={bucket.hasChildren}
                             />
                         ))}
                         {buckets.length === 0 && (

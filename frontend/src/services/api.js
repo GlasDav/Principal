@@ -82,6 +82,11 @@ export const getBuckets = async () => {
     return response.data;
 };
 
+export const getBucketsTree = async () => {
+    const response = await api.get('/settings/buckets/tree');
+    return response.data;
+};
+
 // Analytics
 export const getCalendarData = async (start, end) => (await api.get('/analytics/calendar', { params: { start_date: start, end_date: end } })).data;
 export const getSubscriptions = async () => (await api.get('/analytics/subscriptions')).data;

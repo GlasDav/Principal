@@ -49,6 +49,8 @@ class BudgetBucketBase(BaseModel):
     tags: List[str] = []
     target_amount: Optional[float] = None
     target_date: Optional[date] = None
+    parent_id: Optional[int] = None  # Hierarchy: reference to parent category
+    display_order: int = 0  # For ordering within parent
     
     @field_validator('name', 'icon_name', 'group')
     @classmethod
@@ -65,6 +67,13 @@ class BudgetBucket(BudgetBucketBase):
 
     class Config:
         from_attributes = True
+
+class BudgetBucketWithChildren(BudgetBucket):
+    """Bucket with nested children for tree response."""
+    children: List["BudgetBucketWithChildren"] = []
+
+# Enable forward reference
+BudgetBucketWithChildren.model_rebuild()
 
 # Categorization Rules
 class RuleBase(BaseModel):

@@ -109,7 +109,62 @@ def get_buckets(db: Session = Depends(get_db), current_user: models.User = Depen
     return db.query(models.BudgetBucket)\
              .options(joinedload(models.BudgetBucket.tags))\
              .filter(models.BudgetBucket.user_id == user.id)\
+             .order_by(models.BudgetBucket.display_order)\
              .all()
+
+
+@router.get("/buckets/tree")
+def get_buckets_tree(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """
+    Get buckets organized as a tree structure.
+    Returns parent categories with nested children.
+    """
+    user = current_user
+    if not user:
+        return []
+    
+    # Get all buckets for user
+    all_buckets = db.query(models.BudgetBucket)\
+        .options(joinedload(models.BudgetBucket.tags))\
+        .filter(models.BudgetBucket.user_id == user.id)\
+        .order_by(models.BudgetBucket.display_order)\
+        .all()
+    
+    # Build tree structure
+    buckets_by_id = {b.id: b for b in all_buckets}
+    tree = []
+    
+    for bucket in all_buckets:
+        bucket_dict = {
+            "id": bucket.id,
+            "name": bucket.name,
+            "icon_name": bucket.icon_name,
+            "monthly_limit_a": bucket.monthly_limit_a,
+            "monthly_limit_b": bucket.monthly_limit_b,
+            "is_shared": bucket.is_shared,
+            "is_rollover": bucket.is_rollover,
+            "is_transfer": bucket.is_transfer,
+            "is_investment": bucket.is_investment,
+            "group": bucket.group,
+            "parent_id": getattr(bucket, 'parent_id', None),
+            "display_order": getattr(bucket, 'display_order', 0),
+            "tags": [{"id": t.id, "name": t.name} for t in bucket.tags],
+            "children": []
+        }
+        
+        parent_id = getattr(bucket, 'parent_id', None)
+        if parent_id is None:
+            # Top-level category
+            tree.append(bucket_dict)
+        else:
+            # Find parent in tree and add as child
+            for parent in tree:
+                if parent["id"] == parent_id:
+                    parent["children"].append(bucket_dict)
+                    break
+    
+    return tree
+
 
 def process_tags(db: Session, bucket: models.BudgetBucket, tag_names: List[str]):
     """Helper to sync tags for a bucket"""
@@ -147,7 +202,9 @@ def create_bucket(bucket: schemas.BudgetBucketCreate, db: Session = Depends(get_
         is_rollover=bucket.is_rollover,
         group=bucket.group,
         target_amount=bucket.target_amount,
-        target_date=bucket.target_date
+        target_date=bucket.target_date,
+        parent_id=bucket.parent_id,
+        display_order=bucket.display_order
     )
     db.add(db_bucket)
     db.commit()
@@ -175,6 +232,8 @@ def update_bucket(bucket_id: int, bucket: schemas.BudgetBucketCreate, db: Sessio
     db_bucket.group = bucket.group
     db_bucket.target_amount = bucket.target_amount
     db_bucket.target_date = bucket.target_date
+    db_bucket.parent_id = bucket.parent_id
+    db_bucket.display_order = bucket.display_order
     
     # Process Tags
     process_tags(db, db_bucket, bucket.tags)
@@ -195,7 +254,11 @@ def delete_bucket(bucket_id: int, db: Session = Depends(get_db), current_user: m
     if db_bucket.is_investment:
         raise HTTPException(status_code=400, detail="The Investments bucket cannot be deleted - it is required for investment tracking.")
     
+    # Check if this bucket has children - prevent deletion of parent with children
+    children = db.query(models.BudgetBucket).filter(models.BudgetBucket.parent_id == bucket_id).count()
+    if children > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete category with {children} sub-categories. Delete or move sub-categories first.")
+    
     db.delete(db_bucket)
     db.commit()
     return {"ok": True}
-

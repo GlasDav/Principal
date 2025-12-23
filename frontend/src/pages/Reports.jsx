@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { Download, RefreshCw, Filter, Calendar as CalendarIcon, PieChart, BarChart2 } from 'lucide-react';
 import { ComposedChart, Bar, Line, LineChart, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend, PieChart as RePieChart, Pie, Cell } from 'recharts';
+import { CategorySelect } from '../components/CategoryTree';
 
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
@@ -13,6 +14,7 @@ export default function Reports() {
     const [customStart, setCustomStart] = useState(new Date().toISOString().split('T')[0]);
     const [customEnd, setCustomEnd] = useState(new Date().toISOString().split('T')[0]);
     const [spenderFilter, setSpenderFilter] = useState("Combined");
+    const [categoryFilter, setCategoryFilter] = useState(null);
 
     // Helper to calculate dates
     const getDateRange = (type) => {
@@ -47,6 +49,12 @@ export default function Reports() {
         queryFn: async () => (await api.get('/settings/user')).data
     });
 
+    // Fetch Categories Tree for Filter
+    const { data: categories = [] } = useQuery({
+        queryKey: ['bucketsTree'],
+        queryFn: api.getBucketsTree
+    });
+
     // Fetch Dashboard Data (Summary Cards)
     const { data: dashboardData, isLoading: loadingSummary } = useQuery({
         queryKey: ['reports_summary', start, end, spenderFilter],
@@ -60,10 +68,14 @@ export default function Reports() {
 
     // Fetch History Data (Chart)
     const { data: historyData = [], isLoading: loadingHistory } = useQuery({
-        queryKey: ['reports_history', start, end, spenderFilter],
+        queryKey: ['reports_history', start, end, spenderFilter, categoryFilter],
         queryFn: async () => {
             const res = await api.get(`/analytics/history`, {
-                params: { start_date: start, end_date: end } // Note: spender filter not yet supported in history endpoint properly, relying on backend
+                params: {
+                    start_date: start,
+                    end_date: end,
+                    bucket_id: categoryFilter
+                }
             });
             return res.data;
         }
@@ -220,6 +232,16 @@ export default function Reports() {
                         </button>
                     ))}
                 </div>
+
+                {/* Category Filter */}
+                <div className="w-64">
+                    <CategorySelect
+                        categories={categories}
+                        value={categoryFilter}
+                        onChange={setCategoryFilter}
+                        placeholder="Filter by Category"
+                    />
+                </div>
             </div>
 
             {/* Summary Cards */}
@@ -344,6 +366,6 @@ export default function Reports() {
                     </ResponsiveContainer>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

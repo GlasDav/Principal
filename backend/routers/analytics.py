@@ -65,7 +65,39 @@ def get_dashboard_data(
     for bid, total in results:
         if bid is None: continue
         # Transaction amount: -100 (expense). Total: -100. Spent: 100.
-        spend_map[bid] = -total if total < 0 else 0 # Don't show negative bars for net income in a bucket
+        spend_map[bid] = -total if total < 0 else 0 
+        
+    # Hierarchy Rollup: Sum child spending into parent
+    # 1. Build children map
+    children_map = {b.id: [] for b in buckets}
+    for b in buckets:
+        if b.parent_id and b.parent_id in children_map:
+            children_map[b.parent_id].append(b.id)
+            
+    # 2. Recursive Rollup
+    rollup_spend_map = {}
+    
+    def calculate_rollup(bid):
+        if bid in rollup_spend_map:
+            return rollup_spend_map[bid]
+            
+        # Start with own spending
+        total = spend_map.get(bid, 0.0)
+        
+        # Add children spending
+        children = children_map.get(bid, [])
+        for child_id in children:
+            total += calculate_rollup(child_id)
+            
+        rollup_spend_map[bid] = total
+        return total
+        
+    # Calculate for all
+    for b in buckets:
+        calculate_rollup(b.id)
+        
+    # Use rollup_spend_map for display (updates existing spend_map logic effectively)
+    spend_map = rollup_spend_map
         
     # 3. Rollover Logic (Optimized N+1 fix)
     # If any bucket is rollover, we need YTD spending before s_date.
@@ -198,7 +230,28 @@ def get_analytics_history(
     # Note: Using CURRENT limits for history (limitation of current data model)
     buckets_query = db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id)
     if bucket_id:
-        buckets_query = buckets_query.filter(models.BudgetBucket.id == bucket_id)
+        # Hierarchy: Find all descendants of the selected bucket
+        # 1. Fetch all hierarchy info for user
+        hierarchy = db.query(models.BudgetBucket.id, models.BudgetBucket.parent_id).filter(models.BudgetBucket.user_id == user.id).all()
+        
+        # 2. Build adjacency list
+        adj = {}
+        for bid, pid in hierarchy:
+            if pid:
+                adj.setdefault(pid, []).append(bid)
+        
+        # 3. BFS traversal to find all descendant IDs
+        subtree_ids = {bucket_id}
+        queue = [bucket_id]
+        while queue:
+            curr = queue.pop(0)
+            children = adj.get(curr, [])
+            for child in children:
+                if child not in subtree_ids:
+                    subtree_ids.add(child)
+                    queue.append(child)
+                    
+        buckets_query = buckets_query.filter(models.BudgetBucket.id.in_(subtree_ids))
     elif group:
         buckets_query = buckets_query.filter(models.BudgetBucket.group == group)
         

@@ -40,6 +40,10 @@ class BudgetBucket(Base):
     is_investment = Column(Boolean, default=False)  # Investment buckets excluded from expenses but shown in Sankey
     group = Column(String, default="Discretionary") # 'Discretionary' (Wants) or 'Non-Discretionary' (Needs)
     
+    # Hierarchy Fields
+    parent_id = Column(Integer, ForeignKey("budget_buckets.id"), nullable=True)
+    display_order = Column(Integer, default=0)  # For ordering within parent
+    
     # Goal Fields
     target_amount = Column(Float, nullable=True)
     target_date = Column(Date, nullable=True)
@@ -47,6 +51,9 @@ class BudgetBucket(Base):
     user = relationship("User", back_populates="buckets")
     transactions = relationship("Transaction", back_populates="bucket")
     tags = relationship("Tag", secondary="bucket_tags", back_populates="buckets")
+    
+    # Self-referential relationship for hierarchy
+    parent = relationship("BudgetBucket", remote_side=[id], backref="children")
 
 class Tag(Base):
     __tablename__ = "tags"
