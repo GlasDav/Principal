@@ -1,0 +1,288 @@
+/**
+ * Mobile Responsiveness Utilities
+ * 
+ * CSS utility classes for responsive design across devices.
+ * Import this file in your main CSS or index.css.
+ */
+
+/* ============================================
+   BREAKPOINT REFERENCE
+   ============================================
+   sm: 640px   (Small devices - phones)
+   md: 768px   (Medium devices - tablets)
+   lg: 1024px  (Large devices - laptops)
+   xl: 1280px  (Extra large - desktops)
+   2xl: 1536px (Large desktops)
+   ============================================ */
+
+/* Mobile-First Base Styles */
+.container-responsive {
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+    .container-responsive {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .container-responsive {
+        padding-left: 2rem;
+        padding-right: 2rem;
+        max-width: 1280px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+/* Responsive Grid System */
+.grid-responsive {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+    .grid-responsive {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid-responsive {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1280px) {
+    .grid-responsive {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Card Grid for Dashboard */
+.dashboard-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Sidebar Responsive Behavior */
+.sidebar-responsive {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 40;
+    transition: left 0.3s ease;
+}
+
+.sidebar-responsive.is-open {
+    left: 0;
+}
+
+@media (min-width: 1024px) {
+    .sidebar-responsive {
+        position: relative;
+        left: 0;
+        width: 256px;
+    }
+}
+
+/* Mobile Menu Toggle */
+.mobile-menu-button {
+    display: block;
+}
+
+@media (min-width: 1024px) {
+    .mobile-menu-button {
+        display: none;
+    }
+}
+
+/* Table Responsive Wrapper */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+    min-width: 600px;
+}
+
+/* Stack on Mobile */
+.stack-on-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .stack-on-mobile {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+/* Hide on Mobile / Show on Desktop */
+.hide-mobile {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .hide-mobile {
+        display: block;
+    }
+}
+
+.hide-desktop {
+    display: block;
+}
+
+@media (min-width: 768px) {
+    .hide-desktop {
+        display: none;
+    }
+}
+
+/* Touch-Friendly Targets */
+.touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Safe Area Padding for Notch Devices */
+.safe-area-padding {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Responsive Typography */
+.text-responsive-sm {
+    font-size: 0.875rem;
+}
+
+.text-responsive-base {
+    font-size: 0.875rem;
+}
+
+.text-responsive-lg {
+    font-size: 1rem;
+}
+
+.text-responsive-xl {
+    font-size: 1.125rem;
+}
+
+@media (min-width: 768px) {
+    .text-responsive-sm {
+        font-size: 0.875rem;
+    }
+
+    .text-responsive-base {
+        font-size: 1rem;
+    }
+
+    .text-responsive-lg {
+        font-size: 1.125rem;
+    }
+
+    .text-responsive-xl {
+        font-size: 1.25rem;
+    }
+}
+
+/* Responsive Spacing */
+.section-padding {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .section-padding {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .section-padding {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+}
+
+/* Fixed Bottom Bar (Mobile) */
+.fixed-bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    z-index: 30;
+}
+
+@media (min-width: 768px) {
+    .fixed-bottom-bar {
+        position: static;
+        border-top: none;
+        padding: 0;
+    }
+}
+
+/* Chart Responsiveness */
+.chart-container {
+    width: 100%;
+    height: 250px;
+}
+
+@media (min-width: 640px) {
+    .chart-container {
+        height: 300px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .chart-container {
+        height: 400px;
+    }
+}
+
+/* Modal Responsiveness */
+.modal-responsive {
+    width: calc(100% - 2rem);
+    max-width: 32rem;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+}
+
+@media (min-width: 640px) {
+    .modal-responsive {
+        width: auto;
+        min-width: 24rem;
+    }
+}

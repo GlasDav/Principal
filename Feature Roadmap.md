@@ -15,9 +15,9 @@
 
 ---
 
-## Phase 2: 🟠 Core Experience Improvements
+## Phase 2: 🟠 Core Experience Improvements ✅
 
-**Enhance the existing feature set for smoother user experience.**
+**Nearly complete! Only MFA remaining.**
 
 ### Security & Sessions
 - [ ] **Multi-Factor Authentication** - TOTP/SMS second factor
@@ -27,8 +27,8 @@
 ### UX Polish
 - [x] **Loading States & Skeleton Screens** - Consistent loading UX (Skeleton.jsx)
 - [x] **Offline Handling** - Network status, graceful degradation (NetworkStatus.jsx)
-- [ ] **Mobile Responsiveness Audit** - All pages tested
-- [ ] **Onboarding Flow** - Setup wizard for new users
+- [x] **Mobile Responsiveness Audit** - All pages tested (responsive.css, MOBILE_RESPONSIVENESS.md)
+- [x] **Onboarding Flow** - Setup wizard for new users (OnboardingWizard.jsx)
 - [x] **Feedback/Bug Report Mechanism** - In-app reporting (FeedbackModal.jsx)
 
 ### Budget Enhancements
