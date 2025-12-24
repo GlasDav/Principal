@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Switch, Menu } from '@headlessui/react';
-import { Trash2, Plus, Download, Moon, Sun, DollarSign, Euro, PoundSterling, Save, Upload, Wallet, ShoppingCart, Tag as TagIcon, Home, Utensils, Zap, Car, Film, Heart, ShoppingBag, Briefcase, Coffee, Gift, Music, Smartphone, Plane, Play, TrendingUp, PiggyBank, Landmark, ChevronRight, ChevronDown, CornerDownRight, Users, Link } from 'lucide-react';
+import { Trash2, Plus, Download, Moon, Sun, DollarSign, Euro, PoundSterling, Save, Upload, Wallet, ShoppingCart, Tag as TagIcon, Home, Utensils, Zap, Car, Film, Heart, ShoppingBag, Briefcase, Coffee, Gift, Music, Smartphone, Plane, Play, TrendingUp, PiggyBank, Landmark, ChevronRight, ChevronDown, CornerDownRight, Users, Link, Bell } from 'lucide-react';
 import * as api from '../services/api';
 import { ICON_MAP, DEFAULT_ICON } from '../utils/icons';
 import { useTheme } from '../context/ThemeContext';
@@ -147,6 +147,10 @@ export default function Settings() {
     const { data: userSettings, isLoading: settingsLoading } = useQuery({ queryKey: ['settings'], queryFn: api.getSettings });
     const { data: accounts = [], isLoading: accountsLoading } = useQuery({ queryKey: ['accounts'], queryFn: api.getAccounts });
     const { data: members = [], isLoading: membersLoading } = useQuery({ queryKey: ['members'], queryFn: api.getMembers });
+    const { data: notificationSettings } = useQuery({
+        queryKey: ['notificationSettings'],
+        queryFn: api.getNotificationSettings
+    });
 
     // Mutations for Settings
     const updateSettingsMutation = useMutation({
@@ -197,6 +201,14 @@ export default function Settings() {
         mutationFn: api.deleteMember,
         onSuccess: () => {
             queryClient.invalidateQueries(['members']);
+        },
+    });
+
+    // Notification Settings Mutation
+    const updateNotificationSettingsMutation = useMutation({
+        mutationFn: api.updateNotificationSettings,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['notificationSettings']);
         },
     });
 
@@ -331,6 +343,94 @@ export default function Settings() {
                                 No members found. Add a member to start tracking individual limits.
                             </div>
                         )}
+                    </div>
+                </div>
+            </section>
+
+            {/* Notification Settings */}
+            <section className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
+                        <Bell size={20} />
+                    </div>
+                    <div>
+                        <h2 className="font-semibold text-slate-800 dark:text-slate-100">Notifications</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Configure which alerts you receive</p>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    {/* Budget Alerts */}
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                        <div>
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Budget Exceeded Alerts</span>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Notify when spending exceeds 80%, 100%, 120% of budget</p>
+                        </div>
+                        <Switch
+                            checked={notificationSettings?.budget_alerts ?? true}
+                            onChange={(checked) => updateNotificationSettingsMutation.mutate({
+                                ...notificationSettings,
+                                budget_alerts: checked
+                            })}
+                            className={`${notificationSettings?.budget_alerts ? 'bg-indigo-600' : 'bg-slate-200'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
+                        >
+                            <span className={`${notificationSettings?.budget_alerts ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+                        </Switch>
+                    </div>
+
+                    {/* Bill Reminders */}
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                        <div>
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Bill Reminders</span>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Remind me about upcoming bills</p>
+                        </div>
+                        <Switch
+                            checked={notificationSettings?.bill_reminders ?? true}
+                            onChange={(checked) => updateNotificationSettingsMutation.mutate({
+                                ...notificationSettings,
+                                bill_reminders: checked
+                            })}
+                            className={`${notificationSettings?.bill_reminders ? 'bg-indigo-600' : 'bg-slate-200'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
+                        >
+                            <span className={`${notificationSettings?.bill_reminders ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+                        </Switch>
+                    </div>
+
+                    {/* Days before bill reminder */}
+                    {notificationSettings?.bill_reminders && (
+                        <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg ml-4">
+                            <span className="text-sm text-slate-600 dark:text-slate-300">Remind me this many days before</span>
+                            <select
+                                value={notificationSettings?.bill_reminder_days ?? 3}
+                                onChange={(e) => updateNotificationSettingsMutation.mutate({
+                                    ...notificationSettings,
+                                    bill_reminder_days: parseInt(e.target.value)
+                                })}
+                                className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm"
+                            >
+                                {[1, 2, 3, 5, 7].map(d => (
+                                    <option key={d} value={d}>{d} day{d > 1 ? 's' : ''}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Goal Milestones */}
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                        <div>
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Goal Milestone Celebrations</span>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Celebrate when you reach 25%, 50%, 75%, 100% of goals</p>
+                        </div>
+                        <Switch
+                            checked={notificationSettings?.goal_milestones ?? true}
+                            onChange={(checked) => updateNotificationSettingsMutation.mutate({
+                                ...notificationSettings,
+                                goal_milestones: checked
+                            })}
+                            className={`${notificationSettings?.goal_milestones ? 'bg-indigo-600' : 'bg-slate-200'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
+                        >
+                            <span className={`${notificationSettings?.goal_milestones ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+                        </Switch>
                     </div>
                 </div>
             </section>

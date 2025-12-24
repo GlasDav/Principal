@@ -22,12 +22,34 @@ class NotificationService:
         return notification
     
     @staticmethod
+    def get_settings(db: Session, user_id: int):
+        """Get notification settings for a user, with defaults if not set."""
+        settings = db.query(models.NotificationSettings).filter(
+            models.NotificationSettings.user_id == user_id
+        ).first()
+        
+        if not settings:
+            # Return default settings object (not persisted)
+            return type('DefaultSettings', (), {
+                'budget_alerts': True,
+                'bill_reminders': True,
+                'goal_milestones': True,
+                'bill_reminder_days': 3
+            })()
+        return settings
+    
+    @staticmethod
     def check_budget_exceeded(db: Session, user_id: int, bucket_id: int):
         """
         Check if spending in a bucket has exceeded budget thresholds.
         Creates notifications at 80%, 100%, and 120% thresholds.
         Uses deduplication to avoid repeat alerts in the same month.
         """
+        # Check settings
+        settings = NotificationService.get_settings(db, user_id)
+        if not settings.budget_alerts:
+            return None
+        
         # Get the bucket
         bucket = db.query(models.BudgetBucket).filter(
             models.BudgetBucket.id == bucket_id,
@@ -130,10 +152,18 @@ class NotificationService:
         """
         Create notifications for bills due within X days if not already notified.
         """
+        # Check settings
+        settings = NotificationService.get_settings(db, user_id)
+        if not settings.bill_reminders:
+            return []
+        
+        # Use user's preferred reminder days if lower than requested
+        effective_days = min(days_ahead, settings.bill_reminder_days)
+        
         from datetime import timedelta
         
         today = datetime.utcnow().date()
-        end_date = today + timedelta(days=days_ahead)
+        end_date = today + timedelta(days=effective_days)
         
         upcoming = db.query(models.Subscription).filter(
             models.Subscription.user_id == user_id,
@@ -221,6 +251,11 @@ class NotificationService:
         Check if a goal has reached a milestone (25%, 50%, 75%, 100%).
         Creates celebratory notifications at each milestone.
         """
+        # Check settings
+        settings = NotificationService.get_settings(db, user_id)
+        if not settings.goal_milestones:
+            return None
+        
         goal = db.query(models.Goal).filter(
             models.Goal.id == goal_id,
             models.Goal.user_id == user_id

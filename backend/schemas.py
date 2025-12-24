@@ -460,3 +460,21 @@ class Notification(NotificationBase):
 
     class Config:
         from_attributes = True
+
+# Notification Settings
+class NotificationSettingsBase(BaseModel):
+    budget_alerts: bool = True
+    bill_reminders: bool = True
+    goal_milestones: bool = True
+    bill_reminder_days: int = 3
+
+class NotificationSettingsUpdate(NotificationSettingsBase):
+    pass
+
+class NotificationSettings(NotificationSettingsBase):
+    id: int
+    user_id: int
+    
+    class Config:
+        from_attributes = True
+

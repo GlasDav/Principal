@@ -287,3 +287,20 @@ class Notification(Base):
     meta_data = Column(String, nullable=True)  # JSON string for extra data (e.g., related IDs)
 
     user = relationship("User", backref="notifications")
+
+class NotificationSettings(Base):
+    __tablename__ = "notification_settings"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    
+    # Toggle settings
+    budget_alerts = Column(Boolean, default=True)
+    bill_reminders = Column(Boolean, default=True)
+    goal_milestones = Column(Boolean, default=True)
+    
+    # Threshold settings
+    bill_reminder_days = Column(Integer, default=3)  # Days before bill due date to notify
+    
+    user = relationship("User", backref="notification_settings")
+

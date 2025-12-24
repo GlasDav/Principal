@@ -245,4 +245,15 @@ export const getUpcomingBills = async (days = 7) => {
     return res.data;
 };
 
+// Notification Settings
+export const getNotificationSettings = async () => {
+    const res = await api.get('/settings/notifications');
+    return res.data;
+};
+
+export const updateNotificationSettings = async (settings) => {
+    const res = await api.put('/settings/notifications', settings);
+    return res.data;
+};
+
 export default api;

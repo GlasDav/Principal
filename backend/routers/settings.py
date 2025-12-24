@@ -413,3 +413,55 @@ def delete_bucket(bucket_id: int, db: Session = Depends(get_db), current_user: m
     db.delete(db_bucket)
     db.commit()
     return {"ok": True}
+
+# --- Notification Settings ---
+
+@router.get("/notifications", response_model=schemas.NotificationSettings)
+def get_notification_settings(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """Get notification preferences for current user."""
+    settings = db.query(models.NotificationSettings).filter(
+        models.NotificationSettings.user_id == current_user.id
+    ).first()
+    
+    # Create default settings if not exist
+    if not settings:
+        settings = models.NotificationSettings(
+            user_id=current_user.id,
+            budget_alerts=True,
+            bill_reminders=True,
+            goal_milestones=True,
+            bill_reminder_days=3
+        )
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+    
+    return settings
+
+@router.put("/notifications", response_model=schemas.NotificationSettings)
+def update_notification_settings(
+    settings_update: schemas.NotificationSettingsUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """Update notification preferences."""
+    settings = db.query(models.NotificationSettings).filter(
+        models.NotificationSettings.user_id == current_user.id
+    ).first()
+    
+    if not settings:
+        # Create with provided values
+        settings = models.NotificationSettings(
+            user_id=current_user.id,
+            **settings_update.dict()
+        )
+        db.add(settings)
+    else:
+        # Update existing
+        for field, value in settings_update.dict().items():
+            setattr(settings, field, value)
+    
+    db.commit()
+    db.refresh(settings)
+    return settings
+
