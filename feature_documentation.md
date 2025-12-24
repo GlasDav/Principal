@@ -7,7 +7,9 @@ The dashboard serves as the central hub for financial oversight.
 
 -   **Cash Flow Sankey Diagram**: A dynamic visual representation of money flow.
     -   **3-Layer Hierarchy**: Income → Savings & Investments / Groups → Buckets.
-    -   **Combined Wealth View** *(New)*: "Investments" and "Net Savings" are grouped under "Savings & Investments" to show total collection of unspent wealth.
+    -   **Income Breakdown** *(New)*: Shows each income stream (Salaries, Interest, etc.) flowing into total Income.
+    -   **Refund Netting** *(New)*: Refunds automatically offset expense bucket amounts instead of showing as income.
+    -   **Combined Wealth View**: "Investments" and "Net Savings" are grouped under "Savings & Investments".
     -   **Empty State Handling**: Gracefully handles periods with no data.
     -   **Transfer Exclusion**: Transfers between accounts are automatically excluded from spending analytics.
 -   **Dynamic Insights** *(New)*:
