@@ -35,6 +35,7 @@ class BudgetBucket(Base):
     is_rollover = Column(Boolean, default=False) # New: Sinking Funds
     is_transfer = Column(Boolean, default=False)  # Transfer buckets excluded from spending analytics
     is_investment = Column(Boolean, default=False)  # Investment buckets excluded from expenses but shown in Sankey
+    is_hidden = Column(Boolean, default=False)  # Hide category from budget view
     group = Column(String, default="Discretionary") # 'Discretionary' (Wants) or 'Non-Discretionary' (Needs)
     
     # Hierarchy Fields

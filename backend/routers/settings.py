@@ -210,6 +210,7 @@ def get_buckets_tree(db: Session = Depends(get_db), current_user: models.User = 
             "is_rollover": getattr(bucket, 'is_rollover', False),
             "is_transfer": getattr(bucket, 'is_transfer', False),
             "is_investment": getattr(bucket, 'is_investment', False),
+            "is_hidden": getattr(bucket, 'is_hidden', False),
             "group": bucket.group,
             "parent_id": getattr(bucket, 'parent_id', None),
             "display_order": getattr(bucket, 'display_order', 0),
@@ -243,6 +244,39 @@ def get_buckets_tree(db: Session = Depends(get_db), current_user: models.User = 
     
     sort_tree(tree)
     return tree
+
+
+@router.post("/buckets/reorder")
+def reorder_buckets(
+    order_data: List[dict],  # [{id: int, display_order: int}, ...]
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Update display_order for multiple buckets.
+    Expects a list of {id, display_order} objects.
+    """
+    if not current_user:
+        return {"ok": False, "error": "Not authenticated"}
+    
+    for item in order_data:
+        bucket_id = item.get("id")
+        new_order = item.get("display_order")
+        
+        if bucket_id is None or new_order is None:
+            continue
+            
+        bucket = db.query(models.BudgetBucket).filter(
+            models.BudgetBucket.id == bucket_id,
+            models.BudgetBucket.user_id == current_user.id
+        ).first()
+        
+        if bucket:
+            bucket.display_order = new_order
+    
+    db.commit()
+    return {"ok": True}
+
 
 @router.get("/tags", response_model=List[schemas.Tag])
 def get_tags(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):

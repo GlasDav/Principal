@@ -28,6 +28,8 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
     const [keyword, setKeyword] = useState(transaction?.description || '');
     const [bucketId, setBucketId] = useState(transaction?.bucket_id || '');
     const [priority, setPriority] = useState(0);
+    const [minAmount, setMinAmount] = useState('');
+    const [maxAmount, setMaxAmount] = useState('');
     const [error, setError] = useState('');
     const [showPreview, setShowPreview] = useState(false);
 
@@ -44,8 +46,12 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
 
     // Preview query - only runs when showPreview is true
     const previewQuery = useQuery({
-        queryKey: ['rulePreview', keyword],
-        queryFn: () => previewRule({ keywords: keyword.trim().toLowerCase() }),
+        queryKey: ['rulePreview', keyword, minAmount, maxAmount],
+        queryFn: () => previewRule({
+            keywords: keyword.trim().toLowerCase(),
+            min_amount: minAmount ? parseFloat(minAmount) : null,
+            max_amount: maxAmount ? parseFloat(maxAmount) : null
+        }),
         enabled: showPreview && keyword.trim().length > 0,
         staleTime: 30000,
     });
@@ -71,7 +77,9 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
         createRuleMutation.mutate({
             keywords: keyword.trim().toLowerCase(),
             bucket_id: parseInt(bucketId),
-            priority: parseInt(priority) || 0
+            priority: parseInt(priority) || 0,
+            min_amount: minAmount ? parseFloat(minAmount) : null,
+            max_amount: maxAmount ? parseFloat(maxAmount) : null
         });
     };
 
@@ -190,6 +198,35 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
                                 <option key={b.id} value={b.id}>{b.name}</option>
                             ))}
                         </select>
+                    </div>
+
+                    {/* Amount Range (optional) */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Amount range (optional)
+                        </label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="number"
+                                value={minAmount}
+                                onChange={(e) => { setMinAmount(e.target.value); setShowPreview(false); }}
+                                placeholder="Min"
+                                step="0.01"
+                                className="w-28 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            />
+                            <span className="text-slate-400">—</span>
+                            <input
+                                type="number"
+                                value={maxAmount}
+                                onChange={(e) => { setMaxAmount(e.target.value); setShowPreview(false); }}
+                                placeholder="Max"
+                                step="0.01"
+                                className="w-28 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            />
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Only apply to transactions within this amount range
+                        </p>
                     </div>
 
                     <div>

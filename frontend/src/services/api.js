@@ -150,6 +150,11 @@ export const deleteBucket = async (id) => {
     return response.data;
 };
 
+export const reorderBuckets = async (orderData) => {
+    const response = await api.post('/settings/buckets/reorder', orderData);
+    return response.data;
+};
+
 // Rules
 export const getRules = async () => {
     const response = await api.get('/settings/rules/');

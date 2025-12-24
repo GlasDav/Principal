@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Menu } from '@headlessui/react';
-import { Trash2, Plus, DollarSign, Wallet, ShoppingBag, Home, Tag as TagIcon, Save, Play, ChevronDown, ChevronRight, CornerDownRight } from 'lucide-react';
+import { Trash2, Plus, DollarSign, Wallet, ShoppingBag, Home, Tag as TagIcon, Save, Play, ChevronDown, ChevronRight, CornerDownRight, EyeOff, Eye, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
 import * as api from '../services/api';
 import { ICON_MAP } from '../utils/icons';
 import { useTheme } from '../context/ThemeContext';
@@ -25,7 +25,7 @@ const cleanKeywords = (str) => {
 };
 
 // === BUCKET TABLE ROW ===
-const BucketTableRow = ({ bucket, userSettings, members = [], updateBucketMutation, deleteBucketMutation, createBucketMutation, allTags = [], depth = 0, isExpanded = false, onToggleExpand = () => { }, hasChildren = false }) => {
+const BucketTableRow = ({ bucket, userSettings, members = [], updateBucketMutation, deleteBucketMutation, createBucketMutation, allTags = [], depth = 0, isExpanded = false, onToggleExpand = () => { }, hasChildren = false, onMoveBucket = null, isFirst = false, isLast = false }) => {
     const Icon = ICON_MAP[bucket.icon_name] || Wallet;
     const [localName, setLocalName] = useState(bucket.name || '');
 
@@ -138,9 +138,10 @@ const BucketTableRow = ({ bucket, userSettings, members = [], updateBucketMutati
     const suggestions = allTags.filter(t => !currentTagNames.includes(t.toLowerCase()));
 
     const isParent = depth === 0;
+    const isHidden = bucket.is_hidden;
     const rowBgClass = isParent
-        ? 'bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold'
-        : `hover:bg-slate-50 dark:hover:bg-slate-800/50 ${bucket.is_transfer ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''} ${bucket.is_investment ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`;
+        ? `bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold ${isHidden ? 'opacity-50' : ''}`
+        : `hover:bg-slate-50 dark:hover:bg-slate-800/50 ${bucket.is_transfer ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''} ${bucket.is_investment ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''} ${isHidden ? 'opacity-50' : ''}`;
 
     return (
         <tr className={`border-b border-slate-100 dark:border-slate-700 transition group ${rowBgClass}`}>
@@ -318,18 +319,52 @@ const BucketTableRow = ({ bucket, userSettings, members = [], updateBucketMutati
                 )}
             </td>
             <td className="p-2 w-10">
-                {!bucket.is_transfer && !bucket.is_investment && (
+                <div className="flex items-center gap-1">
+                    {/* Move Up/Down Buttons */}
+                    {onMoveBucket && (
+                        <>
+                            <button
+                                onClick={() => onMoveBucket(bucket.id, 'up')}
+                                disabled={isFirst}
+                                className={`${isFirst ? 'text-slate-200 dark:text-slate-600 cursor-not-allowed' : 'text-slate-300 hover:text-indigo-500'} opacity-0 group-hover:opacity-100 transition`}
+                                title="Move up"
+                            >
+                                <ArrowUp size={12} />
+                            </button>
+                            <button
+                                onClick={() => onMoveBucket(bucket.id, 'down')}
+                                disabled={isLast}
+                                className={`${isLast ? 'text-slate-200 dark:text-slate-600 cursor-not-allowed' : 'text-slate-300 hover:text-indigo-500'} opacity-0 group-hover:opacity-100 transition`}
+                                title="Move down"
+                            >
+                                <ArrowDown size={12} />
+                            </button>
+                        </>
+                    )}
+                    {/* Hide/Show Toggle */}
                     <button
                         onClick={() => {
-                            if (confirm(`Delete "${bucket.name}"?`)) {
-                                deleteBucketMutation.mutate(bucket.id);
-                            }
+                            updateBucketMutation.mutate({ id: bucket.id, data: { is_hidden: !bucket.is_hidden } });
                         }}
-                        className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                        className={`${bucket.is_hidden ? 'text-amber-500' : 'text-slate-300 hover:text-amber-500'} opacity-0 group-hover:opacity-100 transition`}
+                        title={bucket.is_hidden ? 'Show in budget' : 'Hide from budget'}
                     >
-                        <Trash2 size={14} />
+                        {bucket.is_hidden ? <Eye size={14} /> : <EyeOff size={14} />}
                     </button>
-                )}
+                    {/* Delete Button */}
+                    {!bucket.is_transfer && !bucket.is_investment && (
+                        <button
+                            onClick={() => {
+                                if (confirm(`Delete "${bucket.name}"?`)) {
+                                    deleteBucketMutation.mutate(bucket.id);
+                                }
+                            }}
+                            className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    )}
+                </div>
             </td>
         </tr>
     );
@@ -665,6 +700,47 @@ export default function Budget() {
         },
     });
 
+    const reorderBucketsMutation = useMutation({
+        mutationFn: api.reorderBuckets,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['buckets']);
+        },
+    });
+
+    // Move a bucket up or down within its sibling group
+    const moveBucket = (bucketId, direction) => {
+        // Find the bucket and its siblings
+        const findBucketAndSiblings = (nodes, parentId = null) => {
+            for (let i = 0; i < nodes.length; i++) {
+                if (nodes[i].id === bucketId) {
+                    return { siblings: nodes, index: i, parentId };
+                }
+                if (nodes[i].children && nodes[i].children.length > 0) {
+                    const result = findBucketAndSiblings(nodes[i].children, nodes[i].id);
+                    if (result) return result;
+                }
+            }
+            return null;
+        };
+
+        const result = findBucketAndSiblings(buckets);
+        if (!result) return;
+
+        const { siblings, index } = result;
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+
+        if (newIndex < 0 || newIndex >= siblings.length) return;
+
+        // Swap the display_order values
+        const orderUpdates = siblings.map((sib, i) => {
+            if (i === index) return { id: sib.id, display_order: newIndex };
+            if (i === newIndex) return { id: sib.id, display_order: index };
+            return { id: sib.id, display_order: i };
+        });
+
+        reorderBucketsMutation.mutate(orderUpdates);
+    };
+
     const toggleExpand = (bucketId) => {
         setExpandedGroups(prev => ({ ...prev, [bucketId]: !prev[bucketId] }));
     };
@@ -672,7 +748,7 @@ export default function Budget() {
     if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>;
 
     const renderRows = (nodes, depth = 0) => {
-        return nodes.map(bucket => (
+        return nodes.map((bucket, index) => (
             <React.Fragment key={bucket.id}>
                 <BucketTableRow
                     bucket={bucket}
@@ -686,6 +762,9 @@ export default function Budget() {
                     isExpanded={expandedGroups[bucket.id]}
                     onToggleExpand={() => toggleExpand(bucket.id)}
                     hasChildren={bucket.children && bucket.children.length > 0}
+                    onMoveBucket={moveBucket}
+                    isFirst={index === 0}
+                    isLast={index === nodes.length - 1}
                 />
                 {expandedGroups[bucket.id] && bucket.children && renderRows(bucket.children, depth + 1)}
             </React.Fragment>
