@@ -764,10 +764,48 @@ def get_sankey_data(
             nodes.append({"name": name})
         return node_indices[name]
     
-    # Root Nodes
+    # Root Node: Total Income (center of diagram)
     idx_income = get_node("Income")
-    # idx_budget removed
     
+    # --- INCOME BREAKDOWN BY BUCKET ---
+    # Query income by bucket to show each income stream
+    income_by_bucket_query = db.query(
+        models.Transaction.bucket_id,
+        func.sum(models.Transaction.amount)
+    ).filter(
+        models.Transaction.user_id == user.id,
+        models.Transaction.date >= s_date,
+        models.Transaction.date <= e_date,
+        models.Transaction.amount > 0,  # Only income
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+    )
+    
+    if spender != "Combined":
+        income_by_bucket_query = income_by_bucket_query.filter(models.Transaction.spender == spender)
+        
+    income_results = income_by_bucket_query.group_by(models.Transaction.bucket_id).all()
+    
+    # Create income bucket nodes flowing INTO "Income"
+    for bid, amount in income_results:
+        if bid is None or amount is None or amount <= 0:
+            continue
+        if bid not in bucket_map:
+            continue
+        bucket = bucket_map[bid]
+        # Only include buckets from Income group
+        if bucket.group != "Income":
+            continue
+            
+        idx_income_bucket = get_node(bucket.name)
+        links.append({"source": idx_income_bucket, "target": idx_income, "value": amount})
+    
+    # Handle uncategorized income
+    uncategorized_income = sum(amt for bid, amt in income_results if bid is None and amt and amt > 0)
+    if uncategorized_income > 0:
+        idx_other_income = get_node("Other Income")
+        links.append({"source": idx_other_income, "target": idx_income, "value": uncategorized_income})
+    
+    # --- EXPENSE GROUPS (Income -> Groups) ---
     # Groups (User requested "Discretionary" vs "Non-Discretionary")
     idx_non_disc = get_node("Non-Discretionary") # Formerly Needs
     idx_disc = get_node("Discretionary")         # Formerly Wants
