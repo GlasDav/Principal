@@ -223,11 +223,14 @@ def process_transactions_preview(extracted_data, user, db, spender, skip_duplica
         is_verified = False
         
         # A. Smart Rules (Highest Priority)
-        rule_bucket_id = categorizer.apply_rules(clean_desc, smart_rules)
-        if rule_bucket_id:
-            bucket_id = rule_bucket_id
+        matched_rule = categorizer.apply_rules(clean_desc, smart_rules)
+        tags = None
+        if matched_rule:
+            bucket_id = matched_rule.bucket_id
             confidence = 1.0
-            is_verified = True  # Explicit rule match = Verified
+            # Explicit rule match = Verified, UNLESS marked for review
+            is_verified = not matched_rule.mark_for_review
+            tags = matched_rule.apply_tags
         else:
             # B. Best Guess (Global Keywords)
             guessed_bucket_id, guess_conf = categorizer.guess_category(clean_desc, bucket_map)
@@ -242,6 +245,7 @@ def process_transactions_preview(extracted_data, user, db, spender, skip_duplica
             'is_verified': is_verified,
             'clean_desc': clean_desc,
             'txn_hash': txn_hash,
+            'tags': tags,
             'raw_data': data
         })
         
@@ -295,8 +299,10 @@ def process_transactions_preview(extracted_data, user, db, spender, skip_duplica
             'bucket_id': result['bucket_id'],
             'bucket': {'id': bucket.id, 'name': bucket.name, 'icon_name': bucket.icon_name} if bucket else None,
             'category_confidence': result['confidence'],
+            'category_confidence': result['confidence'],
             'is_verified': result['is_verified'],
             'spender': spender,
+            'tags': result.get('tags'),
             'transaction_hash': result['txn_hash']
         }
         preview_transactions.append(preview_txn)
@@ -379,11 +385,13 @@ def process_transactions_preview_with_progress(
         is_verified = False
         
         # Smart Rules first
-        rule_bucket_id = categorizer.apply_rules(clean_desc, smart_rules)
-        if rule_bucket_id:
-            bucket_id = rule_bucket_id
+        matched_rule = categorizer.apply_rules(clean_desc, smart_rules)
+        tags = None
+        if matched_rule:
+            bucket_id = matched_rule.bucket_id
             confidence = 1.0
-            is_verified = True
+            is_verified = not matched_rule.mark_for_review
+            tags = matched_rule.apply_tags
         else:
             # Global Keywords
             guessed_bucket_id, guess_conf = categorizer.guess_category(clean_desc, bucket_map)
@@ -397,6 +405,7 @@ def process_transactions_preview_with_progress(
             'is_verified': is_verified,
             'clean_desc': clean_desc,
             'txn_hash': txn_hash,
+            'tags': tags,
             'raw_data': data
         })
         
@@ -451,19 +460,40 @@ def process_transactions_preview_with_progress(
     for i, result in enumerate(categorization_results):
         data = result['raw_data']
         bucket = bucket_by_id.get(result['bucket_id']) if result['bucket_id'] else None
-        
+        bucket_dict = None
+        if bucket:
+            bucket_dict = {
+                'id': bucket.id,
+                'name': bucket.name,
+                'group_id': bucket.group_id,
+                'period': bucket.period,
+                'is_income': bucket.is_income,
+                'is_standard': bucket.is_standard,
+                'description': bucket.description,
+                'target_amount': bucket.target_amount,
+                'display_order': getattr(bucket, 'display_order', 0),
+                'is_shared': getattr(bucket, 'is_shared', False),
+                'is_hidden': getattr(bucket, 'is_hidden', False)
+            }
+
         preview_txn = {
             'id': -(i + 1),
+            'user_id': user.id,
             'date': data["date"].isoformat() if hasattr(data["date"], 'isoformat') else str(data["date"]),
             'description': result['clean_desc'],
             'raw_description': data["description"],
             'amount': data["amount"],
             'bucket_id': result['bucket_id'],
-            'bucket': {'id': bucket.id, 'name': bucket.name, 'icon_name': bucket.icon_name} if bucket else None,
+            'bucket': bucket_dict,
             'category_confidence': result['confidence'],
             'is_verified': result['is_verified'],
             'spender': spender,
-            'transaction_hash': result['txn_hash']
+            'tags': result.get('tags'),
+            'transaction_hash': result['txn_hash'],
+            'goal_id': None,
+            'external_id': None,
+            'account_id': None,
+            'assigned_to': None
         }
         preview_transactions.append(preview_txn)
     
@@ -728,9 +758,8 @@ def confirm_transactions(updates: List[schemas.TransactionConfirm], db: Session 
                 bucket_id=update.bucket_id,
                 is_verified=True,  # User confirmed = verified
                 spender=update.spender or "Joint",
-                transaction_hash=update.transaction_hash,
-                category_confidence=update.category_confidence or 0.0,
                 goal_id=update.goal_id,
+                tags=update.tags,
                 assigned_to=update.assigned_to
             )
             db.add(db_txn)
@@ -769,6 +798,8 @@ def confirm_transactions(updates: List[schemas.TransactionConfirm], db: Session 
                     txn.spender = update.spender
                 if update.assigned_to is not None:
                     txn.assigned_to = update.assigned_to if update.assigned_to else None
+                if update.tags is not None:
+                    txn.tags = update.tags
                 txn.is_verified = True
                 confirmed_ids.append(txn.id)
                 

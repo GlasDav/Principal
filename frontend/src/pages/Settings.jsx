@@ -110,15 +110,18 @@ const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation }) => {
                             onChange={(e) => updateMemberMutation.mutate({ id: member.id, data: { ...member, name: e.target.value } })}
                         />
                     </div>
-                    <div className="flex gap-2 items-center">
-                        <input
-                            type="color"
-                            className="w-6 h-6 p-0 border-0 rounded cursor-pointer"
-                            value={member.color || '#6366f1'}
-                            onChange={(e) => updateMemberMutation.mutate({ id: member.id, data: { ...member, color: e.target.value } })}
+                </div>
+
+                <div className="flex gap-1.5 flex-wrap max-w-[140px] justify-end">
+                    {['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef'].map(color => (
+                        <button
+                            key={color}
+                            onClick={() => updateMemberMutation.mutate({ id: member.id, data: { ...member, color } })}
+                            className={`w-5 h-5 rounded-full border border-slate-200 dark:border-slate-600 transition hover:scale-110 ${member.color === color ? 'ring-2 ring-offset-1 ring-slate-400 dark:ring-slate-500' : ''}`}
+                            style={{ backgroundColor: color }}
+                            title={color}
                         />
-                        <span className="text-xs text-slate-400">Color</span>
-                    </div>
+                    ))}
                 </div>
 
                 <button
@@ -129,8 +132,8 @@ const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation }) => {
                 >
                     <Trash2 size={16} />
                 </button>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 
@@ -289,16 +292,10 @@ export default function Settings() {
                     {/* Currency */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Currency Symbol</label>
-                            <select
-                                className="w-full p-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm outline-none focus:border-indigo-500"
-                                value={userSettings?.currency_symbol || 'USD'}
-                                onChange={(e) => updateSettingsMutation.mutate({ ...userSettings, currency_symbol: e.target.value })}
-                            >
-                                {Object.keys(CURRENCY_MAP).map(code => (
-                                    <option key={code} value={code}>{code} ({CURRENCY_MAP[code]})</option>
-                                ))}
-                            </select>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Currency</label>
+                            <div className="w-full p-2 bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-500 dark:text-slate-400">
+                                AUD ($)
+                            </div>
                         </div>
                     </div>
 

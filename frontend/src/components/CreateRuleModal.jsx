@@ -30,6 +30,8 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
     const [priority, setPriority] = useState(0);
     const [minAmount, setMinAmount] = useState('');
     const [maxAmount, setMaxAmount] = useState('');
+    const [applyTags, setApplyTags] = useState('');
+    const [markForReview, setMarkForReview] = useState(false);
     const [error, setError] = useState('');
     const [showPreview, setShowPreview] = useState(false);
 
@@ -39,32 +41,35 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
             setKeyword(transaction.description || '');
             setBucketId(transaction.bucket_id || '');
             setPriority(0);
+            setMinAmount('');
+            setMaxAmount('');
+            setApplyTags('');
+            setMarkForReview(false);
             setError('');
             setShowPreview(false);
         }
     }, [transaction]);
 
-    // Preview query - only runs when showPreview is true
     const previewQuery = useQuery({
         queryKey: ['rulePreview', keyword, minAmount, maxAmount],
         queryFn: () => previewRule({
-            keywords: keyword.trim().toLowerCase(),
+            keywords: keyword,
             min_amount: minAmount ? parseFloat(minAmount) : null,
             max_amount: maxAmount ? parseFloat(maxAmount) : null
         }),
-        enabled: showPreview && keyword.trim().length > 0,
-        staleTime: 30000,
+        enabled: false,
+        retry: false
     });
 
     const createRuleMutation = useMutation({
         mutationFn: createRule,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['rules'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
             onClose();
         },
         onError: (err) => {
-            const detail = err.response?.data?.detail;
-            setError(typeof detail === 'string' ? detail : 'Failed to create rule');
+            setError(err.message || 'Failed to create rule');
         }
     });
 
@@ -79,15 +84,18 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
             bucket_id: parseInt(bucketId),
             priority: parseInt(priority) || 0,
             min_amount: minAmount ? parseFloat(minAmount) : null,
-            max_amount: maxAmount ? parseFloat(maxAmount) : null
+            max_amount: maxAmount ? parseFloat(maxAmount) : null,
+            apply_tags: applyTags.trim() || null,
+            mark_for_review: markForReview
         });
     };
 
     const handlePreview = () => {
-        if (keyword.trim()) {
-            setShowPreview(true);
-        }
+        setShowPreview(true);
+        previewQuery.refetch();
     };
+
+    // ...
 
     if (!isOpen) return null;
 
@@ -224,10 +232,40 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
                                 className="w-28 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                             />
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Apply Tags (optional)
+                        </label>
+                        <input
+                            type="text"
+                            value={applyTags}
+                            onChange={(e) => setApplyTags(e.target.value)}
+                            placeholder="e.g. Tax-Deductible, Reimbursement"
+                            className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        />
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            Only apply to transactions within this amount range
+                            Comma separated tags to add to matched transactions
                         </p>
                     </div>
+
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="markForReview"
+                            checked={markForReview}
+                            onChange={(e) => setMarkForReview(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 bg-slate-100 border-slate-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
+                        />
+                        <label htmlFor="markForReview" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Mark for Review
+                        </label>
+                    </div>
+
+                    <p className="text-xs text-slate-500 dark:text-slate-400 ml-6 -mt-3">
+                        Transactions will be categorized but not marked as verified
+                    </p>
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -245,7 +283,6 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
                         </p>
                     </div>
 
-                    {/* Footer */}
                     <div className="flex justify-end gap-3 pt-2">
                         <button
                             type="button"
@@ -277,4 +314,3 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
         </div>
     );
 }
-

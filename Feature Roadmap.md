@@ -72,8 +72,8 @@
 
 ### Categories & Organization
 - [x] **Custom Groups & Categories** - User-defined category hierarchy
-- [ ] **Hide Category from Budget** - Exclude categories from budget view
-- [ ] **Category Ordering** - Drag-and-drop reordering
+- [x] **Hide Category from Budget** - Exclude categories from budget view
+- [x] **Category Ordering** - Reorder categories with up/down buttons
 
 ### Advanced Rules
 - [ ] **Complex Rule Conditions** - Merchant contains/not contains, amount ranges

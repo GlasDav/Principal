@@ -96,10 +96,12 @@ class RuleBase(BaseModel):
     priority: int = 0
     min_amount: Optional[float] = None  # Optional: only match if amount >= min_amount
     max_amount: Optional[float] = None  # Optional: only match if amount <= max_amount
+    apply_tags: Optional[str] = None # Optional: comma separated tags
+    mark_for_review: bool = False
     
-    @field_validator('keywords')
+    @field_validator('keywords', 'apply_tags')
     @classmethod
-    def sanitize_keywords(cls, v: str) -> str:
+    def sanitize_keywords(cls, v: Optional[str]) -> Optional[str]:
         return sanitize_text(v, max_length=500) or ""
 
 class RuleCreate(RuleBase):
@@ -122,12 +124,13 @@ class TransactionBase(BaseModel):
     spender: str = "Joint"
     external_id: Optional[str] = None
     account_id: Optional[int] = None
+    tags: Optional[str] = None # New: Comma separated tags
     
-    @field_validator('description', 'spender')
+    @field_validator('description', 'spender', 'tags')
     @classmethod
-    def sanitize_text_fields(cls, v: str) -> str:
+    def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
         return sanitize_text(v, max_length=500) or ""
-    
+
     @field_validator('external_id')
     @classmethod
     def sanitize_external_id(cls, v: Optional[str]) -> Optional[str]:
@@ -153,6 +156,7 @@ class TransactionConfirm(BaseModel):
     spender: Optional[str] = None
     goal_id: Optional[int] = None
     assigned_to: Optional[str] = None  # For partner review: "A", "B", or None
+    tags: Optional[str] = None # New: Tags
     # Fields required for creating new transactions from preview
     date: Optional[str] = None  # ISO date string
     description: Optional[str] = None
@@ -161,7 +165,7 @@ class TransactionConfirm(BaseModel):
     transaction_hash: Optional[str] = None
     category_confidence: Optional[float] = None
     
-    @field_validator('description', 'raw_description', 'spender', 'assigned_to')
+    @field_validator('description', 'raw_description', 'spender', 'assigned_to', 'tags')
     @classmethod
     def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
         return sanitize_text(v, max_length=500) if v else None

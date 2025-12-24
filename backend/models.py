@@ -97,6 +97,7 @@ class Transaction(Base):
     external_id = Column(String, unique=True, nullable=True) # Basiq Transaction ID
     transaction_hash = Column(String, index=True, nullable=True)  # Duplicate detection fingerprint
     assigned_to = Column(String, nullable=True)  # For partner review: "A", "B", or None (reviewed)
+    tags = Column(String, nullable=True)  # Comma separated tags
     
     account = relationship("Account")
 
@@ -172,6 +173,8 @@ class CategorizationRule(Base):
     priority = Column(Integer, default=0) # Higher executes first
     min_amount = Column(Float, nullable=True)  # Optional: only match if amount >= min_amount
     max_amount = Column(Float, nullable=True)  # Optional: only match if amount <= max_amount
+    apply_tags = Column(String, nullable=True) # Optional: comma separated tags to apply
+    mark_for_review = Column(Boolean, default=False) # Optional: if True, set is_verified=False
     
     user = relationship("User")
     bucket = relationship("BudgetBucket")

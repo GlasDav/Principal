@@ -38,7 +38,9 @@ def create_rule(rule: schemas.RuleCreate, db: Session = Depends(get_db), current
         keywords=norm_keywords,
         priority=rule.priority,
         min_amount=rule.min_amount,
-        max_amount=rule.max_amount
+        max_amount=rule.max_amount,
+        apply_tags=rule.apply_tags,
+        mark_for_review=rule.mark_for_review
     )
     db.add(db_rule)
     db.commit()
@@ -96,6 +98,8 @@ def update_rule(rule_id: int, rule: schemas.RuleCreate, db: Session = Depends(ge
     db_rule.priority = rule.priority
     db_rule.min_amount = rule.min_amount
     db_rule.max_amount = rule.max_amount
+    db_rule.apply_tags = rule.apply_tags
+    db_rule.mark_for_review = rule.mark_for_review
     
     db.commit()
     db.refresh(db_rule)
@@ -206,15 +210,22 @@ def run_rules(db: Session = Depends(get_db), current_user: models.User = Depends
         # Let's clean it here too to match ingestion behavior.
         clean_desc = categorizer.clean_description(txn.raw_description or txn.description)
         
-        rule_bucket_id = categorizer.apply_rules(clean_desc, rules, amount=txn.amount)
+        rule = categorizer.apply_rules(clean_desc, rules, amount=txn.amount)
         
-        if rule_bucket_id and rule_bucket_id != txn.bucket_id:
-            txn.bucket_id = rule_bucket_id
-            # We explicitly matched a rule, so we could mark as verified, 
-            # BUT if we mark as verified, future rule runs won't touch it.
-            # Maybe that's desired? "I ran the rules, these are now correct".
-            # Let's mark as verified to be consistent with ingestion.
-            txn.is_verified = True 
+        if rule and rule.bucket_id != txn.bucket_id:
+            txn.bucket_id = rule.bucket_id
+            
+            # Apply Tags if present
+            if rule.apply_tags:
+                txn.tags = rule.apply_tags
+                
+            # Logically, if we match a rule, we usually verify it.
+            # But if "mark_for_review" is True, we explicitly keep it Unverified.
+            if rule.mark_for_review:
+                txn.is_verified = False
+            else:
+                txn.is_verified = True
+            
             txn.category_confidence = 1.0
             updated_txns.append(txn)
             count += 1

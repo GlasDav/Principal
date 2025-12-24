@@ -35,7 +35,7 @@ class Categorizer:
                 
                 try:
                     if k in description_lower:
-                        return rule.bucket_id
+                        return rule
                 except:
                     continue
                     
