@@ -66,6 +66,7 @@
 - [ ] **Member Permissions** - Role-based access (view only, edit, admin)
 
 ### Notifications
+- [x] **Notification Infrastructure** - Bell UI, dropdown, context, API endpoints, database table
 - [ ] **Budget Exceeded Alerts** - Email/in-app when budget limit hit
 - [ ] **Recurring Transaction Reminders** - Upcoming bill notifications
 - [ ] **Goal Milestone Celebrations** - Notify when reaching savings goals
@@ -76,8 +77,8 @@
 - [x] **Category Ordering** - Reorder categories with up/down buttons
 
 ### Advanced Rules
-- [ ] **Complex Rule Conditions** - Merchant contains/not contains, amount ranges
-- [ ] **Rule Actions** - Add tags, hide transaction, add to review, link to goal
+- [x] **Complex Rule Conditions** - Amount ranges (min/max filters)
+- [x] **Rule Actions** - Add tags, mark for review
 - [ ] **Split Transaction Rules** - Auto-split based on patterns
 
 ---
