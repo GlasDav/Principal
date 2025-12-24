@@ -207,6 +207,10 @@ Dedicated reporting section for deeper financial analysis.
     -   Analyzes spending patterns to suggest savings opportunities.
     -   Detects over-budget categories, unused subscriptions, and spending spikes.
     -   Calculates potential yearly savings for each opportunity.
+-   **Interactive Feature Tour** *(New)*:
+    -   Page-specific contextual tips for feature discovery.
+    -   AI-generated personalized recommendations.
+    -   Progress tracking for completed tours.
 -   **Async Background Processing**: Large imports processed in background with real-time progress updates.
 -   **Parallel Batch Processing**: 5 concurrent API calls for faster categorization (~2 min for 500 transactions).
 -   **Compact JSON Optimization**: Prompt engineered for minimal token usage, preventing response truncation.

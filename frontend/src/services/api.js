@@ -268,5 +268,10 @@ export const getSavingsOpportunities = async () => {
     return res.data;
 };
 
-export default api;
+// Cash Flow Forecast
+export const getCashFlowForecast = async (days = 90) => {
+    const res = await api.get('/analytics/forecast', { params: { days } });
+    return res.data;
+};
 
+export default api;
