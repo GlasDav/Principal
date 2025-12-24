@@ -95,6 +95,8 @@ export default function Reports() {
     const cashFlowData = forecastResult?.forecast || [];
     const minBalance = forecastResult?.min_projected_balance;
     const dailyBurn = forecastResult?.daily_burn_rate;
+    const dailyIncome = forecastResult?.daily_income_rate;
+    const netDaily = forecastResult?.net_daily_rate;
 
     // Fetch Transactions for Export (Raw Data)
     const handleExport = async () => {
@@ -355,13 +357,21 @@ export default function Reports() {
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Cash Flow Forecast (90 Days)</h2>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Projected balance based on subscriptions and daily burn rate.</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Projected balance based on average income and spending.</p>
                     </div>
                     {(minBalance !== undefined) && (
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 flex-wrap">
                             <div className="text-right">
-                                <p className="text-xs text-slate-400">Daily Burn</p>
+                                <p className="text-xs text-slate-400">Daily Income</p>
+                                <p className="text-sm font-semibold text-emerald-600">{formatCurrency(dailyIncome)}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs text-slate-400">Daily Spend</p>
                                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(dailyBurn)}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs text-slate-400">Net/Day</p>
+                                <p className={`text-sm font-semibold ${netDaily >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{formatCurrency(netDaily)}</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-xs text-slate-400">Min Projected</p>

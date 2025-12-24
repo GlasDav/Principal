@@ -36,6 +36,7 @@ class BudgetBucket(Base):
     is_transfer = Column(Boolean, default=False)  # Transfer buckets excluded from spending analytics
     is_investment = Column(Boolean, default=False)  # Investment buckets excluded from expenses but shown in Sankey
     is_hidden = Column(Boolean, default=False)  # Hide category from budget view
+    is_one_off = Column(Boolean, default=False)  # One-off items excluded from forecasting (tax, large purchases)
     group = Column(String, default="Discretionary") # 'Discretionary' (Wants) or 'Non-Discretionary' (Needs)
     
     # Hierarchy Fields

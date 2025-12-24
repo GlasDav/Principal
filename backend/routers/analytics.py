@@ -573,21 +573,21 @@ def get_anomalies(
     user = current_user
     today = datetime.now()
     
-    # Get transfer bucket IDs to exclude
-    transfer_bucket_ids = [b.id for b in db.query(models.BudgetBucket).filter(
+    # Get bucket IDs to exclude from anomaly detection (transfers and one-offs)
+    excluded_bucket_ids = [b.id for b in db.query(models.BudgetBucket).filter(
         models.BudgetBucket.user_id == user.id,
-        models.BudgetBucket.is_transfer == True
+        (models.BudgetBucket.is_transfer == True) | (models.BudgetBucket.is_one_off == True)
     ).all()]
     
     # 1. Large Transactions (Dynamic Threshold based on last 90 days)
     ninety_days_ago = today - timedelta(days=90)
     
-    # Fetch all expenses in last 90 days (excluding transfers)
+    # Fetch all expenses in last 90 days (excluding transfers and one-offs)
     recent_txns = db.query(models.Transaction).filter(
         models.Transaction.user_id == user.id,
         models.Transaction.date >= ninety_days_ago,
         models.Transaction.amount < 0,
-        ~models.Transaction.bucket_id.in_(transfer_bucket_ids) if transfer_bucket_ids else True
+        ~models.Transaction.bucket_id.in_(excluded_bucket_ids) if excluded_bucket_ids else True
     ).all()
     
     anomalies = []
@@ -1205,26 +1205,46 @@ def get_cash_flow_forecast(
         current_balance = sum(a.balance for a in accounts) 
         
     # 2. Daily Burn Rate (Variable Spend)
+    # Includes Discretionary, Non-Discretionary, and Rollover (irregular expenses)
+    # Excludes: transfers, investments, one-off, and income
     daily_burn = 0.0
+    daily_income = 0.0
+    burn_start = today - timedelta(days=90)
+    
     if include_discretionary:
-        burn_start = today - timedelta(days=90)
         burn_txns = db.query(models.Transaction).filter(
             models.Transaction.user_id == user.id,
             models.Transaction.date >= burn_start,
             models.Transaction.amount < 0,
-            # Exclude Transfers
-            ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+            # Exclude Transfers (not real spending)
+            ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True),
+            # Exclude Investments (wealth building, not spending)
+            ~models.Transaction.bucket.has(models.BudgetBucket.is_investment == True),
+            # Exclude One-Off items (tax, large non-recurring purchases)
+            ~models.Transaction.bucket.has(models.BudgetBucket.is_one_off == True)
+            # Note: Rollover buckets ARE included (irregular expenses like car rego, annual bills)
         ).all()
         
-        # Use simple Sum / 90
-        # Refinement: Exclude known recurring amounts?
-        # For efficiency, let's trust the "Discretionary" Group if available
-        # Or just use the raw average and assume "Recurring" items will just be double counted as a conservative buffer?
-        # Actually double counting is bad.
-        # Let's filter to Discretionary Group for Burn Rate.
-        
-        disc_spend = sum(abs(t.amount) for t in burn_txns if t.bucket and t.bucket.group == "Discretionary")
-        daily_burn = disc_spend / 90
+        # Include ALL expense transactions for accurate cash flow
+        # This includes uncategorized transactions too (bucket may be None)
+        real_spend = sum(abs(t.amount) for t in burn_txns)
+        daily_burn = real_spend / 90
+    
+    # 2b. Average Daily Income (from last 90 days)
+    # Includes all positive transactions except transfers and one-offs
+    income_txns = db.query(models.Transaction).filter(
+        models.Transaction.user_id == user.id,
+        models.Transaction.date >= burn_start,
+        models.Transaction.amount > 0,
+        # Exclude Transfers (not real income)
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True),
+        # Exclude One-Off items (e.g. tax refunds, insurance payouts)
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_one_off == True)
+    ).all()
+    
+    # Include ALL income transactions for accurate cash flow
+    total_income = sum(t.amount for t in income_txns)
+    daily_income = total_income / 90
     
     # 3. Recurring Items (Future)
     subscriptions = db.query(models.Subscription).filter(
@@ -1291,11 +1311,14 @@ def get_cash_flow_forecast(
         f_date = today + timedelta(days=d)
         daily_change = 0.0
         
-        # Recurring
+        # Recurring events (subscriptions - both income and expenses)
         events = events_by_date.get(f_date, [])
         for e in events: daily_change += e["amount"]
         
-        # Burn Rate
+        # Average daily income (from historical data)
+        daily_change += daily_income
+        
+        # Burn Rate (average daily expenses)
         daily_change -= daily_burn
         
         running_balance += daily_change
@@ -1311,8 +1334,10 @@ def get_cash_flow_forecast(
         
     return {
         "current_balance": current_balance,
-        "daily_burn_rate": daily_burn,
-        "min_projected_balance": min_balance,
+        "daily_burn_rate": round(daily_burn, 2),
+        "daily_income_rate": round(daily_income, 2),
+        "net_daily_rate": round(daily_income - daily_burn, 2),
+        "min_projected_balance": round(min_balance, 2),
         "forecast": forecast_data
     }
 
@@ -1382,8 +1407,8 @@ def get_savings_opportunities(
         bucket = bucket_map[bucket_id]
         spent = abs(total)
         
-        # Skip transfers, investments, and rollover buckets
-        if bucket.is_transfer or bucket.is_investment or bucket.is_rollover:
+        # Skip transfers, investments, rollover, and one-off buckets
+        if bucket.is_transfer or bucket.is_investment or bucket.is_rollover or getattr(bucket, 'is_one_off', False):
             continue
         
         # Get budget limits from member limits
@@ -1451,8 +1476,8 @@ def get_savings_opportunities(
             continue
         bucket = bucket_map[bucket_id]
         
-        # Only check discretionary categories, skip transfers/investments/rollover
-        if bucket.group != "Discretionary" or bucket.is_transfer or bucket.is_investment or bucket.is_rollover:
+        # Only check discretionary categories, skip transfers/investments/rollover/one-off
+        if bucket.group != "Discretionary" or bucket.is_transfer or bucket.is_investment or bucket.is_rollover or getattr(bucket, 'is_one_off', False):
             continue
         
         current = abs(total)

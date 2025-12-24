@@ -213,6 +213,14 @@ def create_default_user_setup(user: models.User, db: Session):
         user_id=user.id, name="Investments", icon_name="TrendingUp",
         group="Non-Discretionary", is_investment=True, display_order=display_order
     ))
+    display_order += 1
+    total_buckets += 1
+    
+    # One Off bucket (excluded from forecasting - tax payments, large one-time purchases)
+    db.add(models.BudgetBucket(
+        user_id=user.id, name="One Off", icon_name="Zap",
+        group="Non-Discretionary", is_one_off=True, display_order=display_order
+    ))
     total_buckets += 1
     
     db.commit()

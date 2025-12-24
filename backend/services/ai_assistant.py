@@ -58,10 +58,10 @@ class AIAssistant:
         buckets = db.query(models.BudgetBucket).filter(
             models.BudgetBucket.user_id == user_id
         ).all()
-        context["categories"] = [{"name": b.name, "group": b.group} for b in buckets if not b.is_transfer]
+        context["categories"] = [{"name": b.name, "group": b.group} for b in buckets if not b.is_transfer and not getattr(b, 'is_one_off', False)]
         bucket_map = {b.id: b.name for b in buckets}
-        # Get IDs of transfer buckets to exclude
-        transfer_bucket_ids = [b.id for b in buckets if b.is_transfer]
+        # Get IDs of special buckets to exclude (transfers, investments, one-off)
+        excluded_bucket_ids = [b.id for b in buckets if b.is_transfer or getattr(b, 'is_one_off', False)]
         
         # Get spending by category (last 30 days)
         spending_by_cat = db.query(
@@ -75,7 +75,7 @@ class AIAssistant:
         
         context["spending_last_30_days"] = {
             bucket_map.get(bid, "Uncategorized"): abs(amt) 
-            for bid, amt in spending_by_cat if amt and bid not in transfer_bucket_ids
+            for bid, amt in spending_by_cat if amt and bid not in excluded_bucket_ids
         }
         
         # Get total income and expenses separately (to avoid SQLAlchemy case syntax issues)
