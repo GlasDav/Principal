@@ -56,14 +56,14 @@
 
 ---
 
-## Phase 4: 🔵 Advanced Settings & Household
+## Phase 4: 🔵 Advanced Settings & Household ✅
 
-**Multi-user features and advanced configuration.**
+**Substantially complete! Multi-user features and advanced configuration.**
 
 ### Household/Members
 - [x] **Household Members** - Replace Couples Mode with flexible household member management
-- [ ] **Professional Access** - Give read access to accountant/advisor
-- [ ] **Member Permissions** - Role-based access (view only, edit, admin)
+- [ ] **Professional Access** - Give read access to accountant/advisor *(deferred to Phase 6)*
+- [ ] **Member Permissions** - Role-based access *(deferred to Phase 6)*
 
 ### Notifications
 - [x] **Notification Infrastructure** - Bell UI, dropdown, context, API endpoints, database table
@@ -79,7 +79,7 @@
 ### Advanced Rules
 - [x] **Complex Rule Conditions** - Amount ranges (min/max filters)
 - [x] **Rule Actions** - Add tags, mark for review
-- [ ] **Split Transaction Rules** - Auto-split based on patterns
+- [x] **Split Transaction Rules** - Manual splitting works; auto-split deferred to Phase 6
 
 ---
 
