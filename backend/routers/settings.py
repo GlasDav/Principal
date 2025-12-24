@@ -72,6 +72,74 @@ async def restore_backup(file: UploadFile = File(...), current_user: models.User
     
     return {"message": "Database restored successfully"}
 
+# --- Household Members ---
+
+@router.get("/members", response_model=List[schemas.HouseholdMember])
+def get_members(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    return db.query(models.HouseholdMember).filter(models.HouseholdMember.user_id == current_user.id).all()
+
+@router.post("/members", response_model=schemas.HouseholdMember)
+def create_member(member: schemas.HouseholdMemberCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    # Limit max members? Maybe 6 for now.
+    count = db.query(models.HouseholdMember).filter(models.HouseholdMember.user_id == current_user.id).count()
+    if count >= 6:
+        raise HTTPException(status_code=400, detail="Maximum of 6 members allowed.")
+        
+    db_member = models.HouseholdMember(
+        user_id=current_user.id,
+        name=html.unescape(member.name),
+        color=member.color,
+        avatar=member.avatar
+    )
+    db.add(db_member)
+    db.commit()
+    db.refresh(db_member)
+    return db_member
+
+@router.put("/members/{member_id}", response_model=schemas.HouseholdMember)
+def update_member(member_id: int, member: schemas.HouseholdMemberCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    db_member = db.query(models.HouseholdMember).filter(
+        models.HouseholdMember.id == member_id,
+        models.HouseholdMember.user_id == current_user.id
+    ).first()
+    
+    if not db_member:
+        raise HTTPException(status_code=404, detail="Member not found")
+        
+    db_member.name = html.unescape(member.name)
+    db_member.color = member.color
+    db_member.avatar = member.avatar
+    
+    db.commit()
+    db.refresh(db_member)
+    return db_member
+
+@router.delete("/members/{member_id}")
+def delete_member(member_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    # Cannot delete if transactions/limits exist?
+    # For MVP, just delete limits. Transactions would need reassigning, but let's just delete member for now 
+    # and cascade limits (via database or manual delete).
+    
+    db_member = db.query(models.HouseholdMember).filter(
+        models.HouseholdMember.id == member_id,
+        models.HouseholdMember.user_id == current_user.id
+    ).first()
+    
+    if not db_member:
+        raise HTTPException(status_code=404, detail="Member not found")
+        
+    # Check if only 1 member left?
+    count = db.query(models.HouseholdMember).filter(models.HouseholdMember.user_id == current_user.id).count()
+    if count <= 1:
+        raise HTTPException(status_code=400, detail="Cannot delete the last member.")
+
+    # Delete limits
+    db.query(models.BudgetLimit).filter(models.BudgetLimit.member_id == member_id).delete()
+    
+    db.delete(db_member)
+    db.commit()
+    return {"ok": True}
+
 # --- Budget Buckets ---
 
 @router.get("/buckets", response_model=List[schemas.BudgetBucket])
@@ -107,7 +175,7 @@ def get_buckets(db: Session = Depends(get_db), current_user: models.User = Depen
     
     # Use joinedload to eagerly load tags
     return db.query(models.BudgetBucket)\
-             .options(joinedload(models.BudgetBucket.tags))\
+             .options(joinedload(models.BudgetBucket.tags), joinedload(models.BudgetBucket.limits))\
              .filter(models.BudgetBucket.user_id == user.id)\
              .order_by(models.BudgetBucket.display_order)\
              .all()
@@ -125,45 +193,67 @@ def get_buckets_tree(db: Session = Depends(get_db), current_user: models.User = 
     
     # Get all buckets for user
     all_buckets = db.query(models.BudgetBucket)\
-        .options(joinedload(models.BudgetBucket.tags))\
+        .options(joinedload(models.BudgetBucket.tags), joinedload(models.BudgetBucket.limits))\
         .filter(models.BudgetBucket.user_id == user.id)\
         .order_by(models.BudgetBucket.display_order)\
         .all()
     
-    # Build tree structure
-    buckets_by_id = {b.id: b for b in all_buckets}
-    tree = []
-    
+    # Build tree structure using a map for O(N) lookup
+    # First, create all dicts and store in a map
+    id_to_dict = {}
     for bucket in all_buckets:
-        bucket_dict = {
+        id_to_dict[bucket.id] = {
             "id": bucket.id,
             "name": bucket.name,
             "icon_name": bucket.icon_name,
-            "monthly_limit_a": bucket.monthly_limit_a,
-            "monthly_limit_b": bucket.monthly_limit_b,
-            "is_shared": bucket.is_shared,
-            "is_rollover": bucket.is_rollover,
-            "is_transfer": bucket.is_transfer,
-            "is_investment": bucket.is_investment,
+            "is_shared": getattr(bucket, 'is_shared', False),
+            "is_rollover": getattr(bucket, 'is_rollover', False),
+            "is_transfer": getattr(bucket, 'is_transfer', False),
+            "is_investment": getattr(bucket, 'is_investment', False),
             "group": bucket.group,
             "parent_id": getattr(bucket, 'parent_id', None),
             "display_order": getattr(bucket, 'display_order', 0),
             "tags": [{"id": t.id, "name": t.name} for t in bucket.tags],
+            "limits": [{"member_id": l.member_id, "amount": l.amount} for l in bucket.limits],
             "children": []
         }
-        
-        parent_id = getattr(bucket, 'parent_id', None)
-        if parent_id is None:
-            # Top-level category
-            tree.append(bucket_dict)
-        else:
-            # Find parent in tree and add as child
-            for parent in tree:
-                if parent["id"] == parent_id:
-                    parent["children"].append(bucket_dict)
-                    break
     
+    tree = []
+    for bucket_id, bucket_dict in id_to_dict.items():
+        parent_id = bucket_dict["parent_id"]
+        if parent_id and parent_id in id_to_dict:
+            id_to_dict[parent_id]["children"].append(bucket_dict)
+        else:
+            tree.append(bucket_dict)
+            
+    # Sort by display_order within each level, protecting against cycles
+    def sort_tree(nodes, visited=None):
+        if visited is None:
+            visited = set()
+            
+        nodes.sort(key=lambda x: x.get("display_order", 0))
+        for node in nodes:
+            node_id = node["id"]
+            if node_id in visited:
+                continue # Prevent infinite recursion
+            visited.add(node_id)
+            
+            if node["children"]:
+                sort_tree(node["children"], visited)
+    
+    sort_tree(tree)
     return tree
+
+@router.get("/tags", response_model=List[schemas.Tag])
+def get_tags(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """Get all unique tags used by the user"""
+    # Fetch all tags. Actually, tags are shared in current model, but we want all tags for now.
+    # If we want only tags used by user:
+    tags = db.query(models.Tag)\
+        .join(models.Tag.buckets)\
+        .filter(models.BudgetBucket.user_id == current_user.id)\
+        .distinct().all()
+    return tags
 
 
 def process_tags(db: Session, bucket: models.BudgetBucket, tag_names: List[str]):
@@ -190,14 +280,33 @@ def process_tags(db: Session, bucket: models.BudgetBucket, tag_names: List[str])
         bucket.tags.append(tag)
 
 
+def process_limits(db: Session, bucket: models.BudgetBucket, limits_data: List[schemas.BudgetLimitBase]):
+    """Helper to sync limits for a bucket"""
+    if limits_data is None:
+        return
+        
+    # Clear existing limits (simplest strategy suitable for this scale)
+    db.query(models.BudgetLimit).filter(models.BudgetLimit.bucket_id == bucket.id).delete()
+    
+    for l in limits_data:
+        if l.amount > 0:
+            db.add(models.BudgetLimit(
+                bucket_id=bucket.id,
+                member_id=l.member_id,
+                amount=l.amount
+            ))
+
+import html
+
 @router.post("/buckets", response_model=schemas.BudgetBucket)
 def create_bucket(bucket: schemas.BudgetBucketCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    # Unescape name to prevent double encoding
+    clean_name = html.unescape(bucket.name) if bucket.name else bucket.name
+    
     db_bucket = models.BudgetBucket(
-        name=bucket.name,
+        name=clean_name,
         icon_name=bucket.icon_name,
         user_id=current_user.id,
-        monthly_limit_a=bucket.monthly_limit_a,
-        monthly_limit_b=bucket.monthly_limit_b,
         is_shared=bucket.is_shared,
         is_rollover=bucket.is_rollover,
         group=bucket.group,
@@ -212,9 +321,12 @@ def create_bucket(bucket: schemas.BudgetBucketCreate, db: Session = Depends(get_
     
     if bucket.tags:
         process_tags(db, db_bucket, bucket.tags)
-        db.commit()
-        db.refresh(db_bucket)
+    
+    if bucket.limits:
+        process_limits(db, db_bucket, bucket.limits)
         
+    db.commit()
+    db.refresh(db_bucket)
     return db_bucket
 
 @router.put("/buckets/{bucket_id}", response_model=schemas.BudgetBucket)
@@ -223,10 +335,11 @@ def update_bucket(bucket_id: int, bucket: schemas.BudgetBucketCreate, db: Sessio
     if not db_bucket:
         raise HTTPException(status_code=404, detail="Bucket not found")
     
-    db_bucket.name = bucket.name
+    # Unescape name 
+    clean_name = html.unescape(bucket.name) if bucket.name else bucket.name
+    
+    db_bucket.name = clean_name
     db_bucket.icon_name = bucket.icon_name
-    db_bucket.monthly_limit_a = bucket.monthly_limit_a
-    db_bucket.monthly_limit_b = bucket.monthly_limit_b
     db_bucket.is_shared = bucket.is_shared
     db_bucket.is_rollover = bucket.is_rollover
     db_bucket.group = bucket.group
@@ -237,6 +350,10 @@ def update_bucket(bucket_id: int, bucket: schemas.BudgetBucketCreate, db: Sessio
     
     # Process Tags
     process_tags(db, db_bucket, bucket.tags)
+    
+    # Process Limits
+    if bucket.limits is not None:
+        process_limits(db, db_bucket, bucket.limits)
     
     db.commit()
     db.refresh(db_bucket)

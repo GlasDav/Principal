@@ -56,7 +56,27 @@ class BasiqService:
                     {"id": "acc_2", "accountNo": "87654321", "name": "Credit Card", "currency": "AUD", "balance": -1250.00, "class": "credit-card"},
                 ],
                 "transactions": [
-                    {"id": "txn_real_1", "description": "Woolworths Real", "amount": -150.00, "postDate": (datetime.now()).isoformat()},
+                    {
+                        "id": "txn_real_1", 
+                        "description": "Woolworths Real", 
+                        "amount": -150.00, 
+                        "postDate": (datetime.now()).isoformat(),
+                        "links": {"account": "acc_1"} 
+                    },
+                    {
+                        "id": "txn_real_2", 
+                        "description": "Salary", 
+                        "amount": 5000.00, 
+                        "postDate": (datetime.now()).isoformat(),
+                        "links": {"account": "acc_1"} 
+                    },
+                    {
+                        "id": "txn_real_3", 
+                        "description": "Credit Card Repayment", 
+                        "amount": -1000.00, 
+                        "postDate": (datetime.now()).isoformat(),
+                        "links": {"account": "acc_2"} 
+                    }
                 ]
             }
 

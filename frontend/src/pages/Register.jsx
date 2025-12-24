@@ -6,6 +6,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 
 export default function Register() {
     const [email, setEmail] = useState("");
+    const [name, setName] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +19,7 @@ export default function Register() {
         setError("");
         setIsLoading(true);
         try {
-            await register(email, password);
+            await register(email, password, name);
             navigate("/");
         } catch (err) {
             const detail = err.response?.data?.detail;
@@ -117,6 +118,21 @@ export default function Register() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">Name</label>
+                        <div className="relative group">
+                            <Lock className="absolute left-3 top-3 text-slate-400 group-focus-within:text-violet-400 transition-colors" size={20} />
+                            <input
+                                type="text"
+                                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/20 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none transition-all text-white placeholder-slate-500"
+                                placeholder="Your Name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                required
+                            />
+                        </div>
+                    </div>
+
                     <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
                         <div className="relative group">

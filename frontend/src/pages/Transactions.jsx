@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { getBuckets, getSettings, getGoals, deleteAllTransactions } from '../services/api';
+import api, { getBuckets, getSettings, getGoals, deleteAllTransactions, getMembers } from '../services/api';
 import { Trash2, Search, Filter, Pencil, Split, UploadCloud, FileText, Loader2, ChevronDown, ArrowUp, ArrowDown, X, BookPlus, UserCheck } from 'lucide-react';
 import { useSearchParams, Link } from 'react-router-dom';
 import SplitTransactionModal from '../components/SplitTransactionModal';
@@ -87,6 +87,12 @@ export default function Transactions() {
     const { data: goals = [] } = useQuery({
         queryKey: ['goals'],
         queryFn: getGoals
+    });
+
+    // Fetch Household Members
+    const { data: members = [] } = useQuery({
+        queryKey: ['members'],
+        queryFn: getMembers
     });
 
     // Update Transaction
@@ -272,8 +278,9 @@ export default function Transactions() {
                             >
                                 <option value="">Set Who...</option>
                                 <option value="Joint">Joint</option>
-                                <option value="User A">{userSettings?.name_a || 'User A'}</option>
-                                <option value="User B">{userSettings?.name_b || 'User B'}</option>
+                                {members.map(member => (
+                                    <option key={member.id} value={member.name}>{member.name}</option>
+                                ))}
                             </select>
                             {/* Delete Button */}
                             <button
@@ -416,13 +423,21 @@ export default function Transactions() {
                                             >
                                                 All
                                             </button>
-                                            {['Joint', 'User A', 'User B'].map(s => (
+                                            <button
+                                                key="Joint"
+                                                onClick={() => { setSpenderFilter('Joint'); setShowSpenderDropdown(false); }}
+                                                className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${spenderFilter === 'Joint' ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}
+                                            >
+                                                Joint
+                                            </button>
+                                            {members.map(member => (
                                                 <button
-                                                    key={s}
-                                                    onClick={() => { setSpenderFilter(s); setShowSpenderDropdown(false); }}
-                                                    className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${spenderFilter === s ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}
+                                                    key={member.id}
+                                                    onClick={() => { setSpenderFilter(member.name); setShowSpenderDropdown(false); }}
+                                                    className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 ${spenderFilter === member.name ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}
                                                 >
-                                                    {s === 'User A' ? (userSettings?.name_a || 'User A') : s === 'User B' ? (userSettings?.name_b || 'User B') : s}
+                                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: member.color }}></span>
+                                                    {member.name}
                                                 </button>
                                             ))}
                                         </div>
@@ -579,8 +594,9 @@ export default function Transactions() {
                                                 onChange={(e) => updateMutation.mutate({ id: txn.id, spender: e.target.value })}
                                             >
                                                 <option value="Joint">Joint</option>
-                                                <option value="User A">{userSettings?.name_a || "User A"}</option>
-                                                <option value="User B">{userSettings?.name_b || "User B"}</option>
+                                                {members.map(member => (
+                                                    <option key={member.id} value={member.name}>{member.name}</option>
+                                                ))}
                                             </select>
                                         </td>
                                         <td className={`p-4 text-sm font-semibold text-right ${txn.amount < 0 ? 'text-slate-900 dark:text-white' : 'text-green-600'}`}>

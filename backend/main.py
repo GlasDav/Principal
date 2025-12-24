@@ -69,6 +69,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
+# Add security headers middleware FIRST (middleware runs in reverse order, so this runs AFTER CORS)
+app.add_middleware(SecurityHeadersMiddleware)
+
 # === CORS CONFIGURATION ===
 # IMPORTANT: In production, set CORS_ORIGINS to your actual frontend domain
 # Example: CORS_ORIGINS=https://principal.com
@@ -96,8 +99,6 @@ else:
         allow_headers=["*"],
     )
 
-# Add security headers middleware AFTER CORS (middleware runs in reverse order)
-app.add_middleware(SecurityHeadersMiddleware)
 
 
 # Include routers

@@ -125,7 +125,8 @@ def get_dashboard_data(
         # Calculate Rollover
         pre_months = s_date.month - 1
         for b in rollover_buckets:
-            pre_limit = (b.monthly_limit_a + b.monthly_limit_b) * pre_months
+            limit = sum(l.amount for l in b.limits)
+            pre_limit = limit * pre_months
             pre_spent = ytd_spend_map.get(b.id, 0.0)
             rollover_map[b.id] = max(0, pre_limit - pre_spent)
 
@@ -163,7 +164,7 @@ def get_dashboard_data(
     for b in buckets:
         spent = spend_map.get(b.id, 0.0)
         
-        base_limit = b.monthly_limit_a + b.monthly_limit_b
+        base_limit = sum(l.amount for l in b.limits)
         limit = base_limit * delta_months
         
         # Add Rollover if applicable
@@ -256,7 +257,7 @@ def get_analytics_history(
         buckets_query = buckets_query.filter(models.BudgetBucket.group == group)
         
     relevant_buckets = buckets_query.all()
-    monthly_limit_total = sum((b.monthly_limit_a + b.monthly_limit_b) for b in relevant_buckets)
+    monthly_limit_total = sum(sum(l.amount for l in b.limits) for b in relevant_buckets)
     
     # Pre-fetch relevant buckets IDs for txn filtering
     relevant_bucket_ids = [b.id for b in relevant_buckets]
@@ -404,98 +405,101 @@ def get_suggested_subscriptions(
 ):
     user = current_user
     # 0. Get Existing Subscriptions to filter out
-    # Use description_keyword for matching (not name) so renamed subscriptions still exclude properly
     existing_keywords = set()
     if exclude_existing:
         subs = db.query(models.Subscription).filter(models.Subscription.user_id == user.id).all()
         for s in subs:
-            # Use description_keyword if set, otherwise fall back to name
             keyword = (s.description_keyword or s.name).lower()
             existing_keywords.add(keyword)
 
-    # 1. Fetch last 12 months of expenses
+    # 1. Fetch last 12 months of transactions
     one_year_ago = datetime.now() - timedelta(days=365)
     
-    txns = db.query(models.Transaction).filter(
+    all_txns = db.query(models.Transaction).filter(
         models.Transaction.user_id == user.id,
-        models.Transaction.date >= one_year_ago,
-        models.Transaction.amount < 0
+        models.Transaction.date >= one_year_ago
     ).order_by(models.Transaction.date.desc()).all()
     
-    # 2. Group by Description text (simple clustering)
-    from collections import defaultdict
-    groups = defaultdict(list)
+    recommendations = []
     
-    for t in txns:
-        # Use first 15 chars or similarity? 
-        # Let's use clean_description if avail, else raw
-        key = t.description.strip().lower()
-        groups[key].append(t)
+    # Helper to process a group of transactions
+    def process_group(txns_list, txn_type):
+        from collections import defaultdict
+        groups = defaultdict(list)
         
-    subscriptions = []
+        for t in txns_list:
+            key = t.description.strip().lower()
+            groups[key].append(t)
+            
+        for name, items in groups.items():
+            if len(items) < 3: continue 
+            
+            if exclude_existing and name in existing_keywords:
+                continue
+            
+            # Sort by date
+            items.sort(key=lambda x: x.date)
+            
+            # Check Amount Consistency
+            amounts = [abs(x.amount) for x in items]
+            avg_amount = sum(amounts) / len(amounts)
+            
+            # Allow 15% variance
+            is_consistent_amount = all(abs(a - avg_amount) < (avg_amount * 0.15) for a in amounts) 
+            
+            if not is_consistent_amount: continue
     
-    for name, items in groups.items():
-        if len(items) < 3: continue # Need at least 3 to form pattern
-        
-        # Check against existing keywords (matches on description_keyword or name)
-        if exclude_existing and name in existing_keywords:
-            continue
-        
-        # Sort by date
-        items.sort(key=lambda x: x.date)
-        
-        # Check Amount Consistency
-        amounts = [abs(x.amount) for x in items]
-        avg_amount = sum(amounts) / len(amounts)
-        
-        # Allow 15% variance (Utilities often fluctuate) or strict $1 for fixed
-        is_consistent_amount = all(abs(a - avg_amount) < (avg_amount * 0.15) for a in amounts) 
-        
-        if not is_consistent_amount: continue
+            # Check Frequency
+            dates = [x.date for x in items]
+            intervals = [(dates[i] - dates[i-1]).days for i in range(1, len(dates))]
+                
+            avg_interval = sum(intervals) / len(intervals)
+            
+            frequency = None
+            
+            # Ranges
+            if 6 <= avg_interval <= 8:
+                frequency = "Weekly"
+                nom_interval = 7
+            elif 13 <= avg_interval <= 15:
+                frequency = "Bi-Weekly"
+                nom_interval = 14
+            elif 25 <= avg_interval <= 35:
+                frequency = "Monthly"
+                nom_interval = 30
+            elif 360 <= avg_interval <= 370:
+                frequency = "Yearly"
+                nom_interval = 365
+                
+            if frequency:
+                last_date = dates[-1]
+                next_due = last_date + timedelta(days=int(nom_interval))
+                
+                # Confidence
+                variance_score = sum(abs(a - avg_amount) for a in amounts) / (len(amounts) * avg_amount)
+                confidence = "High" if variance_score < 0.05 else "Medium"
+                
+                recommendations.append({
+                    "name": items[0].description, 
+                    "description_keyword": name,
+                    "amount": avg_amount,
+                    "type": txn_type,
+                    "frequency": frequency,
+                    "annual_cost": avg_amount * (365/nom_interval),
+                    "next_due": next_due,
+                    "confidence": confidence,
+                    "last_payment_date": last_date
+                })
 
-        # Check Frequency
-        dates = [x.date for x in items]
-        intervals = []
-        for i in range(1, len(dates)):
-            delta = (dates[i] - dates[i-1]).days
-            intervals.append(delta)
+    # Pass 1: Expenses
+    expenses = [t for t in all_txns if t.amount < 0]
+    process_group(expenses, "Expense")
+    
+    # Pass 2: Income
+    income = [t for t in all_txns if t.amount > 0]
+    process_group(income, "Income")
             
-        avg_interval = sum(intervals) / len(intervals)
-        
-        frequency = None
-        
-        # Ranges
-        if 25 <= avg_interval <= 35:
-            frequency = "Monthly"
-            avg_interval = 30 # normalize
-        elif 6 <= avg_interval <= 8:
-            frequency = "Weekly"
-            avg_interval = 7
-        elif 360 <= avg_interval <= 370:
-            frequency = "Yearly"
-            avg_interval = 365
-            
-        if frequency:
-            # Calculate next due
-            last_date = dates[-1]
-            next_due = last_date + timedelta(days=int(avg_interval))
-            
-            # Confidence scoring
-            variance_score = sum(abs(a - avg_amount) for a in amounts) / (len(amounts) * avg_amount) # Lower is better
-            confidence = "High" if variance_score < 0.05 else "Medium"
-            
-            subscriptions.append({
-                "name": items[0].description, # use display name
-                "description_keyword": name, # original search key for future matching
-                "amount": avg_amount,
-                "frequency": frequency,
-                "annual_cost": avg_amount * (12 if frequency == "Monthly" else 52 if frequency == "Weekly" else 1),
-                "next_due": next_due,
-                "confidence": confidence,
-                "last_payment_date": last_date
-            })
-            
-    return subscriptions
+    return recommendations
 
 
 @router.get("/debt_projection")
@@ -796,6 +800,7 @@ def get_sankey_data(
     # Because we plot Investments separately (below), we must subtract them here to avoid double counting 
     # and to accurately represent "Cash Savings".
     
+
     # We need total_investments calculated BEFORE this block or access it.
     # Move Investment Calculation UP or do it here.
     
@@ -1161,5 +1166,143 @@ def get_group_spending(
         "spender": spender,
         "groups": groups,
         "total_expenses": round(sum(g["expenses"] for g in groups), 2)
+    }
+
+
+@router.get("/forecast")
+def get_cash_flow_forecast(
+    days: int = 90,
+    include_discretionary: bool = True, # Whether to subtract burn rate
+    account_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    user = current_user
+    today = datetime.now().date()
+    end_date = today + timedelta(days=days)
+    
+    # 1. Starting Balance
+    if account_id:
+        acc = db.query(models.Account).filter(models.Account.id == account_id, models.Account.user_id == user.id).first()
+        if not acc: raise HTTPException(status_code=404, detail="Account not found")
+        current_balance = acc.balance
+    else:
+        # Sum of all Asset accounts (Bank type or just sum positive ones?)
+        # Let's assume all accounts (Credit Cards are negative liabilities) = Net Worth (Liquid)
+        # Actually usually Forecast is "Cash Flow". 
+        # Including Credit Card Balance (negative) is correct: "Current Net Cash Position".
+        accounts = db.query(models.Account).filter(models.Account.user_id == user.id).all()
+        current_balance = sum(a.balance for a in accounts) 
+        
+    # 2. Daily Burn Rate (Variable Spend)
+    daily_burn = 0.0
+    if include_discretionary:
+        burn_start = today - timedelta(days=90)
+        burn_txns = db.query(models.Transaction).filter(
+            models.Transaction.user_id == user.id,
+            models.Transaction.date >= burn_start,
+            models.Transaction.amount < 0,
+            # Exclude Transfers
+            ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+        ).all()
+        
+        # Use simple Sum / 90
+        # Refinement: Exclude known recurring amounts?
+        # For efficiency, let's trust the "Discretionary" Group if available
+        # Or just use the raw average and assume "Recurring" items will just be double counted as a conservative buffer?
+        # Actually double counting is bad.
+        # Let's filter to Discretionary Group for Burn Rate.
+        
+        disc_spend = sum(abs(t.amount) for t in burn_txns if t.bucket and t.bucket.group == "Discretionary")
+        daily_burn = disc_spend / 90
+    
+    # 3. Recurring Items (Future)
+    subscriptions = db.query(models.Subscription).filter(
+        models.Subscription.user_id == user.id,
+        models.Subscription.is_active == True
+    ).all()
+    
+    # 4. Projection Loop
+    forecast_data = []
+    running_balance = current_balance
+    min_balance = running_balance
+    
+    # Pre-calculate events
+    events_by_date = {}
+    
+    for sub in subscriptions:
+        current_due = sub.next_due_date
+        
+        # Advance to window
+        while current_due < today:
+             if sub.frequency == "Monthly": current_due += timedelta(days=30)
+             elif sub.frequency == "Weekly": current_due += timedelta(days=7)
+             elif sub.frequency == "Bi-Weekly": current_due += timedelta(days=14)
+             elif sub.frequency == "Yearly": 
+                 try: current_due = current_due.replace(year=current_due.year + 1)
+                 except: current_due += timedelta(days=365)
+             else: current_due += timedelta(days=30)
+             
+        # Collect events
+        while current_due <= end_date:
+            if current_due not in events_by_date: events_by_date[current_due] = []
+            
+            # Logic: Expense = subtract, Income = add
+            # Subscription.amount is typically positive magnitude.
+            amt = abs(sub.amount)
+            if sub.type == "Expense": amt = -amt
+            # If type is Income, amt remains positive
+            
+            events_by_date[current_due].append({
+                "name": sub.name,
+                "amount": amt,
+                "type": sub.type
+            })
+            
+            # Next occurrence
+            if sub.frequency == "Monthly": current_due += timedelta(days=30)
+            elif sub.frequency == "Weekly": current_due += timedelta(days=7)
+            elif sub.frequency == "Bi-Weekly": current_due += timedelta(days=14)
+            elif sub.frequency == "Yearly":
+                 try: current_due = current_due.replace(year=current_due.year + 1)
+                 except: current_due += timedelta(days=365)
+            else: current_due += timedelta(days=30)
+            
+    # Simulate
+    forecast_data.append({
+        "date": today,
+        "balance": running_balance,
+        "label": "Today",
+        "events": [],
+        "is_projected": False
+    })
+    
+    for d in range(1, days + 1):
+        f_date = today + timedelta(days=d)
+        daily_change = 0.0
+        
+        # Recurring
+        events = events_by_date.get(f_date, [])
+        for e in events: daily_change += e["amount"]
+        
+        # Burn Rate
+        daily_change -= daily_burn
+        
+        running_balance += daily_change
+        min_balance = min(min_balance, running_balance)
+        
+        forecast_data.append({
+            "date": f_date,
+            "balance": running_balance,
+            "label": f_date.strftime("%b %d"),
+            "events": events,
+            "is_projected": True
+        })
+        
+    return {
+        "current_balance": current_balance,
+        "daily_burn_rate": daily_burn,
+        "min_projected_balance": min_balance,
+        "forecast": forecast_data
     }
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import api from '../services/api';
+import api, { getMembers } from '../services/api';
 import {
     CheckCircle, AlertCircle, TrendingUp, TrendingDown, ChevronRight, LineChart, RefreshCw, Wallet, Utensils, ShoppingBag
 } from 'lucide-react';
@@ -64,6 +64,12 @@ export default function Dashboard() {
     const { data: userSettings } = useQuery({
         queryKey: ['userSettings'],
         queryFn: async () => (await api.get('/settings/user')).data
+    });
+
+    // Fetch Household Members
+    const { data: members = [] } = useQuery({
+        queryKey: ['members'],
+        queryFn: getMembers
     });
 
     // Formatting
@@ -177,22 +183,28 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {/* Couple Mode Toggle */}
+                    {/* Spender Mode Toggle */}
                     <div className="bg-slate-100 dark:bg-slate-700 p-1 rounded-lg flex items-center">
-                        {[
-                            { label: "Combined", value: "Combined" },
-                            { label: userSettings?.name_a || "User A", value: "User A" },
-                            { label: userSettings?.name_b || "User B", value: "User B" }
-                        ].map((mode) => (
+                        <button
+                            onClick={() => setSpenderMode('Combined')}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition ${spenderMode === 'Combined'
+                                ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                }`}
+                        >
+                            Combined
+                        </button>
+                        {members.map((member) => (
                             <button
-                                key={mode.value}
-                                onClick={() => setSpenderMode(mode.value)}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition ${spenderMode === mode.value
+                                key={member.id}
+                                onClick={() => setSpenderMode(member.name)}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${spenderMode === member.name
                                     ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm'
                                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                                     }`}
                             >
-                                {mode.label}
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: member.color }}></span>
+                                {member.name}
                             </button>
                         ))}
                     </div>

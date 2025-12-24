@@ -30,7 +30,7 @@ router = APIRouter(
 
 
 def create_default_user_setup(user: models.User, db: Session):
-    """Create default accounts and buckets for a new user."""
+    """Create default accounts and buckets for a new user with hierarchical categories."""
     
     # Default Balance Sheet Accounts
     default_accounts = [
@@ -49,106 +49,175 @@ def create_default_user_setup(user: models.User, db: Session):
         )
         db.add(account)
     
-    # === DEFAULT BUDGET CATEGORIES ===
-    # Based on comprehensive category tree
+    # === HIERARCHICAL BUDGET CATEGORIES ===
+    # Based on Notes file structure
     
-    # --- INCOME ---
-    income_buckets = [
-        {"name": "Salary", "icon_name": "Briefcase"},
-        {"name": "Interest", "icon_name": "TrendingUp"},
-        {"name": "Business Income", "icon_name": "Building"},
-        {"name": "Other Income", "icon_name": "DollarSign"},
-    ]
-    for b in income_buckets:
-        db.add(models.BudgetBucket(
-            user_id=user.id, name=b["name"], icon_name=b["icon_name"],
-            group="Income", monthly_limit_a=0.0, monthly_limit_b=0.0
-        ))
+    DEFAULT_CATEGORIES = {
+        "Income": {
+            "icon": "TrendingUp",
+            "group": "Income",
+            "children": [
+                {"name": "Salaries", "icon": "Briefcase"},
+                {"name": "Interest", "icon": "TrendingUp"},
+                {"name": "Business", "icon": "Building"},
+                {"name": "Other Income", "icon": "DollarSign"},
+            ]
+        },
+        "Household Expenses": {
+            "icon": "Home",
+            "group": "Non-Discretionary",
+            "children": [
+                {"name": "Gas & Electricity", "icon": "Zap"},
+                {"name": "Water", "icon": "Droplet"},
+                {"name": "Internet", "icon": "Wifi"},
+                {"name": "Mortgage/Rent", "icon": "Home"},
+                {"name": "Strata Levies", "icon": "Building"},
+                {"name": "Council Rates", "icon": "Landmark"},
+                {"name": "Subscriptions", "icon": "CreditCard"},
+                {"name": "Maintenance", "icon": "Wrench"},
+                {"name": "Household General", "icon": "Home"},
+            ]
+        },
+        "Vehicle": {
+            "icon": "Car",
+            "group": "Non-Discretionary",
+            "children": [
+                {"name": "Petrol", "icon": "Fuel"},
+                {"name": "Insurance & Registration", "icon": "Shield"},
+                {"name": "Vehicle Maintenance", "icon": "Settings"},
+            ]
+        },
+        "Food": {
+            "icon": "Utensils",
+            "group": "Discretionary",
+            "children": [
+                {"name": "Groceries", "icon": "ShoppingCart"},
+                {"name": "Dining Out", "icon": "Utensils"},
+                {"name": "Coffee", "icon": "Coffee"},
+                {"name": "Snacks", "icon": "Cookie"},
+            ]
+        },
+        "Lifestyle": {
+            "icon": "Heart",
+            "group": "Discretionary",
+            "children": [
+                {"name": "Personal", "icon": "User"},
+                {"name": "Homewares", "icon": "Sofa"},
+                {"name": "Beauty", "icon": "Sparkles"},
+                {"name": "Health & Fitness", "icon": "Dumbbell"},
+                {"name": "Clothing", "icon": "Shirt"},
+                {"name": "Leisure", "icon": "Film"},
+                {"name": "Dates", "icon": "Heart"},
+                {"name": "Gifts", "icon": "Gift"},
+                {"name": "Parking & Tolls", "icon": "ParkingCircle"},
+                {"name": "Public Transport", "icon": "Train"},
+                {"name": "Taxi & Rideshare", "icon": "Car"},
+            ]
+        },
+        "Health & Wellness": {
+            "icon": "HeartPulse",
+            "group": "Non-Discretionary",
+            "children": [
+                {"name": "Medical", "icon": "Stethoscope"},
+                {"name": "Dental", "icon": "Smile"},
+                {"name": "Pharmacy", "icon": "Pill"},
+                {"name": "Fitness", "icon": "Dumbbell"},
+            ]
+        },
+        "Kids": {
+            "icon": "Baby",
+            "group": "Discretionary",
+            "children": [
+                {"name": "Childcare", "icon": "Baby"},
+                {"name": "Education", "icon": "GraduationCap"},
+                {"name": "Kids Expenses", "icon": "ShoppingBag"},
+                {"name": "Activities", "icon": "Gamepad"},
+            ]
+        },
+        "Rollover/Non-Monthly": {
+            "icon": "Calendar",
+            "group": "Discretionary",
+            "children": [
+                {"name": "Donations", "icon": "HandHeart"},
+                {"name": "Renovations", "icon": "Hammer"},
+                {"name": "Travel", "icon": "Plane"},
+                {"name": "Major Purchases", "icon": "ShoppingBag"},
+            ]
+        },
+        "Financial": {
+            "icon": "Landmark",
+            "group": "Non-Discretionary",
+            "children": [
+                {"name": "Cash & ATM Fees", "icon": "Banknote"},
+                {"name": "Financial Fees", "icon": "Building2"},
+                {"name": "Investment Contributions", "icon": "TrendingUp"},
+                {"name": "Accounting", "icon": "Calculator"},
+            ]
+        },
+        "Other": {
+            "icon": "MoreHorizontal",
+            "group": "Discretionary",
+            "children": [
+                {"name": "Work Expenses", "icon": "Briefcase"},
+                {"name": "Business Expenses", "icon": "Building"},
+                {"name": "Miscellaneous", "icon": "MoreHorizontal"},
+                {"name": "Uncategorised", "icon": "HelpCircle"},
+            ]
+        },
+    }
     
-    # --- NON-DISCRETIONARY ---
-    non_disc_buckets = [
-        # Household
-        {"name": "Gas & Electricity", "icon_name": "Zap"},
-        {"name": "Water", "icon_name": "Droplet"},
-        {"name": "Internet", "icon_name": "Wifi"},
-        {"name": "Mortgage/Rent", "icon_name": "Home"},
-        {"name": "Strata Levies", "icon_name": "Building"},
-        {"name": "Council Rates", "icon_name": "Landmark"},
-        {"name": "Home Insurance", "icon_name": "Shield"},
-        {"name": "Subscriptions", "icon_name": "CreditCard"},
-        {"name": "Home Maintenance", "icon_name": "Wrench"},
-        # Vehicle
-        {"name": "Petrol", "icon_name": "Fuel"},
-        {"name": "Car Insurance & Rego", "icon_name": "Car"},
-        {"name": "Car Maintenance", "icon_name": "Settings"},
-        # Health
-        {"name": "Medical", "icon_name": "Stethoscope"},
-        {"name": "Dental", "icon_name": "Smile"},
-        {"name": "Pharmacy", "icon_name": "Pill"},
-        {"name": "Health Insurance", "icon_name": "ShieldCheck"},
-        # Kids
-        {"name": "Childcare", "icon_name": "Baby"},
-        {"name": "Education", "icon_name": "GraduationCap"},
-        # Financial
-        {"name": "Bank Fees", "icon_name": "Building2"},
-        {"name": "Accounting", "icon_name": "Calculator"},
-    ]
-    for b in non_disc_buckets:
-        db.add(models.BudgetBucket(
-            user_id=user.id, name=b["name"], icon_name=b["icon_name"],
-            group="Non-Discretionary", monthly_limit_a=0.0, monthly_limit_b=0.0
-        ))
+    # Create parent categories and their children
+    display_order = 0
+    total_buckets = 0
     
-    # --- DISCRETIONARY ---
-    disc_buckets = [
-        # Food
-        {"name": "Groceries", "icon_name": "ShoppingCart"},
-        {"name": "Dining Out", "icon_name": "Utensils"},
-        {"name": "Coffee", "icon_name": "Coffee"},
-        {"name": "Snacks", "icon_name": "Cookie"},
-        # Lifestyle
-        {"name": "Personal", "icon_name": "User"},
-        {"name": "Homewares", "icon_name": "Sofa"},
-        {"name": "Beauty", "icon_name": "Sparkles"},
-        {"name": "Health & Fitness", "icon_name": "Dumbbell"},
-        {"name": "Clothing", "icon_name": "Shirt"},
-        {"name": "Leisure", "icon_name": "Film"},
-        {"name": "Dates", "icon_name": "Heart"},
-        {"name": "Gifts", "icon_name": "Gift"},
-        # Transport
-        {"name": "Parking & Tolls", "icon_name": "ParkingCircle"},
-        {"name": "Public Transport", "icon_name": "Train"},
-        {"name": "Taxi & Rideshare", "icon_name": "Car"},
-        # Other
-        {"name": "Donations", "icon_name": "HandHeart"},
-        {"name": "Work Expenses", "icon_name": "Briefcase"},
-        {"name": "Kids Expenses", "icon_name": "Baby"},
-        {"name": "Miscellaneous", "icon_name": "MoreHorizontal"},
-        {"name": "Uncategorised", "icon_name": "HelpCircle"},
-    ]
-    for b in disc_buckets:
-        db.add(models.BudgetBucket(
-            user_id=user.id, name=b["name"], icon_name=b["icon_name"],
-            group="Discretionary", monthly_limit_a=0.0, monthly_limit_b=0.0
-        ))
+    for parent_name, config in DEFAULT_CATEGORIES.items():
+        # Create parent bucket
+        parent_bucket = models.BudgetBucket(
+            user_id=user.id,
+            name=parent_name,
+            icon_name=config.get("icon", "Wallet"),
+            group=config.get("group", "Discretionary"),
+            display_order=display_order
+        )
+        db.add(parent_bucket)
+        db.flush()  # Get the parent ID
+        display_order += 1
+        total_buckets += 1
+        
+        # Create children with parent_id reference
+        child_order = 0
+        for child in config.get("children", []):
+            child_bucket = models.BudgetBucket(
+                user_id=user.id,
+                name=child["name"],
+                icon_name=child.get("icon", "Wallet"),
+                group=config.get("group", "Discretionary"),
+                parent_id=parent_bucket.id,
+                display_order=child_order
+            )
+            db.add(child_bucket)
+            child_order += 1
+            total_buckets += 1
     
     # --- SPECIAL BUCKETS (Protected) ---
     # Transfers bucket (excluded from spending analytics)
     db.add(models.BudgetBucket(
         user_id=user.id, name="Transfers", icon_name="ArrowLeftRight",
-        group="Non-Discretionary", is_transfer=True,
-        monthly_limit_a=0.0, monthly_limit_b=0.0
+        group="Non-Discretionary", is_transfer=True, display_order=display_order
     ))
+    display_order += 1
+    total_buckets += 1
     
     # Investments bucket (excluded from expenses, shown in Sankey)
     db.add(models.BudgetBucket(
         user_id=user.id, name="Investments", icon_name="TrendingUp",
-        group="Non-Discretionary", is_investment=True,
-        monthly_limit_a=0.0, monthly_limit_b=0.0
+        group="Non-Discretionary", is_investment=True, display_order=display_order
     ))
+    total_buckets += 1
     
     db.commit()
-    logger.info(f"Created default accounts and {4 + len(non_disc_buckets) + len(disc_buckets) + 2} buckets for user {user.email}")
+    logger.info(f"Created default accounts and {total_buckets} hierarchical buckets for user {user.email}")
+
 
 
 @router.post("/register", response_model=schemas.User)
@@ -164,13 +233,21 @@ def register(request: Request, user: schemas.UserCreate, db: Session = Depends(d
     new_user = models.User(
         email=user.email,
         hashed_password=hashed_password,
-        name_a="You",
-        name_b="Partner",
-        is_couple_mode=False
+        name=user.name or "You"
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    # Create default Household Member
+    default_member = models.HouseholdMember(
+        user_id=new_user.id,
+        name=new_user.name,
+        color="#4F46E5", # Indigo-600
+        avatar="User"
+    )
+    db.add(default_member)
+    db.commit()
     
     # Create default accounts and buckets
     create_default_user_setup(new_user, db)
@@ -292,14 +369,22 @@ async def google_login(request: Request, token: str = Body(..., embed=True), db:
             user = models.User(
                 email=email,
                 hashed_password=hashed_password,
-                name_a=user_info.get("given_name", "You"),
-                name_b="Partner",
-                is_couple_mode=False,
+                name=user_info.get("given_name", "You"),
                 is_email_verified=True  # Google already verified this email
             )
             db.add(user)
             db.commit()
             db.refresh(user)
+
+            # Create default Household Member
+            default_member = models.HouseholdMember(
+                user_id=user.id,
+                name=user.name,
+                color="#4F46E5",
+                avatar="User"
+            )
+            db.add(default_member)
+            db.commit()
             
             # Create default accounts and buckets for new Google users
             create_default_user_setup(user, db)

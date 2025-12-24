@@ -4,6 +4,7 @@ import { Menu } from '@headlessui/react';
 import { Trash2, Plus, DollarSign, Wallet, ShoppingBag, Home, Tag as TagIcon, Save, Play, ChevronDown, ChevronRight, CornerDownRight } from 'lucide-react';
 import * as api from '../services/api';
 import { ICON_MAP } from '../utils/icons';
+import { useTheme } from '../context/ThemeContext';
 
 // Currency Code to Symbol Map
 const CURRENCY_MAP = {
@@ -24,21 +25,60 @@ const cleanKeywords = (str) => {
 };
 
 // === BUCKET TABLE ROW ===
-const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBucketMutation, createBucketMutation, allTags = [], depth = 0, isExpanded = false, onToggleExpand = () => { }, hasChildren = false }) => {
+const BucketTableRow = ({ bucket, userSettings, members = [], updateBucketMutation, deleteBucketMutation, createBucketMutation, allTags = [], depth = 0, isExpanded = false, onToggleExpand = () => { }, hasChildren = false }) => {
     const Icon = ICON_MAP[bucket.icon_name] || Wallet;
     const [localName, setLocalName] = useState(bucket.name || '');
-    const [localLimitA, setLocalLimitA] = useState(bucket.monthly_limit_a || 0);
-    const [localLimitB, setLocalLimitB] = useState(bucket.monthly_limit_b || 0);
+
+    // Initialize limits state from bucket.limits or default to empty
+    // We map member_id -> amount for easier lookup
+    const [localLimits, setLocalLimits] = useState(() => {
+        const limitsMap = {};
+        (bucket.limits || []).forEach(l => limitsMap[l.member_id] = l.amount);
+        return limitsMap;
+    });
+
     const [showTags, setShowTags] = useState(false);
     const [newTag, setNewTag] = useState('');
     const tagDropdownRef = useRef(null);
     const currencySymbol = CURRENCY_MAP[userSettings?.currency_symbol] || userSettings?.currency_symbol || '$';
 
+    // Update local state when prop changes
     useEffect(() => {
         setLocalName(bucket.name || '');
-        setLocalLimitA(bucket.monthly_limit_a || 0);
-        setLocalLimitB(bucket.monthly_limit_b || 0);
-    }, [bucket.name, bucket.monthly_limit_a, bucket.monthly_limit_b]);
+        const limitsMap = {};
+        (bucket.limits || []).forEach(l => limitsMap[l.member_id] = l.amount);
+        setLocalLimits(limitsMap);
+    }, [bucket.name, bucket.limits]);
+
+    // Handle Limit Change (Local)
+    const handleLimitChange = (memberId, val) => {
+        setLocalLimits(prev => ({ ...prev, [memberId]: val }));
+    };
+
+    // Handle Limit Blur (Save)
+    const handleLimitBlur = (memberId) => {
+        const val = parseFloat(localLimits[memberId]) || 0;
+        // Construct new limits array
+        const currentLimits = bucket.limits || [];
+        const otherLimits = currentLimits.filter(l => l.member_id !== memberId);
+
+        // Only update if changed
+        const oldVal = currentLimits.find(l => l.member_id === memberId)?.amount || 0;
+
+        if (val !== oldVal) {
+            const newLimits = [
+                ...otherLimits,
+                { member_id: memberId, amount: val }
+            ];
+            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, limits: newLimits } });
+        }
+    };
+
+    const handleBlurName = () => {
+        if (localName !== bucket.name && localName.trim()) {
+            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, name: localName } });
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -52,26 +92,6 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
         }
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showTags]);
-
-    const handleBlurName = () => {
-        if (localName !== bucket.name && localName.trim()) {
-            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, name: localName } });
-        }
-    };
-
-    const handleBlurLimitA = () => {
-        const val = parseFloat(localLimitA) || 0;
-        if (val !== bucket.monthly_limit_a) {
-            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, monthly_limit_a: val } });
-        }
-    };
-
-    const handleBlurLimitB = () => {
-        const val = parseFloat(localLimitB) || 0;
-        if (val !== bucket.monthly_limit_b) {
-            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, monthly_limit_b: val } });
-        }
-    };
 
     const handleTagKeyDown = (e) => {
         if (e.key === 'Enter') {
@@ -186,49 +206,43 @@ const BucketTableRow = ({ bucket, userSettings, updateBucketMutation, deleteBuck
                     placeholder="Category name..."
                 />
             </td>
-            <td className="p-2 w-28">
-                <div className="relative">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencySymbol}</span>
-                    <input
-                        type="number"
-                        className="w-full pl-6 pr-2 py-1 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        value={localLimitA}
-                        onChange={(e) => setLocalLimitA(e.target.value)}
-                        onBlur={handleBlurLimitA}
-                    />
-                </div>
-            </td>
-            {userSettings?.is_couple_mode && (
+
+            {/* Dynamic Member Columns */}
+            {members.length > 0 ? (
+                members.map(member => (
+                    <td key={member.id} className="p-2 w-28">
+                        <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencySymbol}</span>
+                            <input
+                                type="number"
+                                className="w-full pl-6 pr-2 py-1 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-800 dark:text-slate-200 focus:border-indigo-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                value={localLimits[member.id] || 0}
+                                onChange={(e) => handleLimitChange(member.id, e.target.value)}
+                                onBlur={() => handleLimitBlur(member.id)}
+                            />
+                        </div>
+                    </td>
+                ))
+            ) : (
+                // Fallback if no members loaded yet (though query normally returns empty list)
                 <td className="p-2 w-28">
                     <div className="relative">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencySymbol}</span>
-                        <input
-                            type="number"
-                            className={`w-full pl-6 pr-2 py-1 text-sm border rounded focus:border-indigo-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${bucket.is_shared
-                                ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-slate-400'
-                                : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200'
-                                }`}
-                            value={localLimitB}
-                            onChange={(e) => setLocalLimitB(e.target.value)}
-                            onBlur={handleBlurLimitB}
-                            disabled={bucket.is_shared}
-                        />
+                        <span className="text-xs text-slate-400">Loading...</span>
                     </div>
                 </td>
             )}
-            {userSettings?.is_couple_mode && (
-                <td className="p-2 w-16 text-center">
-                    <button
-                        onClick={() => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, is_shared: !bucket.is_shared } })}
-                        className={`mx-auto w-5 h-5 rounded border-2 flex items-center justify-center transition ${bucket.is_shared
-                            ? 'bg-indigo-500 border-indigo-500 text-white'
-                            : 'border-slate-300 dark:border-slate-600 hover:border-indigo-400'
-                            }`}
-                    >
-                        {bucket.is_shared && <span className="text-xs">✓</span>}
-                    </button>
-                </td>
-            )}
+
+            <td className="p-2 w-16 text-center">
+                <button
+                    onClick={() => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, is_shared: !bucket.is_shared } })}
+                    className={`mx-auto w-5 h-5 rounded border-2 flex items-center justify-center transition ${bucket.is_shared
+                        ? 'bg-indigo-500 border-indigo-500 text-white'
+                        : 'border-slate-300 dark:border-slate-600 hover:border-indigo-400'
+                        }`}
+                >
+                    {bucket.is_shared && <span className="text-xs">✓</span>}
+                </button>
+            </td>
             <td className="p-2 w-20 text-center">
                 <button
                     onClick={() => updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, is_rollover: !bucket.is_rollover } })}
@@ -380,8 +394,6 @@ const BucketTableSection = ({ title, icon: SectionIcon, buckets, userSettings, c
                 let aVal, bVal;
                 switch (sortField) {
                     case 'name': aVal = (a.name || '').toLowerCase(); bVal = (b.name || '').toLowerCase(); break;
-                    case 'limitA': aVal = a.monthly_limit_a || 0; bVal = b.monthly_limit_a || 0; break;
-                    case 'limitB': aVal = a.monthly_limit_b || 0; bVal = b.monthly_limit_b || 0; break;
                     case 'rollover': aVal = a.is_rollover ? 1 : 0; bVal = b.is_rollover ? 1 : 0; break;
                     default: aVal = (a.name || '').toLowerCase(); bVal = (b.name || '').toLowerCase();
                 }
@@ -605,6 +617,142 @@ const RuleItem = ({ rule, buckets, updateRuleMutation, deleteRuleMutation, isSel
     );
 };
 
+export default function Budget() {
+    const { theme } = useTheme();
+    const queryClient = useQueryClient();
+    const [expandedGroups, setExpandedGroups] = useState({});
+
+    // Queries
+    const { data: userSettings, isLoading: settingsLoading } = useQuery({ queryKey: ['settings'], queryFn: api.getSettings });
+    const { data: buckets = [], isLoading: bucketsLoading } = useQuery({ queryKey: ['buckets'], queryFn: api.getBucketsTree });
+    const { data: allTags = [], isLoading: tagsLoading } = useQuery({ queryKey: ['tags'], queryFn: api.getTags });
+    const { data: members = [], isLoading: membersLoading } = useQuery({ queryKey: ['members'], queryFn: api.getMembers });
+
+    const isLoading = settingsLoading || bucketsLoading || tagsLoading || membersLoading;
+
+    // Auto-expand all parent categories on initial load
+    useEffect(() => {
+        if (buckets && buckets.length > 0) {
+            const hasChildren = (bucket) => bucket.children && bucket.children.length > 0;
+            const parentsWithChildren = buckets.filter(hasChildren);
+            if (parentsWithChildren.length > 0 && Object.keys(expandedGroups).length === 0) {
+                const expanded = {};
+                parentsWithChildren.forEach(b => { expanded[b.id] = true; });
+                setExpandedGroups(expanded);
+            }
+        }
+    }, [buckets]);
+
+    // Mutations
+    const updateBucketMutation = useMutation({
+        mutationFn: ({ id, data }) => api.updateBucket(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['buckets']);
+        },
+    });
+
+    const createBucketMutation = useMutation({
+        mutationFn: api.createBucket,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['buckets']);
+        },
+    });
+
+    const deleteBucketMutation = useMutation({
+        mutationFn: api.deleteBucket,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['buckets']);
+        },
+    });
+
+    const toggleExpand = (bucketId) => {
+        setExpandedGroups(prev => ({ ...prev, [bucketId]: !prev[bucketId] }));
+    };
+
+    if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>;
+
+    const renderRows = (nodes, depth = 0) => {
+        return nodes.map(bucket => (
+            <React.Fragment key={bucket.id}>
+                <BucketTableRow
+                    bucket={bucket}
+                    userSettings={userSettings}
+                    members={members}
+                    updateBucketMutation={updateBucketMutation}
+                    deleteBucketMutation={deleteBucketMutation}
+                    createBucketMutation={createBucketMutation}
+                    allTags={allTags.map(t => t.name)}
+                    depth={depth}
+                    isExpanded={expandedGroups[bucket.id]}
+                    onToggleExpand={() => toggleExpand(bucket.id)}
+                    hasChildren={bucket.children && bucket.children.length > 0}
+                />
+                {expandedGroups[bucket.id] && bucket.children && renderRows(bucket.children, depth + 1)}
+            </React.Fragment>
+        ));
+    };
+
+    // Calculate Rules Section Props (assuming RulesSection exists below or imported)
+    // We didn't change RulesSection, so we keep the structure.
+
+    return (
+        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Budget & Categories</h1>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th className="p-3 w-12"></th>
+                                <th className="p-3">Category Name</th>
+
+                                {/* Dynamic Member Columns */}
+                                {members.length > 0 ? (
+                                    members.map(member => (
+                                        <th key={member.id} className="p-3 w-28">
+                                            <div className="flex items-center gap-1">
+                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: member.color }}></div>
+                                                {member.name}
+                                            </div>
+                                        </th>
+                                    ))
+                                ) : (
+                                    <th className="p-3 w-28">Limit</th>
+                                )}
+
+                                <th className="p-3 w-16 text-center">Shared</th>
+                                <th className="p-3 w-20 text-center">Rollover</th>
+                                <th className="p-3">Tags</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {renderRows(buckets)}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Footer / Add Root Category */}
+                <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30">
+                    <button
+                        onClick={() => createBucketMutation.mutate({ name: "New Category", group: "Discretionary" })}
+                        className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+                    >
+                        <Plus size={16} />
+                        Add Main Category
+                    </button>
+                </div>
+            </div>
+
+            {/* Smart Rules Section - Preserved */}
+            <section>
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6">Smart Rules</h2>
+                <RulesSection buckets={buckets} />
+            </section>
+        </div>
+    );
+}
+
 // === RULES SECTION ===
 const RulesSection = ({ buckets }) => {
     const queryClient = useQueryClient();
@@ -796,121 +944,3 @@ const RulesSection = ({ buckets }) => {
         </div>
     );
 };
-
-// === MAIN BUDGET PAGE ===
-export default function Budget() {
-    const queryClient = useQueryClient();
-
-    const { data: userSettings, isLoading: loadingUser } = useQuery({
-        queryKey: ['userSettings'],
-        queryFn: api.getSettings
-    });
-
-    const { data: buckets, isLoading: loadingBuckets } = useQuery({
-        queryKey: ['buckets'],
-        queryFn: api.getBuckets
-    });
-
-    const createBucketMutation = useMutation({
-        mutationFn: api.createBucket,
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['buckets'] })
-    });
-
-    const updateBucketMutation = useMutation({
-        mutationFn: ({ id, data }) => {
-            const payload = { ...data };
-            if (payload.tags && Array.isArray(payload.tags)) {
-                payload.tags = payload.tags.map(t => typeof t === 'object' ? t.name : t);
-            }
-            return api.updateBucket(id, payload);
-        },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['buckets'] })
-    });
-
-    const deleteBucketMutation = useMutation({
-        mutationFn: api.deleteBucket,
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['buckets'] })
-    });
-
-    const groupedBuckets = React.useMemo(() => {
-        if (!buckets) return { "Non-Discretionary": [], "Discretionary": [] };
-        const groups = { "Income": [], "Non-Discretionary": [], "Discretionary": [] };
-        buckets.forEach(bucket => {
-            const groupName = bucket.group || "Discretionary";
-            if (!groups[groupName]) groups[groupName] = [];
-            groups[groupName].push(bucket);
-        });
-        return groups;
-    }, [buckets]);
-
-    const allTags = React.useMemo(() => {
-        if (!buckets) return [];
-        const tagSet = new Set();
-        buckets.forEach(bucket => {
-            (bucket.tags || []).forEach(tag => tagSet.add(tag.name));
-        });
-        return Array.from(tagSet).sort();
-    }, [buckets]);
-
-    if (loadingUser || loadingBuckets) {
-        return <div className="p-8 dark:bg-slate-900 dark:text-white h-screen">Loading...</div>;
-    }
-
-    return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
-            <div className="max-w-7xl mx-auto p-6 space-y-8">
-                <header>
-                    <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Budget</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your spending categories and smart rules.</p>
-                </header>
-
-                {/* Budget Categories */}
-                <section>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6">Categories</h2>
-
-                    <BucketTableSection
-                        title="Income"
-                        icon={DollarSign}
-                        buckets={groupedBuckets["Income"] || []}
-                        userSettings={userSettings}
-                        createBucketMutation={createBucketMutation}
-                        updateBucketMutation={updateBucketMutation}
-                        deleteBucketMutation={deleteBucketMutation}
-                        groupName="Income"
-                        allTags={allTags}
-                    />
-
-                    <BucketTableSection
-                        title="Non-Discretionary"
-                        icon={Home}
-                        buckets={groupedBuckets["Non-Discretionary"] || []}
-                        userSettings={userSettings}
-                        createBucketMutation={createBucketMutation}
-                        updateBucketMutation={updateBucketMutation}
-                        deleteBucketMutation={deleteBucketMutation}
-                        groupName="Non-Discretionary"
-                        allTags={allTags}
-                    />
-
-                    <BucketTableSection
-                        title="Discretionary"
-                        icon={ShoppingBag}
-                        buckets={groupedBuckets["Discretionary"] || []}
-                        userSettings={userSettings}
-                        createBucketMutation={createBucketMutation}
-                        updateBucketMutation={updateBucketMutation}
-                        deleteBucketMutation={deleteBucketMutation}
-                        groupName="Discretionary"
-                        allTags={allTags}
-                    />
-                </section>
-
-                {/* Smart Rules */}
-                <section>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6">Smart Rules</h2>
-                    <RulesSection buckets={buckets} />
-                </section>
-            </div>
-        </div>
-    );
-}

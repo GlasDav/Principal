@@ -87,6 +87,11 @@ export const getBucketsTree = async () => {
     return response.data;
 };
 
+export const getTags = async () => {
+    const response = await api.get('/settings/tags');
+    return response.data;
+};
+
 // Analytics
 export const getCalendarData = async (start, end) => (await api.get('/analytics/calendar', { params: { start_date: start, end_date: end } })).data;
 export const getSubscriptions = async () => (await api.get('/analytics/subscriptions')).data;
@@ -102,6 +107,33 @@ export const getGoals = async () => (await api.get('/goals/')).data;
 export const createGoal = async (goal) => (await api.post('/goals/', goal)).data;
 export const updateGoal = async (id, data) => (await api.put(`/goals/${id}`, data)).data;
 export const deleteGoal = async (id) => (await api.delete(`/goals/${id}`)).data;
+
+// Accounts
+export const getAccounts = async () => (await api.get('/net-worth/accounts')).data;
+export const createAccount = async (data) => (await api.post('/net-worth/accounts', data)).data;
+export const updateAccount = async (id, data) => (await api.put(`/net-worth/accounts/${id}`, data)).data;
+export const deleteAccount = async (id) => (await api.delete(`/net-worth/accounts/${id}`)).data;
+
+// --- Members ---
+export const getMembers = async () => {
+    const response = await api.get('/settings/members');
+    return response.data;
+};
+
+export const createMember = async (memberData) => {
+    const response = await api.post('/settings/members', memberData);
+    return response.data;
+};
+
+export const updateMember = async ({ id, data }) => {
+    const response = await api.put(`/settings/members/${id}`, data);
+    return response.data;
+};
+
+export const deleteMember = async (id) => {
+    const response = await api.delete(`/settings/members/${id}`);
+    return response.data;
+};
 
 export const createBucket = async (bucket) => {
     const response = await api.post('/settings/buckets', bucket);

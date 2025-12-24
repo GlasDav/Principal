@@ -41,13 +41,18 @@
 
 ---
 
-## Phase 3: 🟡 Bank Integration & Automation
+## Phase 3: ✅ Bank Integration & Automation (Completed)
 
 **Automate data import and reduce manual entry.**
 
-- [ ] **Basiq Integration** - Automatic bank data import for Australian banks
-- [ ] **Connected Accounts Management** - Add/delete/hide accounts in Settings
-- [ ] **Recurring Transaction Detection** - Identify and flag recurring patterns
+- [x] **Basiq.io Integration**
+    - [x] Backend service for token handling & job polling
+    - [x] "Connect Bank" UI flow
+    - [x] Data ingestion (Accounts & Transactions)
+- [x] **Link Accounts UI**
+    - [x] View connected institutions
+    - [x] Manual sync trigger (backend logic ready)
+- [x] **Recurring Transaction Detection** - Identify and flag recurring patterns
 
 ---
 
@@ -56,7 +61,7 @@
 **Multi-user features and advanced configuration.**
 
 ### Household/Members
-- [ ] **Household Members** - Replace Couples Mode with flexible household member management
+- [x] **Household Members** - Replace Couples Mode with flexible household member management
 - [ ] **Professional Access** - Give read access to accountant/advisor
 - [ ] **Member Permissions** - Role-based access (view only, edit, admin)
 
@@ -66,7 +71,7 @@
 - [ ] **Goal Milestone Celebrations** - Notify when reaching savings goals
 
 ### Categories & Organization
-- [ ] **Custom Groups & Categories** - User-defined category hierarchy
+- [x] **Custom Groups & Categories** - User-defined category hierarchy
 - [ ] **Hide Category from Budget** - Exclude categories from budget view
 - [ ] **Category Ordering** - Drag-and-drop reordering
 

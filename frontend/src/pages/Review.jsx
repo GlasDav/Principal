@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { getBuckets, getSettings } from '../services/api';
+import api, { getBuckets, getSettings, getMembers } from '../services/api';
 import { CheckCircle, XCircle, Clock, Users, ArrowRight } from 'lucide-react';
 
 export default function Review() {
@@ -27,6 +27,12 @@ export default function Review() {
         }
     });
 
+    // Fetch Household Members
+    const { data: members = [], isLoading: loadingMembers } = useQuery({
+        queryKey: ['members'],
+        queryFn: getMembers
+    });
+
     // Update transaction mutation
     const updateMutation = useMutation({
         mutationFn: async ({ id, data }) => {
@@ -39,33 +45,44 @@ export default function Review() {
     });
 
     const transactions = reviewData?.items || [];
-    const pendingForA = transactions.filter(t => t.assigned_to === 'A');
-    const pendingForB = transactions.filter(t => t.assigned_to === 'B');
+
+    // Group transactions by assigned_to field (member_id or legacy 'A'/'B')
+    const getTransactionsForMember = (memberId, memberIndex) => {
+        return transactions.filter(t => {
+            // Support both member_id (new) and legacy 'A'/'B' assignment
+            if (t.assigned_to === String(memberId)) return true;
+            // Legacy support: 'A' = first member, 'B' = second member
+            if (memberIndex === 0 && t.assigned_to === 'A') return true;
+            if (memberIndex === 1 && t.assigned_to === 'B') return true;
+            return false;
+        });
+    };
 
     const handleApprove = (txnId) => {
         updateMutation.mutate({ id: txnId, data: { assigned_to: '', is_verified: true } });
     };
 
-    const handleAssign = (txnId, assignTo) => {
-        updateMutation.mutate({ id: txnId, data: { assigned_to: assignTo } });
+    const handleReassign = (txnId, newAssignee) => {
+        updateMutation.mutate({ id: txnId, data: { assigned_to: newAssignee } });
     };
 
-    if (loadingSettings || loadingReview) {
+    if (loadingSettings || loadingReview || loadingMembers) {
         return <div className="p-8 dark:bg-slate-900 dark:text-white h-screen">Loading...</div>;
     }
 
-    if (!userSettings?.is_couple_mode) {
+    // Check if there are at least 2 members to enable review feature
+    if (members.length < 2) {
         return (
             <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
                 <div className="max-w-4xl mx-auto p-6">
                     <div className="bg-white dark:bg-slate-800 rounded-xl p-8 text-center">
                         <Users size={48} className="mx-auto text-slate-400 mb-4" />
-                        <h2 className="text-xl font-bold text-slate-700 dark:text-white mb-2">Partner Review</h2>
+                        <h2 className="text-xl font-bold text-slate-700 dark:text-white mb-2">Family Review</h2>
                         <p className="text-slate-500 dark:text-slate-400">
-                            Partner review is only available in Couple Mode.
+                            Family review requires at least 2 household members.
                         </p>
                         <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">
-                            Enable Couple Mode in Settings to use this feature.
+                            Add more members in Settings to use this feature.
                         </p>
                     </div>
                 </div>
@@ -73,8 +90,7 @@ export default function Review() {
         );
     }
 
-
-    const TransactionRow = ({ txn, showAssignedTo }) => {
+    const TransactionRow = ({ txn, currentMemberId }) => {
         const bucket = buckets.find(b => b.id === txn.bucket_id);
         return (
             <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
@@ -103,6 +119,19 @@ export default function Review() {
                     ${Math.abs(txn.amount).toFixed(2)}
                 </div>
                 <div className="flex gap-2">
+                    {/* Reassign dropdown */}
+                    <select
+                        className="bg-slate-50 dark:bg-slate-700 border-0 rounded-md text-xs text-slate-600 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-600 focus:ring-2 focus:ring-indigo-500 py-1.5 pl-2 pr-6"
+                        value=""
+                        onChange={(e) => {
+                            if (e.target.value) handleReassign(txn.id, e.target.value);
+                        }}
+                    >
+                        <option value="">Reassign...</option>
+                        {members.filter(m => String(m.id) !== String(currentMemberId)).map(m => (
+                            <option key={m.id} value={m.id}>{m.name}</option>
+                        ))}
+                    </select>
                     <button
                         onClick={() => handleApprove(txn.id)}
                         disabled={updateMutation.isPending}
@@ -120,69 +149,54 @@ export default function Review() {
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
             <div className="max-w-5xl mx-auto p-6 space-y-8">
                 <header>
-                    <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Partner Review</h1>
+                    <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Family Review</h1>
                     <p className="text-slate-500 dark:text-slate-400 mt-1">
-                        Review and approve transactions assigned by your partner.
+                        Review and approve transactions assigned to household members.
                     </p>
                 </header>
 
-                {/* Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                                <Clock size={20} className="text-indigo-600 dark:text-indigo-400" />
-                            </div>
-                            <div>
-                                <div className="text-2xl font-bold text-slate-800 dark:text-white">{pendingForA.length}</div>
-                                <div className="text-sm text-slate-500 dark:text-slate-400">
-                                    Pending for {userSettings?.name_a || 'Partner A'}
+                {/* Summary Cards - One for each member */}
+                <div className={`grid grid-cols-1 ${members.length === 2 ? 'md:grid-cols-2' : members.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-4`}>
+                    {members.map((member, index) => {
+                        const pendingCount = getTransactionsForMember(member.id, index).length;
+                        return (
+                            <div key={member.id} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: member.color + '20' }}>
+                                        <Clock size={20} style={{ color: member.color }} />
+                                    </div>
+                                    <div>
+                                        <div className="text-2xl font-bold text-slate-800 dark:text-white">{pendingCount}</div>
+                                        <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: member.color }}></span>
+                                            Pending for {member.name}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                                <Clock size={20} className="text-purple-600 dark:text-purple-400" />
-                            </div>
-                            <div>
-                                <div className="text-2xl font-bold text-slate-800 dark:text-white">{pendingForB.length}</div>
-                                <div className="text-sm text-slate-500 dark:text-slate-400">
-                                    Pending for {userSettings?.name_b || 'Partner B'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        );
+                    })}
                 </div>
 
-                {/* Partner A's Queue */}
-                {pendingForA.length > 0 && (
-                    <section>
-                        <h2 className="text-lg font-bold text-slate-700 dark:text-white mb-3">
-                            For {userSettings?.name_a || 'Partner A'} to Review
-                        </h2>
-                        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                            {pendingForA.map(txn => (
-                                <TransactionRow key={txn.id} txn={txn} />
-                            ))}
-                        </div>
-                    </section>
-                )}
+                {/* Transaction queues for each member */}
+                {members.map((member, index) => {
+                    const pending = getTransactionsForMember(member.id, index);
+                    if (pending.length === 0) return null;
 
-                {/* Partner B's Queue */}
-                {pendingForB.length > 0 && (
-                    <section>
-                        <h2 className="text-lg font-bold text-slate-700 dark:text-white mb-3">
-                            For {userSettings?.name_b || 'Partner B'} to Review
-                        </h2>
-                        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                            {pendingForB.map(txn => (
-                                <TransactionRow key={txn.id} txn={txn} />
-                            ))}
-                        </div>
-                    </section>
-                )}
+                    return (
+                        <section key={member.id}>
+                            <h2 className="text-lg font-bold text-slate-700 dark:text-white mb-3 flex items-center gap-2">
+                                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: member.color }}></span>
+                                For {member.name} to Review
+                            </h2>
+                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                {pending.map(txn => (
+                                    <TransactionRow key={txn.id} txn={txn} currentMemberId={member.id} />
+                                ))}
+                            </div>
+                        </section>
+                    );
+                })}
 
                 {/* Empty State */}
                 {transactions.length === 0 && (
@@ -193,7 +207,7 @@ export default function Review() {
                             No transactions need review right now.
                         </p>
                         <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">
-                            To assign a transaction for review, select "Assign to Partner" in the Transactions page.
+                            To assign a transaction for review, select "Assign to Member" in the Transactions page.
                         </p>
                     </div>
                 )}

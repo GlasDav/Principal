@@ -35,18 +35,32 @@ class Tag(TagBase):
     class Config:
         from_attributes = True
 
+# Budget Limits (Forward declaration for buckets)
+class BudgetLimitBase(BaseModel):
+    member_id: int
+    amount: float
+
+class BudgetLimitCreate(BudgetLimitBase):
+    pass
+
+class BudgetLimit(BudgetLimitBase):
+    id: int
+    bucket_id: int
+    
+    class Config:
+        from_attributes = True
+
 # BudgetBucket (Moved Up)
 class BudgetBucketBase(BaseModel):
     name: str
     icon_name: str = "Wallet"
-    monthly_limit_a: float = 0.0
-    monthly_limit_b: float = 0.0
-    is_shared: bool = False
     group: str = "Discretionary"
     is_rollover: bool = False
     is_transfer: bool = False  # Transfer buckets excluded from spending analytics
     is_investment: bool = False  # Investment buckets excluded from expenses but shown in Sankey
+    is_investment: bool = False  # Investment buckets excluded from expenses but shown in Sankey
     tags: List[str] = []
+    limits: List[BudgetLimitBase] = [] # New: Member Limits
     target_amount: Optional[float] = None
     target_date: Optional[date] = None
     parent_id: Optional[int] = None  # Hierarchy: reference to parent category
@@ -182,15 +196,13 @@ class Transaction(TransactionBase):
 # User
 class UserBase(BaseModel):
     email: EmailStr
-    is_couple_mode: bool = False
-    name_a: str = "You"
-    name_b: str = "Partner"
     currency_symbol: str = "$"
 
 class UserCreate(BaseModel):
     """Schema for user registration with validation."""
     email: EmailStr
     password: str
+    name: Optional[str] = "You"
     
     @field_validator('password')
     @classmethod
@@ -204,9 +216,6 @@ class UserCreate(BaseModel):
         return v
 
 class UserSettingsUpdate(BaseModel):
-    is_couple_mode: Optional[bool] = None
-    name_a: Optional[str] = None
-    name_b: Optional[str] = None
     currency_symbol: Optional[str] = None
     
 class UserLogin(BaseModel):
@@ -285,9 +294,11 @@ class NetWorthSnapshot(BaseModel):
     class Config:
         from_attributes = True
 
+# Subscriptions
 class SubscriptionBase(BaseModel):
     name: str
     amount: float
+    type: str = "Expense" # "Expense" or "Income"
     frequency: str
     next_due_date: date
     is_active: bool = True
@@ -299,6 +310,7 @@ class SubscriptionCreate(SubscriptionBase):
 class SubscriptionUpdate(BaseModel):
     name: Optional[str] = None
     amount: Optional[float] = None
+    type: Optional[str] = None
     frequency: Optional[str] = None
     next_due_date: Optional[date] = None
     is_active: Optional[bool] = None
@@ -404,3 +416,26 @@ class MessageResponse(BaseModel):
 class DeleteAccountRequest(BaseModel):
     """Request schema for account deletion - requires password confirmation."""
     password: str
+
+# Household Members
+class HouseholdMemberBase(BaseModel):
+    name: str
+    color: str = "#6366f1"
+    avatar: str = "User"
+
+    @field_validator('name', 'color', 'avatar')
+    @classmethod
+    def sanitize_member_fields(cls, v: str) -> str:
+        return sanitize_text(v, max_length=50) or ""
+
+class HouseholdMemberCreate(HouseholdMemberBase):
+    pass
+
+class HouseholdMember(HouseholdMemberBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+

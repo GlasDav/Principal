@@ -86,13 +86,7 @@ async def sync_connection(
         accounts_map = {a.connection_id: a for a in db.query(models.Account).filter(models.Account.user_id == current_user.id).all()}
         
         # 2. Sync Transactions
-        # In mock data, transactions aren't linked to specific accounts explicitly 
-        # but in real Basiq they are.
-        # Let's assume Mock Transactions belong to the first account for simplicity logic or randomize.
-        
-        default_acc = list(accounts_map.values())[0] if accounts_map else None
-        
-        if default_acc:
+        if data.get("transactions"):
             for txn_data in data["transactions"]:
                 # Check exist
                 existing_txn = db.query(models.Transaction).filter(
@@ -103,6 +97,11 @@ async def sync_connection(
                     # Parse date
                     date_obj = datetime.fromisoformat(txn_data["postDate"])
                     
+                    # Find mapped account
+                    # In Basiq, txn_data["links"]["account"] is the ID
+                    basiq_acc_id = txn_data.get("links", {}).get("account")
+                    mapped_acc = accounts_map.get(basiq_acc_id)
+                    
                     new_txn = models.Transaction(
                         user_id=current_user.id,
                         date=date_obj,
@@ -111,7 +110,7 @@ async def sync_connection(
                         amount=float(txn_data["amount"]),
                         bucket_id=None, # Uncategorized
                         external_id=txn_data["id"],
-                        account_id=default_acc.id if default_acc else None
+                        account_id=mapped_acc.id if mapped_acc else None
                     )
                     
                     db.add(new_txn)

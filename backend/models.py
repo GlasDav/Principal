@@ -9,10 +9,9 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True) # Renamed from username, now Email
     hashed_password = Column(String) # New: Auth
-    is_couple_mode = Column(Boolean, default=False)
-    name_a = Column(String, default="You")
-    name_b = Column(String, default="Partner")
-    currency_symbol = Column(String, default="AUD") # Default: AUD
+    # Personal Info
+    name = Column(String, nullable=True) # Defaults to User A or just Name
+    currency_symbol = Column(String, default="$")
     is_email_verified = Column(Boolean, default=False)  # Email verification status
     token_version = Column(Integer, default=0)  # Incremented to invalidate all tokens
     
@@ -32,9 +31,7 @@ class BudgetBucket(Base):
     name = Column(String, index=True)
     icon_name = Column(String, default="Wallet") # New: Lucide icon name
     user_id = Column(Integer, ForeignKey("users.id"))
-    monthly_limit_a = Column(Float, default=0.0) # For Individual or Partner A
-    monthly_limit_b = Column(Float, default=0.0) # For Partner B (if couple)
-    is_shared = Column(Boolean, default=False)
+
     is_rollover = Column(Boolean, default=False) # New: Sinking Funds
     is_transfer = Column(Boolean, default=False)  # Transfer buckets excluded from spending analytics
     is_investment = Column(Boolean, default=False)  # Investment buckets excluded from expenses but shown in Sankey
@@ -54,6 +51,9 @@ class BudgetBucket(Base):
     
     # Self-referential relationship for hierarchy
     parent = relationship("BudgetBucket", remote_side=[id], backref="children")
+    
+    # New: Household Limits
+    limits = relationship("BudgetLimit", back_populates="bucket", cascade="all, delete-orphan")
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -112,6 +112,7 @@ class Account(Base):
     name = Column(String, index=True)
     type = Column(String) # "Asset" or "Liability"
     category = Column(String) # e.g. "Cash", "Investment", "Real Estate", "Credit Card"
+    balance = Column(Float, default=0.0) # Current cached balance
     is_active = Column(Boolean, default=True)
     connection_id = Column(String, nullable=True) # Basiq Connection/User ID
     
@@ -195,15 +196,15 @@ class Subscription(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    name = Column(String, index=True)
+    name = Column(String)
     amount = Column(Float)
-    frequency = Column(String) # Monthly, Weekly, Yearly
+    type = Column(String, default="Expense") # "Expense" or "Income"
+    frequency = Column(String)
     next_due_date = Column(Date)
     is_active = Column(Boolean, default=True)
-    description_keyword = Column(String, nullable=True) # For auto-matching transactions
+    description_keyword = Column(String, nullable=True) # Text to match in transactions
     
-    user = relationship("User")
-
+    user = relationship("User") # Relationships TaxSettings(Base):
 class TaxSettings(Base):
     __tablename__ = "tax_settings"
     
@@ -246,3 +247,27 @@ class EmailVerificationToken(Base):
     created_at = Column(DateTime, default=func.now())
     
     user = relationship("User")
+
+class HouseholdMember(Base):
+    __tablename__ = "household_members"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    name = Column(String)
+    color = Column(String, default="#6366f1") # Hex color for UI
+    avatar = Column(String, default="User") # Lucide icon name
+    created_at = Column(DateTime, default=func.now())
+    
+    user = relationship("User")
+    budget_limits = relationship("BudgetLimit", back_populates="member")
+
+class BudgetLimit(Base):
+    __tablename__ = "budget_limits"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    bucket_id = Column(Integer, ForeignKey("budget_buckets.id"))
+    member_id = Column(Integer, ForeignKey("household_members.id"))
+    amount = Column(Float, default=0.0)
+    
+    bucket = relationship("BudgetBucket")
+    member = relationship("HouseholdMember", back_populates="budget_limits")

@@ -21,8 +21,12 @@ export const ThemeProvider = ({ children }) => {
         }
     }, [darkMode]);
 
+    // Provide theme as string and toggleTheme function for Settings.jsx compatibility
+    const theme = darkMode ? 'dark' : 'light';
+    const toggleTheme = () => setDarkMode(!darkMode);
+
     return (
-        <ThemeContext.Provider value={{ darkMode, setDarkMode }}>
+        <ThemeContext.Provider value={{ darkMode, setDarkMode, theme, toggleTheme }}>
             {children}
         </ThemeContext.Provider>
     );

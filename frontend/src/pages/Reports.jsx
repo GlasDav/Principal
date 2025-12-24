@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import api from '../services/api';
+import api, { getMembers } from '../services/api';
 import { Download, RefreshCw, Filter, Calendar as CalendarIcon, PieChart, BarChart2 } from 'lucide-react';
 import { ComposedChart, Bar, Line, LineChart, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend, PieChart as RePieChart, Pie, Cell } from 'recharts';
 import { CategorySelect } from '../components/CategoryTree';
@@ -55,6 +55,12 @@ export default function Reports() {
         queryFn: api.getBucketsTree
     });
 
+    // Fetch Household Members
+    const { data: members = [] } = useQuery({
+        queryKey: ['members'],
+        queryFn: getMembers
+    });
+
     // Fetch Dashboard Data (Summary Cards)
     const { data: dashboardData, isLoading: loadingSummary } = useQuery({
         queryKey: ['reports_summary', start, end, spenderFilter],
@@ -82,10 +88,13 @@ export default function Reports() {
     });
 
     // Cash Flow Projection
-    const { data: cashFlowData = [] } = useQuery({
-        queryKey: ['cashFlowProjection'],
-        queryFn: async () => (await api.get('/analytics/cashflow-projection?months=3')).data
+    const { data: forecastResult } = useQuery({
+        queryKey: ['cashFlowForecast'],
+        queryFn: async () => (await api.get('/analytics/forecast?days=90')).data
     });
+    const cashFlowData = forecastResult?.forecast || [];
+    const minBalance = forecastResult?.min_projected_balance;
+    const dailyBurn = forecastResult?.daily_burn_rate;
 
     // Fetch Transactions for Export (Raw Data)
     const handleExport = async () => {
@@ -218,17 +227,20 @@ export default function Reports() {
 
                 {/* Spender Filter */}
                 <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
-                    {[
-                        { label: "Combined", value: "Combined" },
-                        { label: userSettings?.name_a || "User A", value: "User A" },
-                        { label: userSettings?.name_b || "User B", value: "User B" }
-                    ].map(mode => (
+                    <button
+                        onClick={() => setSpenderFilter('Combined')}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${spenderFilter === 'Combined' ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
+                    >
+                        Combined
+                    </button>
+                    {members.map(member => (
                         <button
-                            key={mode.value}
-                            onClick={() => setSpenderFilter(mode.value)}
-                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${spenderFilter === mode.value ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
+                            key={member.id}
+                            onClick={() => setSpenderFilter(member.name)}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${spenderFilter === member.name ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
                         >
-                            {mode.label}
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: member.color }}></span>
+                            {member.name}
                         </button>
                     ))}
                 </div>
@@ -340,8 +352,24 @@ export default function Reports() {
 
             {/* Cash Flow Forecast */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Cash Flow Forecast (Next 3 Months)</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Projected balance based on your subscriptions and recurring expenses.</p>
+                <div className="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Cash Flow Forecast (90 Days)</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Projected balance based on subscriptions and daily burn rate.</p>
+                    </div>
+                    {(minBalance !== undefined) && (
+                        <div className="flex gap-4">
+                            <div className="text-right">
+                                <p className="text-xs text-slate-400">Daily Burn</p>
+                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(dailyBurn)}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs text-slate-400">Min Projected</p>
+                                <p className={`text-sm font-semibold ${minBalance < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{formatCurrency(minBalance)}</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Switch, Menu } from '@headlessui/react';
-import { Trash2, Plus, Download, Moon, Sun, DollarSign, Euro, PoundSterling, Save, Upload, Wallet, ShoppingCart, Tag as TagIcon, Home, Utensils, Zap, Car, Film, Heart, ShoppingBag, Briefcase, Coffee, Gift, Music, Smartphone, Plane, Play, TrendingUp, PiggyBank, Landmark, ChevronRight, ChevronDown, CornerDownRight, Users } from 'lucide-react';
+import { Trash2, Plus, Download, Moon, Sun, DollarSign, Euro, PoundSterling, Save, Upload, Wallet, ShoppingCart, Tag as TagIcon, Home, Utensils, Zap, Car, Film, Heart, ShoppingBag, Briefcase, Coffee, Gift, Music, Smartphone, Plane, Play, TrendingUp, PiggyBank, Landmark, ChevronRight, ChevronDown, CornerDownRight, Users, Link } from 'lucide-react';
 import * as api from '../services/api';
 import { ICON_MAP, DEFAULT_ICON } from '../utils/icons';
 import { useTheme } from '../context/ThemeContext';
@@ -40,11 +40,19 @@ const AccountCard = ({ account, updateAccountMutation, deleteAccountMutation }) 
                 </div>
 
                 <div className="flex flex-col flex-1 gap-1">
-                    <input
-                        className="font-semibold text-slate-800 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-indigo-500 outline-none transition px-1"
-                        value={account.name}
-                        onChange={(e) => updateAccountMutation.mutate({ id: account.id, data: { ...account, name: e.target.value } })}
-                    />
+                    <div className="flex items-center gap-2">
+                        <input
+                            className="font-semibold text-slate-800 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-indigo-500 outline-none transition px-1 flex-1"
+                            value={account.name}
+                            onChange={(e) => updateAccountMutation.mutate({ id: account.id, data: { ...account, name: e.target.value } })}
+                        />
+                        {account.connection_id && (
+                            <span className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800" title="Connected via Basiq">
+                                <Link size={10} />
+                                Linked
+                            </span>
+                        )}
+                    </div>
                     <div className="flex gap-2">
                         <select
                             className="text-xs text-slate-500 dark:text-slate-400 bg-transparent outline-none cursor-pointer hover:text-indigo-500"
@@ -83,6 +91,49 @@ const AccountCard = ({ account, updateAccountMutation, deleteAccountMutation }) 
     );
 };
 
+const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation }) => {
+    return (
+        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 space-y-3 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3">
+                <div
+                    className="p-2 rounded-lg text-white"
+                    style={{ backgroundColor: member.color || '#6366f1' }}
+                >
+                    <Users size={20} />
+                </div>
+
+                <div className="flex flex-col flex-1 gap-1">
+                    <div className="flex items-center gap-2">
+                        <input
+                            className="font-semibold text-slate-800 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-indigo-500 outline-none transition px-1 flex-1"
+                            value={member.name}
+                            onChange={(e) => updateMemberMutation.mutate({ id: member.id, data: { ...member, name: e.target.value } })}
+                        />
+                    </div>
+                    <div className="flex gap-2 items-center">
+                        <input
+                            type="color"
+                            className="w-6 h-6 p-0 border-0 rounded cursor-pointer"
+                            value={member.color || '#6366f1'}
+                            onChange={(e) => updateMemberMutation.mutate({ id: member.id, data: { ...member, color: e.target.value } })}
+                        />
+                        <span className="text-xs text-slate-400">Color</span>
+                    </div>
+                </div>
+
+                <button
+                    onClick={() => {
+                        if (confirm("Delete this member? Limits associated with them will be removed.")) deleteMemberMutation.mutate(member.id);
+                    }}
+                    className="text-slate-300 hover:text-red-400 transition self-start"
+                >
+                    <Trash2 size={16} />
+                </button>
+            </div>
+        </div>
+    );
+};
+
 export default function Settings() {
     const { theme, toggleTheme } = useTheme();
     const queryClient = useQueryClient();
@@ -92,6 +143,7 @@ export default function Settings() {
     // Queries
     const { data: userSettings, isLoading: settingsLoading } = useQuery({ queryKey: ['settings'], queryFn: api.getSettings });
     const { data: accounts = [], isLoading: accountsLoading } = useQuery({ queryKey: ['accounts'], queryFn: api.getAccounts });
+    const { data: members = [], isLoading: membersLoading } = useQuery({ queryKey: ['members'], queryFn: api.getMembers });
 
     // Mutations for Settings
     const updateSettingsMutation = useMutation({
@@ -120,6 +172,28 @@ export default function Settings() {
         mutationFn: api.deleteAccount,
         onSuccess: () => {
             queryClient.invalidateQueries(['accounts']);
+        },
+    });
+
+    // Mutations for Members
+    const createMemberMutation = useMutation({
+        mutationFn: api.createMember,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['members']);
+        },
+    });
+
+    const updateMemberMutation = useMutation({
+        mutationFn: api.updateMember,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['members']);
+        },
+    });
+
+    const deleteMemberMutation = useMutation({
+        mutationFn: api.deleteMember,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['members']);
         },
     });
 
@@ -164,7 +238,7 @@ export default function Settings() {
         updateSettingsMutation.mutate({ ...userSettings, is_couple_mode: checked });
     };
 
-    if (settingsLoading) return <div className="p-8">Loading settings...</div>;
+    if (settingsLoading || accountsLoading || membersLoading) return <div className="p-8">Loading settings...</div>;
 
     return (
         <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-8">
@@ -228,47 +302,39 @@ export default function Settings() {
                         </div>
                     </div>
 
-                    {/* Couple Mode Toggle */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                            <Users size={18} className="text-purple-500" />
+                    {/* Household Members */}
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-4">
                             <div>
-                                <span className="text-sm font-medium text-slate-700 dark:text-slate-200 block">Couple Mode</span>
-                                <span className="text-xs text-slate-400">Enable split limits (User A / User B) for categories</span>
+                                <h3 className="text-sm font-medium text-slate-800 dark:text-slate-200">Household Members</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Manage people in your household for budgeting</p>
                             </div>
+                            <button
+                                onClick={() => createMemberMutation.mutate({ name: "New Member", color: "#6366f1", avatar: "User" })}
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition"
+                            >
+                                <Plus size={14} />
+                                Add Member
+                            </button>
                         </div>
-                        <Switch
-                            checked={userSettings?.is_couple_mode || false}
-                            onChange={handleCoupleToggle}
-                            className={`${userSettings?.is_couple_mode ? 'bg-purple-600' : 'bg-slate-200'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
-                        >
-                            <span className={`${userSettings?.is_couple_mode ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
-                        </Switch>
-                    </div>
 
-                    {/* Couple Names - Only if enabled */}
-                    {userSettings?.is_couple_mode && (
-                        <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div>
-                                <label className="block text-xs font-medium text-slate-500 mb-1">User A Name</label>
-                                <input
-                                    className="w-full p-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm outline-none focus:border-indigo-500"
-                                    value={userSettings?.name_a || ''}
-                                    onChange={(e) => updateSettingsMutation.mutate({ ...userSettings, name_a: e.target.value })}
-                                    placeholder="e.g. David"
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {members.map(member => (
+                                <MemberCard
+                                    key={member.id}
+                                    member={member}
+                                    updateMemberMutation={updateMemberMutation}
+                                    deleteMemberMutation={deleteMemberMutation}
                                 />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-slate-500 mb-1">User B Name</label>
-                                <input
-                                    className="w-full p-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm outline-none focus:border-indigo-500"
-                                    value={userSettings?.name_b || ''}
-                                    onChange={(e) => updateSettingsMutation.mutate({ ...userSettings, name_b: e.target.value })}
-                                    placeholder="e.g. Partner"
-                                />
-                            </div>
+                            ))}
                         </div>
-                    )}
+
+                        {members.length === 0 && (
+                            <div className="text-center py-6 text-slate-400 text-sm italic">
+                                No members found. Add a member to start tracking individual limits.
+                            </div>
+                        )}
+                    </div>
                 </div>
             </section>
 

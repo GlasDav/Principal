@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Listbox, Transition } from '@headlessui/react';
 import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight, Pencil, Table, ChevronDown, Check, Loader2, UserCheck } from 'lucide-react';
-import api from '../services/api';
+import api, { getMembers } from '../services/api';
 import ConnectBank from '../components/ConnectBank';
 
 
@@ -33,6 +33,12 @@ export default function Ingest() {
     const { data: userSettings } = useQuery({
         queryKey: ['userSettings'],
         queryFn: async () => (await api.get('/settings/user')).data
+    });
+
+    // Fetch Household Members
+    const { data: members = [] } = useQuery({
+        queryKey: ['members'],
+        queryFn: getMembers
     });
 
     // ... (fetch and mutations) ...
@@ -276,9 +282,7 @@ export default function Ingest() {
                                     <div className="relative mt-1">
                                         <Listbox.Button className="relative w-full cursor-default rounded-lg bg-slate-50 dark:bg-slate-700 py-2 pl-10 pr-10 text-center border border-slate-200 dark:border-slate-600 focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-300 sm:text-sm text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                             <span className="block truncate">
-                                                {spender === 'Joint' ? 'Joint Account' :
-                                                    spender === 'User A' ? (userSettings?.name_a || 'User A') :
-                                                        (userSettings?.name_b || 'User B')}
+                                                {spender === 'Joint' ? 'Joint Account' : spender}
                                             </span>
                                             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                                                 <ChevronDown
@@ -294,29 +298,44 @@ export default function Ingest() {
                                             leaveTo="opacity-0"
                                         >
                                             <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-slate-700 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm z-50 text-center">
-                                                {[
-                                                    { id: 'Joint', name: 'Joint Account' },
-                                                    { id: 'User A', name: userSettings?.name_a || 'User A' },
-                                                    { id: 'User B', name: userSettings?.name_b || 'User B' }
-                                                ].map((person, personIdx) => (
+                                                <Listbox.Option
+                                                    className={({ active }) =>
+                                                        `relative cursor-default select-none py-2 pl-10 pr-10 ${active ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-100' : 'text-slate-900 dark:text-slate-100'}`
+                                                    }
+                                                    value="Joint"
+                                                >
+                                                    {({ selected }) => (
+                                                        <>
+                                                            <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                                Joint Account
+                                                            </span>
+                                                            {selected && (
+                                                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                                                    <Check className="h-5 w-5" aria-hidden="true" />
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </Listbox.Option>
+                                                {members.map((member) => (
                                                     <Listbox.Option
-                                                        key={personIdx}
+                                                        key={member.id}
                                                         className={({ active }) =>
-                                                            `relative cursor-default select-none py-2 pl-10 pr-10 ${active ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-100' : 'text-slate-900 dark:text-slate-100'
-                                                            }`
+                                                            `relative cursor-default select-none py-2 pl-10 pr-10 ${active ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-100' : 'text-slate-900 dark:text-slate-100'}`
                                                         }
-                                                        value={person.id}
+                                                        value={member.name}
                                                     >
                                                         {({ selected }) => (
                                                             <>
-                                                                <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
-                                                                    {person.name}
+                                                                <span className={`block truncate flex items-center gap-2 justify-center ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: member.color }}></span>
+                                                                    {member.name}
                                                                 </span>
-                                                                {selected ? (
+                                                                {selected && (
                                                                     <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
                                                                         <Check className="h-5 w-5" aria-hidden="true" />
                                                                     </span>
-                                                                ) : null}
+                                                                )}
                                                             </>
                                                         )}
                                                     </Listbox.Option>
@@ -669,8 +688,9 @@ export default function Ingest() {
                                                 onChange={(e) => handleSpenderChange(txn.id, e.target.value)}
                                             >
                                                 <option value="Joint">Joint</option>
-                                                <option value="User A">{userSettings?.name_a || "User A"}</option>
-                                                <option value="User B">{userSettings?.name_b || "User B"}</option>
+                                                {members.map(member => (
+                                                    <option key={member.id} value={member.name}>{member.name}</option>
+                                                ))}
                                             </select>
                                         </td>
                                         <td className={`p-4 text-sm font-semibold text-right ${txn.amount < 0 ? 'text-slate-900 dark:text-white' : 'text-green-600'}`}>
