@@ -839,19 +839,34 @@ def get_sankey_data(
     non_disc_total = 0.0
     disc_total = 0.0
     
-    # Buckets Logic
+    # Collect buckets by group for ordered processing
+    disc_buckets = []
+    non_disc_buckets = []
+    
     for bid, amount in bucket_spend.items():
         if bid not in bucket_map: continue
         bucket = bucket_map[bid]
         
-        idx_b = get_node(bucket.name)
-        
         if bucket.group == "Non-Discretionary":
-            links.append({"source": idx_non_disc, "target": idx_b, "value": amount})
+            non_disc_buckets.append((bucket.name, amount))
             non_disc_total += amount
         else:
-            links.append({"source": idx_disc, "target": idx_b, "value": amount})
+            disc_buckets.append((bucket.name, amount))
             disc_total += amount
+    
+    # Sort by amount descending within each group
+    disc_buckets.sort(key=lambda x: x[1], reverse=True)
+    non_disc_buckets.sort(key=lambda x: x[1], reverse=True)
+    
+    # Process Discretionary first (will appear higher in diagram)
+    for bucket_name, amount in disc_buckets:
+        idx_b = get_node(bucket_name)
+        links.append({"source": idx_disc, "target": idx_b, "value": amount})
+    
+    # Then Non-Discretionary
+    for bucket_name, amount in non_disc_buckets:
+        idx_b = get_node(bucket_name)
+        links.append({"source": idx_non_disc, "target": idx_b, "value": amount})
             
     # Uncategorized Logic
     if unallocated_spend > 0:
@@ -859,12 +874,12 @@ def get_sankey_data(
         # Layer 3 for Uncategorized
         links.append({"source": idx_uncat, "target": get_node("Misc"), "value": unallocated_spend})
 
-    # High Level Links (Income -> Groups)
-    if non_disc_total > 0:
-        links.append({"source": idx_income, "target": idx_non_disc, "value": non_disc_total})
-    
+    # High Level Links (Income -> Groups) - Discretionary first for visual ordering
     if disc_total > 0:
         links.append({"source": idx_income, "target": idx_disc, "value": disc_total})
+    
+    if non_disc_total > 0:
+        links.append({"source": idx_income, "target": idx_non_disc, "value": non_disc_total})
         
     # Savings Logic
     # Net Savings in this variable is (Income - Expenses).
