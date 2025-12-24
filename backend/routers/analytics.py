@@ -831,9 +831,9 @@ def get_sankey_data(
         links.append({"source": idx_other_income, "target": idx_income, "value": other_income_total})
     
     # --- EXPENSE GROUPS (Income -> Groups) ---
-    # Groups (User requested "Discretionary" vs "Non-Discretionary")
-    idx_non_disc = get_node("Non-Discretionary") # Formerly Needs
+    # Create Discretionary FIRST so it appears higher in the diagram
     idx_disc = get_node("Discretionary")         # Formerly Wants
+    idx_non_disc = get_node("Non-Discretionary") # Formerly Needs
     idx_uncat = get_node("Uncategorized")
     
     non_disc_total = 0.0
