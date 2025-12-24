@@ -88,11 +88,12 @@
 
 **AI-powered insights and predictive features.**
 
-- [ ] **Cash Flow Forecasting** - Predict future balance based on patterns
-- [ ] **AI Chatbot** - Natural language queries about finances
+- [ ] **Cash Flow Forecasting** - Predict future balance based on patterns (UI pending - endpoint exists)
+- [x] **AI Chatbot** - Natural language queries about finances
 - [ ] **Interactive Tutorial** - AI-guided onboarding and feature discovery
-- [ ] **Spending Anomaly Alerts** - Proactive unusual spending notifications
-- [ ] **Savings Opportunity Detection** - AI suggests where to cut spending
+- [x] **Spending Anomaly Alerts** - Proactive unusual spending notifications
+- [x] **Savings Opportunity Detection** - AI suggests where to cut spending
+
 
 ---
 

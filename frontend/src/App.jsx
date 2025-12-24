@@ -33,6 +33,7 @@ import Footer from './components/Footer';
 import { FeedbackModal, FeedbackButton } from './components/FeedbackModal';
 import { LogOut } from 'lucide-react';
 import NotificationBell from './components/NotificationBell';
+import AIChatBot from './components/AIChatBot';
 
 const queryClient = new QueryClient();
 
@@ -136,6 +137,9 @@ function Layout() {
 
       {/* Feedback Modal */}
       <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+
+      {/* AI ChatBot - Available on all pages */}
+      <AIChatBot />
     </div>
   );
 }

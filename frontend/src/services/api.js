@@ -256,4 +256,17 @@ export const updateNotificationSettings = async (settings) => {
     return res.data;
 };
 
+// AI Chat
+export const chatWithAI = async (question) => {
+    const res = await api.post('/analytics/chat', { question });
+    return res.data;
+};
+
+// Savings Opportunities
+export const getSavingsOpportunities = async () => {
+    const res = await api.get('/analytics/savings-opportunities');
+    return res.data;
+};
+
 export default api;
+

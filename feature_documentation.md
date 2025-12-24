@@ -198,6 +198,15 @@ Dedicated reporting section for deeper financial analysis.
 
 ## 8. AI & Machine Learning
 -   **Gemini 3 Flash Integration**: Transaction categorization powered by Google's latest Gemini model.
+-   **AI Financial Assistant** *(New)*:
+    -   Natural language queries about spending, budgets, and finances.
+    -   Context-aware responses using transaction history and account data.
+    -   Floating chat widget available on all authenticated pages.
+    -   Suggested follow-up questions based on user's financial situation.
+-   **Savings Opportunity Detection** *(New)*:
+    -   Analyzes spending patterns to suggest savings opportunities.
+    -   Detects over-budget categories, unused subscriptions, and spending spikes.
+    -   Calculates potential yearly savings for each opportunity.
 -   **Async Background Processing**: Large imports processed in background with real-time progress updates.
 -   **Parallel Batch Processing**: 5 concurrent API calls for faster categorization (~2 min for 500 transactions).
 -   **Compact JSON Optimization**: Prompt engineered for minimal token usage, preventing response truncation.

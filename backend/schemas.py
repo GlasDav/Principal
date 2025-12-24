@@ -478,3 +478,30 @@ class NotificationSettings(NotificationSettingsBase):
     class Config:
         from_attributes = True
 
+
+# AI Chat
+class ChatRequest(BaseModel):
+    """Request schema for AI chat endpoint."""
+    question: str
+    
+    @field_validator('question')
+    @classmethod
+    def sanitize_question(cls, v: str) -> str:
+        return sanitize_text(v, max_length=500) or ""
+
+
+class ChatResponse(BaseModel):
+    """Response schema for AI chat endpoint."""
+    answer: str
+    data_points: Optional[List[dict]] = None
+    suggestions: Optional[List[str]] = None
+
+
+# Savings Opportunity
+class SavingsOpportunity(BaseModel):
+    """A savings opportunity suggestion."""
+    category: str
+    potential_savings: float
+    message: str
+    action: str
+    severity: str = "medium"  # low, medium, high

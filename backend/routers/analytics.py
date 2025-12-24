@@ -573,14 +573,21 @@ def get_anomalies(
     user = current_user
     today = datetime.now()
     
+    # Get transfer bucket IDs to exclude
+    transfer_bucket_ids = [b.id for b in db.query(models.BudgetBucket).filter(
+        models.BudgetBucket.user_id == user.id,
+        models.BudgetBucket.is_transfer == True
+    ).all()]
+    
     # 1. Large Transactions (Dynamic Threshold based on last 90 days)
     ninety_days_ago = today - timedelta(days=90)
     
-    # Fetch all expenses in last 90 days
+    # Fetch all expenses in last 90 days (excluding transfers)
     recent_txns = db.query(models.Transaction).filter(
         models.Transaction.user_id == user.id,
         models.Transaction.date >= ninety_days_ago,
-        models.Transaction.amount < 0
+        models.Transaction.amount < 0,
+        ~models.Transaction.bucket_id.in_(transfer_bucket_ids) if transfer_bucket_ids else True
     ).all()
     
     anomalies = []
@@ -620,12 +627,15 @@ def get_anomalies(
         models.Transaction.amount < 0
     ).all()
     
-    # Aggregate by Bucket and Month
+    # Aggregate by Bucket and Month (excluding transfers)
     bucket_monthly = {} # bid -> { 'yyyy-mm': total }
     from collections import defaultdict
     bucket_monthly = defaultdict(lambda: defaultdict(float))
     
     for t in hist_txns:
+        # Skip transfer buckets
+        if t.bucket_id in transfer_bucket_ids:
+            continue
         month_key = t.date.strftime("%Y-%m")
         bucket_monthly[t.bucket_id][month_key] += abs(t.amount)
         
@@ -1306,3 +1316,170 @@ def get_cash_flow_forecast(
         "forecast": forecast_data
     }
 
+
+# --- AI Chat ---
+
+@router.post("/chat", response_model=schemas.ChatResponse)
+def chat_with_ai(
+    request: schemas.ChatRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Natural language query about user's finances.
+    Uses AI to answer questions based on transaction history, budgets, and accounts.
+    """
+    from ..services.ai_assistant import get_ai_assistant
+    
+    assistant = get_ai_assistant()
+    result = assistant.answer_query(current_user.id, request.question, db)
+    
+    return schemas.ChatResponse(
+        answer=result.get("answer", "I couldn't process your question."),
+        data_points=result.get("data_points", []),
+        suggestions=result.get("suggestions", [])
+    )
+
+
+# --- Savings Opportunities ---
+
+@router.get("/savings-opportunities")
+def get_savings_opportunities(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Analyze spending patterns and suggest savings opportunities.
+    Returns actionable recommendations for reducing spending.
+    """
+    user = current_user
+    today = datetime.now()
+    thirty_days_ago = today - timedelta(days=30)
+    sixty_days_ago = today - timedelta(days=60)
+    
+    opportunities = []
+    
+    # 1. Find categories significantly over budget
+    buckets = db.query(models.BudgetBucket).filter(
+        models.BudgetBucket.user_id == user.id
+    ).all()
+    
+    bucket_map = {b.id: b for b in buckets}
+    
+    # Get current month spending by category
+    current_spending = db.query(
+        models.Transaction.bucket_id,
+        func.sum(models.Transaction.amount)
+    ).filter(
+        models.Transaction.user_id == user.id,
+        models.Transaction.date >= thirty_days_ago,
+        models.Transaction.amount < 0
+    ).group_by(models.Transaction.bucket_id).all()
+    
+    for bucket_id, total in current_spending:
+        if bucket_id not in bucket_map:
+            continue
+        bucket = bucket_map[bucket_id]
+        spent = abs(total)
+        
+        # Skip transfers, investments, and rollover buckets
+        if bucket.is_transfer or bucket.is_investment or bucket.is_rollover:
+            continue
+        
+        # Get budget limits from member limits
+        budget_limit = 0
+        if bucket.limits:
+            budget_limit = sum(l.amount for l in bucket.limits)
+        
+        # Check if over budget
+        if budget_limit > 0 and spent > budget_limit:
+            over_amount = spent - budget_limit
+            over_percent = int((over_amount / budget_limit) * 100)
+            
+            opportunities.append({
+                "category": bucket.name,
+                "type": "over_budget",
+                "potential_savings": round(over_amount, 2),
+                "message": f"You're ${over_amount:.0f} ({over_percent}%) over budget in {bucket.name}",
+                "action": f"Reduce {bucket.name} spending to save ${over_amount:.0f}/month",
+                "severity": "high" if over_percent > 50 else "medium"
+            })
+    
+    # 2. Find unused or underused subscriptions
+    subs = db.query(models.Subscription).filter(
+        models.Subscription.user_id == user.id,
+        models.Subscription.is_active == True,
+        models.Subscription.type == "Expense"
+    ).all()
+    
+    # Get all transaction descriptions in last 60 days
+    recent_txn_descs = [t.description.lower() for t in db.query(models.Transaction).filter(
+        models.Transaction.user_id == user.id,
+        models.Transaction.date >= sixty_days_ago
+    ).all()]
+    
+    for sub in subs:
+        # Check if subscription keyword appears in transactions
+        keyword = (sub.description_keyword or sub.name).lower()
+        matched = any(keyword in desc for desc in recent_txn_descs)
+        
+        if not matched and sub.amount >= 10:  # Only flag subs >= $10
+            opportunities.append({
+                "category": "Subscriptions",
+                "type": "unused_subscription",
+                "potential_savings": round(sub.amount * 12, 2),  # Yearly savings
+                "message": f"'{sub.name}' ({sub.frequency}) hasn't been used recently",
+                "action": f"Consider canceling {sub.name} to save ${sub.amount:.0f}/{sub.frequency.lower()}",
+                "severity": "medium" if sub.amount < 50 else "high"
+            })
+    
+    # 3. Find discretionary categories that spiked vs last month
+    last_month_spending = db.query(
+        models.Transaction.bucket_id,
+        func.sum(models.Transaction.amount)
+    ).filter(
+        models.Transaction.user_id == user.id,
+        models.Transaction.date >= sixty_days_ago,
+        models.Transaction.date < thirty_days_ago,
+        models.Transaction.amount < 0
+    ).group_by(models.Transaction.bucket_id).all()
+    
+    last_month_map = {bid: abs(amt) for bid, amt in last_month_spending if amt}
+    
+    for bucket_id, total in current_spending:
+        if bucket_id not in bucket_map:
+            continue
+        bucket = bucket_map[bucket_id]
+        
+        # Only check discretionary categories, skip transfers/investments/rollover
+        if bucket.group != "Discretionary" or bucket.is_transfer or bucket.is_investment or bucket.is_rollover:
+            continue
+        
+        current = abs(total)
+        previous = last_month_map.get(bucket_id, 0)
+        
+        if previous > 0 and current > previous * 1.5:  # 50% increase
+            # Skip if this category already has an over_budget opportunity (avoid duplicate)
+            if any(o["category"] == bucket.name and o["type"] == "over_budget" for o in opportunities):
+                continue
+            increase = current - previous
+            opportunities.append({
+                "category": bucket.name,
+                "type": "spending_spike",
+                "potential_savings": round(increase, 2),
+                "message": f"{bucket.name} spending up {int((increase/previous)*100)}% vs last month",
+                "action": f"Return to last month's level to save ${increase:.0f}",
+                "severity": "medium"
+            })
+    
+    # Sort by potential savings descending
+    opportunities.sort(key=lambda x: x["potential_savings"], reverse=True)
+    
+    # Calculate total potential savings
+    total_savings = sum(o["potential_savings"] for o in opportunities[:10])
+    
+    return {
+        "opportunities": opportunities[:10],  # Top 10
+        "total_potential_savings": round(total_savings, 2),
+        "count": len(opportunities)
+    }
