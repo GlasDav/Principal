@@ -102,6 +102,8 @@ const SankeyChart = ({ data }) => {
                         nodePadding={nodePadding}
                         nodeWidth={8}
                         margin={{ left: 100, right: 180, top: 20, bottom: 20 }}
+                        sort={false}
+                        iterations={0}
                     >
                         <Tooltip
                             contentStyle={{
