@@ -81,6 +81,14 @@
 - [x] **Complex Rule Conditions** - Amount ranges (min/max filters)
 - [x] **Rule Actions** - Add tags, mark for review
 - [x] **Split Transaction Rules** - Manual splitting works; auto-split deferred to Phase 6
+- [x] **Sub-Category Rules** - Rules can now target any nested category
+
+### Net Worth Enhancements *(New)*
+- [x] **Inline Account Editing** - Click account cards to edit name and balance directly
+- [x] **Liability Management** - Liability accounts now clickable and editable
+- [x] **Automatic Snapshots** - Balance updates auto-create snapshots if none exist
+- [x] **Account Balance Display** - Cards show current balance on the list
+- [x] **Investment Holdings Integration** - Investment accounts display computed holdings value in charts and cards
 
 ---
 

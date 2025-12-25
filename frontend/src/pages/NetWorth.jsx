@@ -108,19 +108,39 @@ export default function NetWorth() {
     };
 
     // --- Allocation Data ---
+    // Compute current balances for each account (from snapshot or holdings)
+    const accountBalances = useMemo(() => {
+        const balMap = {};
+        // First, use snapshot balances as base
+        if (latestSnapshot?.balances) {
+            latestSnapshot.balances.forEach(b => {
+                balMap[b.account_id] = b.balance;
+            });
+        }
+        // For investment accounts, also consider holdings if available
+        // (investment holdings are fetched separately, but for now we use account.balance)
+        accounts.forEach(acc => {
+            if (acc.balance !== undefined && acc.balance !== null) {
+                balMap[acc.id] = acc.balance;
+            }
+        });
+        return balMap;
+    }, [latestSnapshot, accounts]);
+
     const allocationData = useMemo(() => {
-        if (!latestSnapshot || !latestSnapshot.balances) return [];
         const map = {};
-        latestSnapshot.balances.forEach(b => {
-            const acc = accounts.find(a => a.id === b.account_id);
-            if (acc && acc.type === 'Asset' && b.balance > 0) {
-                map[acc.category] = (map[acc.category] || 0) + b.balance;
+        accounts.forEach(acc => {
+            if (acc.type === 'Asset') {
+                const bal = accountBalances[acc.id] || 0;
+                if (bal > 0) {
+                    map[acc.category] = (map[acc.category] || 0) + bal;
+                }
             }
         });
         return Object.entries(map)
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value);
-    }, [latestSnapshot, accounts]);
+    }, [accounts, accountBalances]);
 
     const ALLOCATION_COLORS = ['#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F59E0B'];
 
@@ -528,6 +548,9 @@ export default function NetWorth() {
                                                         <p className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{account.category}</p>
                                                     </div>
                                                 </div>
+                                                <p className="text-sm font-semibold text-emerald-600">
+                                                    ${(accountBalances[account.id] || 0).toLocaleString()}
+                                                </p>
                                             </div>
                                         );
                                     })}
@@ -544,7 +567,7 @@ export default function NetWorth() {
                                     {accounts.filter(a => a.type === 'Liability').map(account => {
                                         const Icon = getCategoryIcon(account.category, 'Liability');
                                         return (
-                                            <div key={account.id} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-red-100 transition-colors flex items-center justify-between group">
+                                            <div key={account.id} onClick={() => { setSelectedAccount(account); setIsDetailsOpen(true); }} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-red-100 transition-colors flex items-center justify-between group cursor-pointer hover:shadow-md">
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-2 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg group-hover:bg-red-100 transition-colors">
                                                         <Icon size={18} />
@@ -554,6 +577,9 @@ export default function NetWorth() {
                                                         <p className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">{account.category}</p>
                                                     </div>
                                                 </div>
+                                                <p className="text-sm font-semibold text-red-500">
+                                                    -${(accountBalances[account.id] || 0).toLocaleString()}
+                                                </p>
                                             </div>
                                         );
                                     })}

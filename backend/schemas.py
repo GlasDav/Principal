@@ -250,6 +250,7 @@ class AccountBase(BaseModel):
     target_balance: Optional[float] = None
     target_date: Optional[date] = None
     connection_id: Optional[str] = None
+    balance: Optional[float] = 0.0  # Added to support manual updates
 
 class AccountCreate(AccountBase):
     pass

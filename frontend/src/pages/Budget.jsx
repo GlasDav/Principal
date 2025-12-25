@@ -597,9 +597,10 @@ const RuleItem = ({ rule, buckets, updateRuleMutation, deleteRuleMutation, isSel
                 <div className="col-span-4">
                     <select
                         className="w-full px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800 dark:text-white"
-                        value={localBucketId}
+                        value={localBucketId || ""}
                         onChange={(e) => setLocalBucketId(e.target.value)}
                     >
+                        <option value="">Select Category...</option>
                         {buckets?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                 </div>
@@ -745,6 +746,22 @@ export default function Budget() {
         setExpandedGroups(prev => ({ ...prev, [bucketId]: !prev[bucketId] }));
     };
 
+    // Flatten buckets tree for Rules dropdown
+    const flatBuckets = React.useMemo(() => {
+        const flatten = (nodes) => {
+            let res = [];
+            if (!nodes) return res;
+            nodes.forEach(node => {
+                res.push(node);
+                if (node.children && node.children.length > 0) {
+                    res = res.concat(flatten(node.children));
+                }
+            });
+            return res;
+        };
+        return flatten(buckets);
+    }, [buckets]);
+
     if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>;
 
     const renderRows = (nodes, depth = 0) => {
@@ -770,6 +787,8 @@ export default function Budget() {
             </React.Fragment>
         ));
     };
+
+
 
     // Calculate Rules Section Props (assuming RulesSection exists below or imported)
     // We didn't change RulesSection, so we keep the structure.
@@ -826,7 +845,7 @@ export default function Budget() {
             {/* Smart Rules Section - Preserved */}
             <section>
                 <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6">Smart Rules</h2>
-                <RulesSection buckets={buckets} />
+                <RulesSection buckets={flatBuckets} />
             </section>
         </div>
     );

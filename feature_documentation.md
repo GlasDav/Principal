@@ -98,6 +98,15 @@ Dedicated reporting section for deeper financial analysis.
     -   **Assets**: Savings, Investments, Cash, Property.
     -   **Liabilities**: Credit Cards, Loans, Mortgages.
 -   **Manual Accounts**: Ability to manually add and update account balances (via Check-In).
+-   **Inline Balance Editing** *(New)*:
+    -   Click any asset or liability account card to open edit modal.
+    -   Update account name and current balance directly.
+    -   Auto-creates initial Net Worth snapshot if none exists.
+    -   Balance changes immediately sync to Net Worth charts and allocation.
+-   **Account Cards** *(New)*:
+    -   Each account displays its current balance on the card.
+    -   Assets show green values, liabilities show red with minus sign.
+    -   Investment accounts automatically display computed holdings value.
 
 ### Tools & Calculators
 -   **Combined Hub**: Centralized "Tools" page for financial planning utilities.
@@ -154,6 +163,8 @@ Dedicated reporting section for deeper financial analysis.
     1. Smart Rules (user-created, highest priority)
     2. Global Keywords (common merchant patterns)
     3. AI Prediction (Google Gemini fallback)
+-   **Sub-Category Support** *(New)*: Rules can target any category including nested sub-categories.
+-   **Placeholder Validation** *(New)*: Edit dropdown shows "Select Category..." for rules with invalid/null categories, preventing silent save failures.
 
 ### Partner Review Queue
 -   **Assign for Review**: In Couple Mode, assign transactions to your partner for review.

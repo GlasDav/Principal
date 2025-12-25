@@ -16,7 +16,15 @@ router = APIRouter(
 
 @router.get("/accounts", response_model=List[schemas.Account])
 def get_accounts(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
-    return db.query(models.Account).filter(models.Account.is_active == True, models.Account.user_id == current_user.id).all()
+    accounts = db.query(models.Account).filter(models.Account.is_active == True, models.Account.user_id == current_user.id).all()
+    
+    # For Investment accounts, compute balance from holdings
+    for acc in accounts:
+        if acc.category == 'Investment':
+            holdings = db.query(models.InvestmentHolding).filter(models.InvestmentHolding.account_id == acc.id).all()
+            acc.balance = sum(h.value for h in holdings)
+    
+    return accounts
 
 @router.post("/accounts", response_model=schemas.Account)
 def create_account(account: schemas.AccountCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
@@ -40,6 +48,61 @@ def update_account(account_id: int, account_update: schemas.AccountCreate, db: S
     db_account.is_active = account_update.is_active
     db_account.target_balance = account_update.target_balance
     db_account.target_date = account_update.target_date
+    
+    # Handle Balance Update (Manual Accounts)
+    if account_update.balance is not None:
+        db_account.balance = account_update.balance
+        
+        # Sync with latest snapshot (or create one if none exists)
+        latest_snapshot = db.query(models.NetWorthSnapshot).filter(models.NetWorthSnapshot.user_id == current_user.id).order_by(models.NetWorthSnapshot.date.desc()).first()
+        
+        if not latest_snapshot:
+            # Auto-create initial snapshot for today
+            from datetime import date as dt_date
+            latest_snapshot = models.NetWorthSnapshot(
+                date=dt_date.today().replace(day=1),  # First of current month
+                user_id=current_user.id,
+                total_assets=0,
+                total_liabilities=0,
+                net_worth=0
+            )
+            db.add(latest_snapshot)
+            db.commit()
+            db.refresh(latest_snapshot)
+        
+        # Now update the balance record
+        balance_record = db.query(models.AccountBalance).filter(
+            models.AccountBalance.snapshot_id == latest_snapshot.id,
+            models.AccountBalance.account_id == account_id
+        ).first()
+        
+        if balance_record:
+            balance_record.balance = account_update.balance
+        else:
+            balance_record = models.AccountBalance(
+                snapshot_id=latest_snapshot.id,
+                account_id=account_id,
+                balance=account_update.balance
+            )
+            db.add(balance_record)
+        
+        db.commit() # Commit balance first
+        
+        # Recalculate Snapshot Totals
+        all_balances = db.query(models.AccountBalance).filter(models.AccountBalance.snapshot_id == latest_snapshot.id).all()
+        new_assets = 0.0
+        new_liabilities = 0.0
+        for b in all_balances:
+            acct = db.query(models.Account).get(b.account_id)
+            if acct:
+                if acct.type == "Asset":
+                    new_assets += b.balance
+                else:
+                    new_liabilities += b.balance
+        
+        latest_snapshot.total_assets = new_assets
+        latest_snapshot.total_liabilities = new_liabilities
+        latest_snapshot.net_worth = new_assets - new_liabilities
     
     db.commit()
     db.refresh(db_account)
