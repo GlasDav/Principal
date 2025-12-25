@@ -486,7 +486,7 @@ export default function Transactions() {
                                         <td className="p-4 text-sm text-slate-800 dark:text-slate-200 font-mono">
                                             {new Date(txn.date).toLocaleDateString('en-AU')}
                                         </td>
-                                        <td className="p-4 text-sm text-slate-700 dark:text-slate-300 group/cell">
+                                        <td className="p-4 text-sm text-slate-700 dark:text-slate-300 group/cell max-w-[300px]">
                                             {editingId === txn.id ? (
                                                 <input
                                                     autoFocus
@@ -506,7 +506,7 @@ export default function Transactions() {
                                                 />
                                             ) : (
                                                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => setEditingId(txn.id)} title={`Original: ${txn.raw_description}`}>
-                                                    <span className="font-medium text-slate-900 dark:text-white truncate">{txn.description}</span>
+                                                    <span className="font-medium text-slate-900 dark:text-white truncate block">{txn.description}</span>
                                                     <Pencil size={14} className="text-slate-400 opacity-0 group-hover/cell:opacity-100 transition-opacity flex-shrink-0" />
                                                 </div>
                                             )}
