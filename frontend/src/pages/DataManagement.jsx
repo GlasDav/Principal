@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Listbox, Transition } from '@headlessui/react';
-import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight, Pencil, Table, ChevronDown, Check, Loader2, UserCheck } from 'lucide-react';
+import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight, Pencil, Table, ChevronDown, Check, Loader2, UserCheck, Download, Calendar, LineChart } from 'lucide-react';
 import api, { getMembers } from '../services/api';
 import ConnectBank from '../components/ConnectBank';
 
@@ -244,8 +244,8 @@ export default function Ingest() {
             {/* Headers and Upload Area (Unchanged) */}
             <header className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Import Data</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-2">Upload your bank statements (PDF) to automatically extract and categorize transactions.</p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Data Management</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2">Import your bank statements or export your data for external analysis.</p>
                 </div>
                 <ConnectBank />
             </header>
@@ -264,10 +264,91 @@ export default function Ingest() {
                 >
                     <div className="flex items-center gap-2"><Table size={16} /> CSV Import</div>
                 </button>
+                <button
+                    onClick={() => { setActiveTab("export"); setFile(null); setTransactions([]); setError(null); }}
+                    className={`pb-3 px-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "export" ? "border-indigo-600 text-indigo-600 dark:text-indigo-400" : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:border-slate-300"}`}
+                >
+                    <div className="flex items-center gap-2"><Download size={16} /> Export Data</div>
+                </button>
             </div>
 
+            {/* Export Tab Content */}
+            {activeTab === 'export' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4">
+                    {/* Export Transactions Card */}
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+                                <Listbox as="div" className="relative">
+                                    <Table size={24} />
+                                </Listbox>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Export Transactions</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Download your transaction history</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Format</label>
+                                <div className="flex gap-3">
+                                    <button
+                                        className="flex-1 py-2 px-4 rounded-lg border border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium text-sm text-center"
+                                        onClick={() => window.open(`${api.defaults.baseURL}/export/transactions?format=csv`)}
+                                    >
+                                        CSV
+                                    </button>
+                                    <button
+                                        className="flex-1 py-2 px-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium text-sm text-center transition-colors"
+                                        onClick={() => window.open(`${api.defaults.baseURL}/export/transactions?format=json`)}
+                                    >
+                                        JSON
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="pt-2">
+                                <p className="text-xs text-slate-400 text-center">
+                                    Exports include date, description, amount, category, and notes.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Export Net Worth Card */}
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
+                                <LineChart size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Export Net Worth</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Download your net worth history</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Format</label>
+                                <button
+                                    className="w-full py-2 px-4 rounded-lg border border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 font-medium text-sm text-center"
+                                    onClick={() => window.open(`${api.defaults.baseURL}/export/net-worth`)}
+                                >
+                                    Download CSV
+                                </button>
+                            </div>
+                            <div className="pt-2">
+                                <p className="text-xs text-slate-400 text-center">
+                                    Exports daily snapshots of your total assets, liabilities, and net worth.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Upload Area */}
-            {!previewData && transactions.length === 0 && (
+            {activeTab !== 'export' && !previewData && transactions.length === 0 && (
                 <div className={`
                     relative border-2 border-dashed rounded-2xl p-12 text-center transition-colors
                     ${file ? 'border-green-300 bg-green-50 dark:bg-green-900/10' : 'border-slate-300 hover:border-indigo-400 bg-white dark:bg-slate-800'}

@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-do
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, Zap, Target, TrendingUp, Wrench, PiggyBank, Users, BarChart3, MessageCircle } from 'lucide-react';
 import Settings from './pages/Settings';
-import Ingest from './pages/Ingest';
+import DataManagement from './pages/DataManagement';
 import Transactions from './pages/Transactions';
 import Dashboard from './pages/Dashboard';
 import NetWorth from './pages/NetWorth';
@@ -86,7 +86,7 @@ function Layout() {
           <NavItem to="/" icon={LayoutDashboard} end>Dashboard</NavItem>
           <NavItem to="/net-worth" icon={LineChart}>Net Worth</NavItem>
           <NavItem to="/transactions" icon={List}>Transactions</NavItem>
-          <NavItem to="/ingest" icon={UploadCloud}>Import Data</NavItem>
+          <NavItem to="/data-management" icon={UploadCloud}>Data Management</NavItem>
           <NavItem to="/calendar" icon={Calendar}>Calendar</NavItem>
           <NavItem to="/subscriptions" icon={CreditCard}>Subscriptions</NavItem>
           <NavItem to="/goals" icon={Target}>Goals</NavItem>
@@ -173,7 +173,7 @@ function App() {
                   <Route path="/review" element={<Review />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/insights" element={<Insights />} />
-                  <Route path="/ingest" element={<Ingest />} />
+                  <Route path="/data-management" element={<DataManagement />} />
                   <Route path="/settings" element={<Settings />} />
                 </Route>
               </Routes>
