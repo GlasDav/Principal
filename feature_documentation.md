@@ -22,7 +22,13 @@ The dashboard serves as the central hub for financial oversight.
     -   Net Savings
     -   Net Worth (Real-time snapshot)
 -   **Spending Trends**: Bar chart visualizing spending over time, with filters for specific budget categories.
+-   **Modular Widgets** *(New)*:
+    -   **Period Comparison**: Compare Income/Expenses/Savings against Last Month, Last Year, or Previous Period.
+    -   **Recent Transactions**: Quick view of last 5 transactions with categories.
+    -   **Investments Summary**: Real-time investment value and daily performance.
+    -   **Collapsible Sections**: Widgets can be expanded/collapsed for cleaner view.
 -   **Global Filtering**: Date range (e.g., "This Month") and Spender (Combined, You, Partner) filters affect all dashboard data.
+-   **Theme Support**: Full light/dark mode support across all dashboard components.
 
 ## 2. Reports & Reports Tab *(New)*
 Dedicated reporting section for deeper financial analysis.
@@ -42,11 +48,15 @@ Dedicated reporting section for deeper financial analysis.
 -   **Split Transactions**: Ability to split a single transaction into multiple categories (accessible via hover/select).
 -   **Filtering & Sorting**: Sort by date, amount, or filter by specific criteria.
 
-### Data Import (Ingest)
+### Data Management (Import/Export)
+-   **Unified Hub**: Centralized `/data-management` page for all data input/output operations.
 -   **Connect Bank**: Integrated button to link financial institutions (via Basiq/ConnectBank component - *In Progress*).
 -   **File Import**: Support for manual file uploads.
     -   **PDF Statements**: Extract transactions from bank PDFs.
     -   **CSV Import**: Map and import CSV data from other sources.
+-   **Data Export** *(New)*:
+    -   **Transactions**: Export full history as CSV or JSON.
+    -   **Net Worth**: Export daily net worth history snapshots as CSV.
 -   **Review Before Save**:
     -   Transactions are categorized and shown for review but NOT saved to database.
     -   Users can edit categories, descriptions, and spender before confirming.
