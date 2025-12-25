@@ -688,6 +688,7 @@ def get_sankey_data(
     start_date: str = Query(..., description="ISO Date string"), 
     end_date: str = Query(..., description="ISO Date string"),
     spender: str = Query(default="Combined"),
+    exclude_one_offs: bool = Query(default=False),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
@@ -717,6 +718,11 @@ def get_sankey_data(
         ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True),
         ~models.Transaction.bucket.has(models.BudgetBucket.is_investment == True)
     )
+
+    if exclude_one_offs:
+        totals_query = totals_query.filter(
+            ~models.Transaction.bucket.has(models.BudgetBucket.is_one_off == True)
+        )
         
     totals_res = totals_query.first()
     total_expenses = abs(totals_res.expenses or 0.0)
@@ -745,6 +751,11 @@ def get_sankey_data(
         # Also exclude Income group buckets from expense calculation
         ~models.Transaction.bucket.has(models.BudgetBucket.group == "Income")
     )
+
+    if exclude_one_offs:
+        expense_query = expense_query.filter(
+            ~models.Transaction.bucket.has(models.BudgetBucket.is_one_off == True)
+        )
         
     expense_results = expense_query.group_by(models.Transaction.bucket_id).all()
     
