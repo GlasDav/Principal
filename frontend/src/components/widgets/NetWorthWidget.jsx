@@ -43,10 +43,10 @@ export default function NetWorthWidget({ history = [], formatCurrency }) {
                 <p className="text-3xl font-bold mb-4">{formatCurrency(currentNetWorth)}</p>
 
                 {/* Mini Sparkline Chart */}
-                {chartData.length > 1 && (
+                {chartData.length >= 1 ? (
                     <div className="h-16 -mx-2">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData}>
+                            <AreaChart data={chartData.length === 1 ? [chartData[0], chartData[0]] : chartData}>
                                 <defs>
                                     <linearGradient id="netWorthGradient" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor={isPositive ? "#10B981" : "#EF4444"} stopOpacity={0.3} />
@@ -62,6 +62,10 @@ export default function NetWorthWidget({ history = [], formatCurrency }) {
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
+                    </div>
+                ) : (
+                    <div className="h-16 flex items-center justify-center border-t border-slate-700 mt-2">
+                        <span className="text-xs text-slate-500">No history data yet</span>
                     </div>
                 )}
             </div>
