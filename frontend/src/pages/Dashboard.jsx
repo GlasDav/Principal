@@ -1,16 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api, { getMembers, getUpcomingBills } from '../services/api';
-import {
-    CheckCircle, AlertCircle, TrendingUp, TrendingDown, ChevronRight, LineChart, RefreshCw, Wallet, Utensils, ShoppingBag, Calendar
-} from 'lucide-react';
-import { ComposedChart, Bar, Line, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
-import { Link } from 'react-router-dom';
-import { ICON_MAP, DEFAULT_ICON } from '../utils/icons';
-import SankeyChart from '../components/SankeyChart';
 
-
-// Icon Map consolidated in utils/icons.js
+// Widget imports
+import SummaryCardsWidget from '../components/widgets/SummaryCardsWidget';
+import UpcomingBillsWidget from '../components/widgets/UpcomingBillsWidget';
+import CashFlowWidget from '../components/widgets/CashFlowWidget';
+import SpendingTrendsWidget from '../components/widgets/SpendingTrendsWidget';
+import BudgetProgressWidget from '../components/widgets/BudgetProgressWidget';
+import GoalsWidget from '../components/widgets/GoalsWidget';
+import NetWorthWidget from '../components/widgets/NetWorthWidget';
 
 export default function Dashboard() {
     // Date Range State
@@ -25,7 +24,7 @@ export default function Dashboard() {
     const getDateRange = (type) => {
         const now = new Date();
         const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0); // End of current month
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
         if (type === "Last 3 Months") {
             start.setMonth(now.getMonth() - 2);
@@ -48,43 +47,27 @@ export default function Dashboard() {
 
     const { start, end } = getDateRange(rangeType);
 
+    // --- Data Queries ---
     const { data: dashboardData, isLoading } = useQuery({
         queryKey: ['dashboard', start, end, spenderMode],
         queryFn: async () => {
             const res = await api.get(`/analytics/dashboard`, {
-                params: {
-                    start_date: start,
-                    end_date: end,
-                    spender: spenderMode
-                }
+                params: { start_date: start, end_date: end, spender: spenderMode }
             });
             return res.data;
         }
     });
 
-    const { data: userSettings } = useQuery({
-        queryKey: ['userSettings'],
-        queryFn: async () => (await api.get('/settings/user')).data
-    });
-
-    // Fetch Household Members
     const { data: members = [] } = useQuery({
         queryKey: ['members'],
         queryFn: getMembers
     });
 
-    // Formatting
-
-    const { data: netWorthHistory } = useQuery({
+    const { data: netWorthHistory = [] } = useQuery({
         queryKey: ['netWorthHistory'],
         queryFn: async () => (await api.get('/net-worth/history')).data
     });
 
-    const netWorth = netWorthHistory && netWorthHistory.length > 0
-        ? netWorthHistory[netWorthHistory.length - 1].net_worth
-        : 0;
-
-    // Spending Trends Data
     const { data: trendHistory = [] } = useQuery({
         queryKey: ['trendHistory', start, end, trendOption],
         queryFn: async () => {
@@ -92,44 +75,34 @@ export default function Dashboard() {
             if (trendOption === "Non-Discretionary") params.group = "Non-Discretionary";
             else if (trendOption === "Discretionary") params.group = "Discretionary";
             else if (trendOption.startsWith("bucket:")) params.bucket_id = trendOption.split(":")[1];
-
             return (await api.get('/analytics/history', { params })).data;
         }
     });
 
-    // Sankey Data
     const { data: sankeyData } = useQuery({
         queryKey: ['sankey', start, end, spenderMode, excludeOneOffs],
         queryFn: async () => {
             const res = await api.get(`/analytics/sankey`, {
-                params: {
-                    start_date: start,
-                    end_date: end,
-                    spender: spenderMode,
-                    exclude_one_offs: excludeOneOffs
-                }
+                params: { start_date: start, end_date: end, spender: spenderMode, exclude_one_offs: excludeOneOffs }
             });
             return res.data;
         }
     });
 
-    // Upcoming Bills
     const { data: upcomingBills = [] } = useQuery({
         queryKey: ['upcomingBills'],
         queryFn: () => getUpcomingBills(7),
-        staleTime: 300000 // 5 minutes
+        staleTime: 300000
     });
 
-
-    if (isLoading) return <div className="p-8 text-center text-slate-500">Loading Dashboard...</div>;
-    if (!dashboardData) return <div className="p-8 text-center text-red-500">Error loading data. Please check connection.</div>;
-
+    // --- Loading / Error States ---
     if (isLoading) return <div className="p-8 text-center text-slate-500">Loading Dashboard...</div>;
     if (!dashboardData) return <div className="p-8 text-center text-red-500">Error loading data. Please check connection.</div>;
 
     const { buckets, totals } = dashboardData;
+    const netWorth = netWorthHistory.length > 0 ? netWorthHistory[netWorthHistory.length - 1].net_worth : 0;
 
-    // Formatting
+    // Formatting helper
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
     };
@@ -153,6 +126,7 @@ export default function Dashboard() {
                 </div>
             </div>
 
+            {/* Filter Controls */}
             <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">Financial Overview</h2>
@@ -220,241 +194,41 @@ export default function Dashboard() {
                 </div>
             </header>
 
-            {/* Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Income</p>
-                    <p className="text-2xl font-bold text-emerald-600 mt-1">{formatCurrency(totals.income)}</p>
+            {/* Widget Grid */}
+            <div className="space-y-8">
+                {/* Row 1: Summary Cards */}
+                <SummaryCardsWidget totals={totals} netWorth={netWorth} formatCurrency={formatCurrency} />
+
+                {/* Row 2: Net Worth Chart + Goals + Upcoming Bills */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <NetWorthWidget history={netWorthHistory} formatCurrency={formatCurrency} />
+                    <GoalsWidget formatCurrency={formatCurrency} />
+                    <UpcomingBillsWidget bills={upcomingBills} formatCurrency={formatCurrency} />
                 </div>
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Expenses</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{formatCurrency(totals.expenses)}</p>
-                </div>
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Net Savings</p>
-                    <p className={`text-2xl font-bold mt-1 ${totals.net_savings >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {formatCurrency(totals.net_savings)}
-                    </p>
-                </div>
-                {/* Net Worth Card (New) */}
-                <Link to="/net-worth" className="bg-gradient-to-br from-indigo-500 to-violet-600 p-6 rounded-2xl shadow-sm text-white hover:shadow-md transition-shadow relative overflow-hidden group">
-                    <div className="relative z-10">
-                        <p className="text-sm font-medium text-indigo-100 flex items-center gap-2">
-                            <Wallet size={16} /> Net Worth
-                        </p>
-                        <p className="text-2xl font-bold mt-1">
-                            {formatCurrency(netWorth)}
-                        </p>
-                    </div>
-                    <div className="absolute -right-4 -bottom-4 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform">
-                        <Wallet size={80} />
-                    </div>
-                </Link>
+
+                {/* Row 3: Cash Flow (Sankey) */}
+                <CashFlowWidget
+                    data={sankeyData}
+                    excludeOneOffs={excludeOneOffs}
+                    onToggleExcludeOneOffs={setExcludeOneOffs}
+                />
+
+                {/* Row 4: Spending Trends */}
+                <SpendingTrendsWidget
+                    trendHistory={trendHistory}
+                    trendOption={trendOption}
+                    onTrendOptionChange={setTrendOption}
+                    buckets={buckets}
+                />
+
+                {/* Row 5: Budget Progress (Needs + Wants) */}
+                <BudgetProgressWidget
+                    buckets={buckets}
+                    formatCurrency={formatCurrency}
+                    startDate={start}
+                    endDate={end}
+                />
             </div>
-
-            {/* Upcoming Bills Widget */}
-            {upcomingBills.length > 0 && (
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                    <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                        <Calendar size={20} className="text-amber-500" />
-                        Upcoming Bills
-                    </h2>
-                    <div className="space-y-3">
-                        {upcomingBills.map((bill) => (
-                            <div key={bill.id} className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                                <div>
-                                    <p className="font-medium text-slate-800 dark:text-white">{bill.name}</p>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                                        {bill.days_until === 0 ? 'Due today' :
-                                            bill.days_until === 1 ? 'Due tomorrow' :
-                                                `Due in ${bill.days_until} days`}
-                                    </p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="font-bold text-slate-900 dark:text-white">{formatCurrency(Math.abs(bill.amount))}</p>
-                                    <p className="text-xs text-slate-400">{bill.frequency}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Sankey Diagram */}
-            <div className="mb-8">
-                <div className="flex justify-between items-center mb-4 px-1">
-                    <h2 className="text-lg font-bold text-slate-800 dark:text-white">Cash Flow Visualization</h2>
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                            Exclude One-Offs
-                        </span>
-                        <div className="relative inline-flex items-center">
-                            <input
-                                type="checkbox"
-                                className="sr-only peer"
-                                checked={excludeOneOffs}
-                                onChange={(e) => setExcludeOneOffs(e.target.checked)}
-                            />
-                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
-                        </div>
-                    </label>
-                </div>
-                <SankeyChart data={sankeyData} />
-            </div>
-
-            {/* Spending Trends Section */}
-            < div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700" >
-                <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                        <LineChart size={20} className="text-indigo-500" />
-                        Spending Trends
-                    </h2>
-                    <select
-                        className="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none cursor-pointer min-w-[200px]"
-                        value={trendOption}
-                        onChange={(e) => setTrendOption(e.target.value)}
-                    >
-                        <option value="Total">Total Budget</option>
-                        <option value="Non-Discretionary">Non-Discretionary (Needs)</option>
-                        <option value="Discretionary">Discretionary (Wants)</option>
-                        <optgroup label="Buckets">
-                            {buckets.map(b => (
-                                <option key={b.id} value={`bucket:${b.id}`}>{b.name}</option>
-                            ))}
-                        </optgroup>
-                    </select>
-                </div>
-
-                <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={trendHistory} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                            <XAxis
-                                dataKey="label"
-                                stroke="#94A3B8"
-                                fontSize={12}
-                                tickLine={false}
-                                axisLine={false}
-                            />
-                            <YAxis
-                                stroke="#94A3B8"
-                                fontSize={12}
-                                tickLine={false}
-                                axisLine={false}
-                                tickFormatter={(val) => `$${val}`}
-                            />
-                            <Tooltip
-                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                formatter={(val) => [`$${val.toLocaleString()}`, ""]}
-                            />
-                            <Bar dataKey="spent" name="Spent" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                            <Line type="monotone" dataKey="limit" name="Budget Limit" stroke="#ef4444" strokeWidth={2} dot={false} strokeDasharray="5 5" />
-                        </ComposedChart>
-                    </ResponsiveContainer>
-                </div>
-            </div >
-
-            {/* Budget Grid */}
-            {/* Needs Section */}
-            <section>
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                    <span className="p-1.5 bg-indigo-100 text-indigo-600 rounded-lg"><Utensils size={18} /></span>
-                    Non-Discretionary (Needs)
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {buckets.filter(b => b.group === "Non-Discretionary").map((bucket) => {
-                        const Icon = ICON_MAP[bucket.icon] || Wallet;
-                        const percent = Math.min(bucket.percent, 100);
-                        let barColor = "bg-emerald-500";
-                        if (bucket.percent > 90) barColor = "bg-amber-500";
-                        if (bucket.percent > 100) barColor = "bg-red-500";
-
-                        return (
-                            <Link
-                                to={`/transactions?bucket_id=${bucket.id}&start_date=${start}&end_date=${end}`}
-                                key={bucket.id}
-                                className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow group"
-                            >
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300">
-                                            <Icon size={20} />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold text-slate-900 dark:text-white">{bucket.name}</h3>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                                {bucket.is_over ? "Over Budget" : `${formatCurrency(bucket.remaining)} left`}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className={`text-sm font-bold ${bucket.is_over ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}`}>
-                                        {Math.round(bucket.percent)}%
-                                    </div>
-                                </div>
-                                <div className="relative h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                    <div className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${percent}%` }} />
-                                </div>
-                                <div className="flex justify-between mt-3 text-sm">
-                                    <span className="text-slate-500 dark:text-slate-400 font-medium">{formatCurrency(bucket.spent)}</span>
-                                    <span className="text-slate-400 dark:text-slate-500">Of {formatCurrency(bucket.limit)}</span>
-                                </div>
-                            </Link>
-                        );
-                    })}
-                </div>
-            </section>
-
-            {/* Wants Section */}
-            <section>
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                    <span className="p-1.5 bg-pink-100 text-pink-600 rounded-lg"><ShoppingBag size={18} /></span>
-                    Discretionary (Wants)
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {buckets.filter(b => (b.group || "Discretionary") === "Discretionary").map((bucket) => {
-                        const Icon = ICON_MAP[bucket.icon] || Wallet;
-                        const percent = Math.min(bucket.percent, 100);
-                        let barColor = "bg-emerald-500";
-                        if (bucket.percent > 90) barColor = "bg-amber-500";
-                        if (bucket.percent > 100) barColor = "bg-red-500";
-
-                        return (
-                            <Link
-                                to={`/transactions?bucket_id=${bucket.id}&start_date=${start}&end_date=${end}`}
-                                key={bucket.id}
-                                className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow group"
-                            >
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300">
-                                            <Icon size={20} />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                                {bucket.name}
-                                                {bucket.is_rollover && <RefreshCw size={12} className="text-indigo-500" title="Rollover Fund" />}
-                                            </h3>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                                {bucket.is_over ? "Over Budget" : `${formatCurrency(bucket.remaining)} left`}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className={`text-sm font-bold ${bucket.is_over ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}`}>
-                                        {Math.round(bucket.percent)}%
-                                    </div>
-                                </div>
-                                <div className="relative h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                    <div className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${percent}%` }} />
-                                </div>
-                                <div className="flex justify-between mt-3 text-sm">
-                                    <span className="text-slate-500 dark:text-slate-400 font-medium">{formatCurrency(bucket.spent)}</span>
-                                    <span className="text-slate-400 dark:text-slate-500">Of {formatCurrency(bucket.limit)}</span>
-                                </div>
-                            </Link>
-                        );
-                    })}
-                </div>
-            </section>
-        </div >
+        </div>
     );
 }
