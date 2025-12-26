@@ -298,6 +298,44 @@ Dedicated reporting section for deeper financial analysis.
 -   **Quick Import FAB**:
     -   Redesigned Floating Action Button focused on high-value actions (Import Data, Add Asset, New Budget).
 
+## 12. UX Polish & Engagement (Phase 8) *(New)*
+-   **Command Palette**:
+    -   Access via `Cmd/Ctrl+K` from anywhere in the app.
+    -   Fuzzy search for quick navigation and actions.
+    -   Keyboard navigation with arrow keys.
+-   **Toast Notifications**:
+    -   Elegant feedback replacing browser alerts.
+    -   Variants: success, error, warning, info.
+    -   Auto-dismiss with slide animations.
+-   **Micro-Animations**:
+    -   Framer Motion integration for smooth page transitions.
+    -   AnimatedPage, FadeIn, SlideIn, ScaleIn components.
+-   **Insights Cards Widget**:
+    -   Natural language spending comparisons ("You spent 20% less than last month").
+    -   Savings rate and category improvement tracking.
+-   **Achievements System**:
+    -   9 milestone badges for financial goals.
+    -   Tracks net worth targets, savings rates, and engagement.
+-   **Empty State Illustrations**:
+    -   Custom SVG illustrations for no-data states.
+-   **Enhanced Date Picker**:
+    -   Rich calendar with 8 presets (Today, This Week, This Month, etc.).
+-   **Accessibility Utilities**:
+    -   Focus trap, screen reader announcements, skip links.
+
+## 13. Navigation Restructure *(New)*
+-   **Consolidated Navigation**:
+    -   Reduced from 12 sidebar items to 7.
+    -   Grouped sections: Overview, Money, Planning, System.
+-   **TransactionsHub**:
+    -   Unified page with tabs: All Transactions, Subscriptions, Needs Review.
+-   **ReportsHub**:
+    -   Unified page with tabs: Overview, Calendar, Insights.
+-   **Header Breadcrumbs**:
+    -   Page title displayed in header bar.
+-   **Budget Summary Widget**:
+    -   Compact health indicator on Dashboard linking to full Budget page.
+
 
 ---
 
