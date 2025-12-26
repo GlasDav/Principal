@@ -56,9 +56,10 @@ class BudgetBucketBase(BaseModel):
     icon_name: str = "Wallet"
     group: str = "Discretionary"
     is_rollover: bool = False
+    is_shared: bool = False  # Shared between household members
     is_transfer: bool = False  # Transfer buckets excluded from spending analytics
     is_investment: bool = False  # Investment buckets excluded from expenses but shown in Sankey
-    is_investment: bool = False  # Investment buckets excluded from expenses but shown in Sankey
+    is_hidden: bool = False  # Hidden from budget view
     tags: List[str] = []
     limits: List[BudgetLimitBase] = [] # New: Member Limits
     target_amount: Optional[float] = None

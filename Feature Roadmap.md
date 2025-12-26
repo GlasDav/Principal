@@ -144,4 +144,31 @@
 
 ---
 
+## Phase 8: 🎨 UX Polish & Engagement
+
+**Elevate the user experience with polish and engagement features.**
+
+### Quick Wins
+- [x] **Toast Notifications** - Replace alert() dialogs with elegant toast feedback
+- [x] **Keyboard Shortcuts** - Cmd/Ctrl+K command palette, navigation shortcuts
+
+### Core UX Enhancements
+- [x] **Command Palette** - Global search/action modal (Cmd/Ctrl+K)
+- [x] **Dashboard Widget Persistence** - Save layout to backend/localStorage
+- [ ] **Inline Transaction Editing** - Edit fields directly in table rows
+- [x] **Visual Budget Progress Bars** - Color-coded spent vs limit indicators
+- [ ] **Drag-and-Drop Categories** - Reorder categories visually with @dnd-kit
+
+### Polish & Delight
+- [x] **Micro-Animations** - Framer Motion for smooth transitions
+- [x] **Empty State Illustrations** - Custom SVG illustrations
+- [x] **Enhanced Date Picker** - Rich calendar with presets
+- [x] **Accessibility Audit** - ARIA labels, keyboard nav, screen reader support
+
+### Engagement & Retention
+- [x] **Achievement System** - Badges for financial milestones
+- [x] **Comparative Insights Cards** - "You spent 20% less this month" style feedback
+
+---
+
 *Last Updated: December 2025*

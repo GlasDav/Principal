@@ -8,17 +8,21 @@ import UpcomingBillsWidget from '../components/widgets/UpcomingBillsWidget';
 import CashFlowWidget from '../components/widgets/CashFlowWidget';
 import SpendingTrendsWidget from '../components/widgets/SpendingTrendsWidget';
 import BudgetProgressWidget from '../components/widgets/BudgetProgressWidget';
+import BudgetSummaryWidget from '../components/widgets/BudgetSummaryWidget';
 import GoalsWidget from '../components/widgets/GoalsWidget';
 import NetWorthWidget from '../components/widgets/NetWorthWidget';
 import RecentTransactionsWidget from '../components/widgets/RecentTransactionsWidget';
 import InvestmentsSummaryWidget from '../components/widgets/InvestmentsSummaryWidget';
 import PeriodComparisonWidget from '../components/widgets/PeriodComparisonWidget';
+import InsightsCardsWidget from '../components/widgets/InsightsCardsWidget';
+import AchievementsWidget from '../components/widgets/AchievementsWidget';
 
 // Drag and Drop Imports
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import OnboardingWizard from '../components/OnboardingWizard';
 import { SortableWidgetWrapper } from '../components/widgets/SortableWidgetWrapper';
+import { AnimatedPage } from '../components/animations/AnimatedComponents';
 
 export default function Dashboard() {
     // Date Range State
@@ -31,13 +35,15 @@ export default function Dashboard() {
 
     // Widget Order State
     const defaultWidgetOrder = [
-        'summary-cards',
-        'period-comparison',
-        'financial-overview',
-        'recent-activity',
-        'cash-flow',
-        'spending-trends',
-        'budget-progress'
+        'summary-cards',           // 1. Financial Overview (income, expenses, net savings, net worth)
+        'recent-activity',         // 2. Recent transactions and upcoming bills
+        'budget-progress',         // 3. Budget performance
+        'insights-cards',          // 4. Spending insights
+        'achievements',            // 5. Milestones
+        'financial-overview',      // 6. Net worth, investments, goals widgets
+        'period-comparison',       // 7. Period comparisons
+        'cash-flow',               // 8. Sankey diagram
+        'spending-trends'          // 9. Trend charts
     ];
 
     const [widgetOrder, setWidgetOrder] = useState(() => {
@@ -165,6 +171,10 @@ export default function Dashboard() {
         switch (id) {
             case 'summary-cards':
                 return <SummaryCardsWidget totals={totals} netWorth={netWorth} formatCurrency={formatCurrency} />;
+            case 'insights-cards':
+                return <InsightsCardsWidget currentStart={start} currentEnd={end} spenderMode={spenderMode} formatCurrency={formatCurrency} />;
+            case 'achievements':
+                return <AchievementsWidget dashboardData={dashboardData} netWorth={netWorth} goals={[]} />;
             case 'period-comparison':
                 return <PeriodComparisonWidget currentStart={start} currentEnd={end} spenderMode={spenderMode} formatCurrency={formatCurrency} currentData={dashboardData} />;
             case 'financial-overview':
@@ -187,14 +197,14 @@ export default function Dashboard() {
             case 'spending-trends':
                 return <SpendingTrendsWidget trendHistory={trendHistory} trendOption={trendOption} onTrendOptionChange={setTrendOption} buckets={buckets} />;
             case 'budget-progress':
-                return <BudgetProgressWidget buckets={buckets} formatCurrency={formatCurrency} startDate={start} endDate={end} />;
+                return <BudgetSummaryWidget buckets={buckets} formatCurrency={formatCurrency} />;
             default:
                 return null;
         }
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-8 space-y-8">
+        <AnimatedPage className="max-w-7xl mx-auto p-8 space-y-8">
             {/* Welcome Header - Removed per user request */}
 
             {/* Filter Controls */}
@@ -279,6 +289,6 @@ export default function Dashboard() {
             </DndContext>
 
             <OnboardingWizard />
-        </div>
+        </AnimatedPage>
     );
 }

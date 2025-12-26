@@ -6,6 +6,7 @@ import Button from './ui/Button';
  * EmptyState component for displaying when there's no data
  * @param {Object} props
  * @param {React.ElementType} props.icon - Lucide icon component
+ * @param {React.ReactNode} [props.illustration] - Custom SVG illustration component
  * @param {string} props.title - Main heading
  * @param {string} props.description - Description text
  * @param {string} [props.actionText] - Button text
@@ -14,6 +15,7 @@ import Button from './ui/Button';
  */
 export default function EmptyState({
     icon: Icon,
+    illustration: Illustration,
     title,
     description,
     actionText,
@@ -23,13 +25,19 @@ export default function EmptyState({
 }) {
     return (
         <div className="flex flex-col items-center justify-center py-16 px-4">
-            {/* Animated icon container */}
-            <div className="relative mb-6">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
-                <div className="relative w-20 h-20 bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-900/30 dark:to-violet-900/30 rounded-2xl flex items-center justify-center border border-indigo-100 dark:border-indigo-500/20">
-                    <Icon className="text-indigo-500 dark:text-indigo-400" size={36} />
+            {/* Custom Illustration or Animated icon container */}
+            {Illustration ? (
+                <div className="mb-6">
+                    {Illustration}
                 </div>
-            </div>
+            ) : Icon && (
+                <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
+                    <div className="relative w-20 h-20 bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-900/30 dark:to-violet-900/30 rounded-2xl flex items-center justify-center border border-indigo-100 dark:border-indigo-500/20">
+                        <Icon className="text-indigo-500 dark:text-indigo-400" size={36} />
+                    </div>
+                </div>
+            )}
 
             {/* Text content */}
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 text-center">

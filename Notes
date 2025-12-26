@@ -52,9 +52,3 @@ Tasks
         - Download account balances
         - Remove card access
         - Delete transactions
-
-Bugs to fix:
-    - Can't view TOS or Privacy Policy without logging in
-    - Quick buttons on transaction page should be a fixed size and in a fixed location on each row - not dynamic based on the length of the description
-    - Transfers should not be included in the calendar
-    - Tags not working

@@ -15,12 +15,15 @@ import Review from './pages/Review';
 import Reports from './pages/Reports';
 import Insights from './pages/Insights';
 import Goals from './pages/Goals';
+import TransactionsHub from './pages/TransactionsHub';
+import ReportsHub from './pages/ReportsHub';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ToastProvider } from './context/ToastContext';
 import { Navigate, Outlet } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -35,6 +38,7 @@ import { LogOut } from 'lucide-react';
 import NotificationBell from './components/NotificationBell';
 import AIChatBot from './components/AIChatBot';
 import QuickAddFAB from './components/QuickAddFAB';
+import CommandPalette from './components/CommandPalette';
 
 const queryClient = new QueryClient();
 
@@ -64,6 +68,36 @@ function NavItem({ to, icon: Icon, children, end = false }) {
   );
 }
 
+// Page title mapping
+const PAGE_TITLES = {
+  '/': 'Dashboard',
+  '/transactions': 'Transactions',
+  '/budget': 'Budget',
+  '/net-worth': 'Net Worth',
+  '/goals': 'Goals',
+  '/reports': 'Reports',
+  '/settings': 'Settings',
+  '/data-management': 'Data Management',
+  '/calendar': 'Calendar',
+  '/subscriptions': 'Subscriptions',
+  '/review': 'Review',
+  '/tools': 'Tools',
+  '/insights': 'Insights',
+};
+
+// Header with page title
+function Header() {
+  const location = window.location.pathname;
+  const title = PAGE_TITLES[location] || 'Principal';
+
+  return (
+    <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shadow-sm z-10">
+      <h1 className="text-lg font-semibold text-slate-800 dark:text-white">{title}</h1>
+      <NotificationBell />
+    </header>
+  );
+}
+
 // Sidebar + Layout
 function Layout() {
   const { logout, user } = useAuth();
@@ -83,20 +117,33 @@ function Layout() {
           </div>
         </div>
 
-        <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
-          <NavItem to="/" icon={LayoutDashboard} end>Dashboard</NavItem>
-          <NavItem to="/net-worth" icon={LineChart}>Net Worth</NavItem>
-          <NavItem to="/transactions" icon={List}>Transactions</NavItem>
-          <NavItem to="/data-management" icon={UploadCloud}>Data Management</NavItem>
-          <NavItem to="/calendar" icon={Calendar}>Calendar</NavItem>
-          <NavItem to="/subscriptions" icon={CreditCard}>Subscriptions</NavItem>
-          <NavItem to="/goals" icon={Target}>Goals</NavItem>
-          <NavItem to="/budget" icon={PiggyBank}>Budget</NavItem>
-          <NavItem to="/review" icon={Users}>Review</NavItem>
-          <NavItem to="/reports" icon={BarChart3}>Reports</NavItem>
-          <NavItem to="/tools" icon={Wrench}>Tools</NavItem>
-          <NavItem to="/insights" icon={Zap}>Insights</NavItem>
-          <NavItem to="/settings" icon={SettingsIcon}>Settings</NavItem>
+        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+          {/* Overview */}
+          <div className="mb-4">
+            <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Overview</div>
+            <NavItem to="/" icon={LayoutDashboard} end>Dashboard</NavItem>
+          </div>
+
+          {/* Money */}
+          <div className="mb-4">
+            <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Money</div>
+            <NavItem to="/transactions" icon={List}>Transactions</NavItem>
+            <NavItem to="/budget" icon={PiggyBank}>Budget</NavItem>
+            <NavItem to="/net-worth" icon={LineChart}>Net Worth</NavItem>
+          </div>
+
+          {/* Planning */}
+          <div className="mb-4">
+            <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Planning</div>
+            <NavItem to="/goals" icon={Target}>Goals</NavItem>
+            <NavItem to="/reports" icon={BarChart3}>Reports</NavItem>
+          </div>
+
+          {/* System */}
+          <div>
+            <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">System</div>
+            <NavItem to="/settings" icon={SettingsIcon}>Settings</NavItem>
+          </div>
         </nav>
 
         <div className="p-3 border-t border-slate-100 dark:border-slate-700">
@@ -120,9 +167,7 @@ function Layout() {
       {/* Main Content - wrapped in error boundary */}
       {/* Main Content - wrapped in error boundary */}
       <div className="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900">
-        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-end px-6 shadow-sm z-10">
-          <NotificationBell />
-        </header>
+        <Header />
 
         <div className="flex-1 overflow-auto">
           <div className="min-h-full flex flex-col">
@@ -139,8 +184,8 @@ function Layout() {
       {/* Feedback Modal */}
       <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
 
-      {/* Feedback Modal */}
-      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+      {/* Command Palette (Cmd/Ctrl+K) */}
+      <CommandPalette />
 
       {/* Quick Add FAB */}
       <QuickAddFAB />
@@ -155,38 +200,41 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <Router>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/verify-email" element={<VerifyEmail />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/terms" element={<TermsOfService />} />
+        <ToastProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <Router>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/verify-email" element={<VerifyEmail />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsOfService />} />
 
-                {/* Protected Routes */}
-                <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/net-worth" element={<NetWorth />} />
-                  <Route path="/transactions" element={<Transactions />} />
-                  <Route path="/calendar" element={<FinancialCalendar />} />
-                  <Route path="/subscriptions" element={<Subscriptions />} />
-                  <Route path="/goals" element={<Goals />} />
-                  <Route path="/tools" element={<Tools />} />
-                  <Route path="/budget" element={<Budget />} />
-                  <Route path="/review" element={<Review />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/insights" element={<Insights />} />
-                  <Route path="/data-management" element={<DataManagement />} />
-                  <Route path="/settings" element={<Settings />} />
-                </Route>
-              </Routes>
-            </Router>
-          </NotificationProvider>
-        </AuthProvider>
+                  {/* Protected Routes */}
+                  <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/transactions" element={<TransactionsHub />} />
+                    <Route path="/budget" element={<Budget />} />
+                    <Route path="/net-worth" element={<NetWorth />} />
+                    <Route path="/goals" element={<Goals />} />
+                    <Route path="/reports" element={<ReportsHub />} />
+                    <Route path="/settings" element={<Settings />} />
+                    {/* Legacy routes - redirect to consolidated pages */}
+                    <Route path="/subscriptions" element={<TransactionsHub />} />
+                    <Route path="/review" element={<TransactionsHub />} />
+                    <Route path="/calendar" element={<ReportsHub />} />
+                    <Route path="/insights" element={<ReportsHub />} />
+                    <Route path="/data-management" element={<Settings />} />
+                    <Route path="/tools" element={<Settings />} />
+                  </Route>
+                </Routes>
+              </Router>
+            </NotificationProvider>
+          </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
