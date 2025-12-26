@@ -3,10 +3,12 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { X, BookPlus, Loader2, Eye, AlertCircle } from 'lucide-react';
 import { createRule } from '../services/api';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 // API call for preview
 const previewRule = async ({ keywords, min_amount, max_amount }) => {
     const token = localStorage.getItem('access_token');
-    const response = await fetch('/settings/rules/preview', {
+    const response = await fetch(`${API_URL}/settings/rules/preview`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
