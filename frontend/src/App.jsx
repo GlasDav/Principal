@@ -227,7 +227,7 @@ function App() {
                     <Route path="/review" element={<TransactionsHub />} />
                     <Route path="/calendar" element={<ReportsHub />} />
                     <Route path="/insights" element={<ReportsHub />} />
-                    <Route path="/data-management" element={<Settings />} />
+                    <Route path="/data-management" element={<DataManagement />} />
                     <Route path="/tools" element={<Settings />} />
                   </Route>
                 </Routes>
