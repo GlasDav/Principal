@@ -11,7 +11,7 @@ class User(Base):
     hashed_password = Column(String) # New: Auth
     # Personal Info
     name = Column(String, nullable=True) # Defaults to User A or just Name
-    currency_symbol = Column(String, default="$")
+    currency_symbol = Column(String, default="A$")
     is_email_verified = Column(Boolean, default=False)  # Email verification status
     token_version = Column(Integer, default=0)  # Incremented to invalidate all tokens
     

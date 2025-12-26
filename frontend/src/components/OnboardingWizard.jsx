@@ -54,7 +54,7 @@ export default function OnboardingWizard() {
                 <div className="h-1.5 bg-slate-100 dark:bg-slate-700 w-full">
                     <div
                         className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500 ease-in-out"
-                        style={{ width: `${(step / 4) * 100}%` }}
+                        style={{ width: `${(step / 3) * 100}%` }}
                     ></div>
                 </div>
 
@@ -62,9 +62,8 @@ export default function OnboardingWizard() {
                 <div className="p-8 flex-1 flex flex-col text-center items-center justify-center min-h-[320px]">
 
                     {step === 1 && <WelcomeStep onNext={() => setStep(2)} />}
-                    {step === 2 && <CurrencyStep onNext={() => setStep(3)} />}
-                    {step === 3 && <HouseholdStep onNext={() => setStep(4)} />}
-                    {step === 4 && <ConnectStep onFinish={handleFinish} />}
+                    {step === 2 && <HouseholdStep onNext={() => setStep(3)} />}
+                    {step === 3 && <ConnectStep onFinish={handleFinish} />}
 
                 </div>
             </div>
