@@ -48,9 +48,31 @@ psql $DATABASE_URL -f backend/migrations/001_add_indexes.sql
 
 ## Production Deployment
 ```bash
-# Install gunicorn
-pip install gunicorn
+# Install dependencies
+pip install -r backend/requirements.txt
 
-# Run with 4 workers (adjust based on CPU cores)
-gunicorn backend.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+# Run with Gunicorn (4 workers by default, based on CPU cores)
+gunicorn backend.main:app -c gunicorn.conf.py
 ```
+
+## Redis Setup (Optional but Recommended)
+
+### Upstash (Serverless - Recommended)
+1. Create account at [upstash.com](https://upstash.com)
+2. Create Redis database
+3. Copy REST URL to `REDIS_URL`
+
+### Local Docker
+```bash
+docker run -d --name principal-redis -p 6379:6379 redis:7
+```
+Set: `REDIS_URL=redis://localhost:6379`
+
+## Background Jobs (Optional)
+
+For heavy tasks like PDF parsing and AI categorization:
+```bash
+# Start RQ worker
+rq worker --with-scheduler
+```
+

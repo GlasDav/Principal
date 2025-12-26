@@ -55,3 +55,12 @@ python-dotenv==1.2.1
 
 # Testing
 pytest==9.0.2
+
+# Production Server
+gunicorn==23.0.0
+
+# Caching (optional - graceful fallback if not configured)
+redis==5.0.0
+
+# Background Jobs (optional)
+rq==1.16.0
