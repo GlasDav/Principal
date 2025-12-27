@@ -242,11 +242,11 @@ export default function FinancialCalendar() {
                                 ))}
                             </div>
 
-                            {/* Projected Text Label if space? (Maybe just '3 Due') */}
+                            {/* Projected Amount Label */}
                             {projected.length > 0 && (
                                 <div className="text-[10px] text-indigo-500 font-medium flex items-center gap-0.5">
                                     <Clock size={10} />
-                                    {projected.length} Due
+                                    ${Math.abs(projected.reduce((sum, t) => sum + t.amount, 0)).toFixed(0)} Due
                                 </div>
                             )}
                         </div>
