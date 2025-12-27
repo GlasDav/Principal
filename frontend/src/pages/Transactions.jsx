@@ -512,7 +512,7 @@ export default function Transactions() {
                                                         {assignDropdownId === txn.id && (
                                                             <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 z-30 min-w-[140px]">
                                                                 <button
-                                                                    onClick={() => { updateMutation.mutate({ id: txn.id, assigned_to: null }); setAssignDropdownId(null); }}
+                                                                    onClick={() => { updateMutation.mutate({ id: txn.id, assigned_to: '' }); setAssignDropdownId(null); }}
                                                                     className="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"
                                                                 >
                                                                     None
