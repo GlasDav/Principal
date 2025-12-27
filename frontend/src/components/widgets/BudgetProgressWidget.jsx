@@ -12,10 +12,25 @@ export default function BudgetProgressWidget({ buckets = [], formatCurrency, sta
 
     const renderBucketCard = (bucket) => {
         const Icon = ICON_MAP[bucket.icon] || Wallet;
-        const percent = Math.min(bucket.percent, 100);
+
+        // Percentages
+        const percentSpent = bucket.limit > 0 ? (bucket.spent / bucket.limit) * 100 : 0;
+        const upcoming = bucket.upcoming_recurring || 0;
+        const percentUpcoming = bucket.limit > 0 ? (upcoming / bucket.limit) * 100 : 0;
+
         let barColor = "bg-emerald-500";
-        if (bucket.percent > 90) barColor = "bg-amber-500";
-        if (bucket.percent > 100) barColor = "bg-red-500";
+        let upcomingColor = "bg-emerald-300 dark:bg-emerald-800";
+
+        if (bucket.percent > 90) {
+            barColor = "bg-amber-500";
+            upcomingColor = "bg-amber-300 dark:bg-amber-800";
+        }
+        if (bucket.percent > 100) {
+            barColor = "bg-red-500";
+            upcomingColor = "bg-red-300 dark:bg-red-800";
+        }
+
+        const effectiveRemaining = bucket.effective_remaining !== undefined ? bucket.effective_remaining : (bucket.limit - bucket.spent - upcoming);
 
         return (
             <Link
@@ -34,7 +49,12 @@ export default function BudgetProgressWidget({ buckets = [], formatCurrency, sta
                                 {bucket.is_rollover && <RefreshCw size={12} className="text-indigo-500" title="Rollover Fund" />}
                             </h3>
                             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                {bucket.is_over ? "Over Budget" : `${formatCurrency(bucket.remaining)} left`}
+                                {bucket.is_over
+                                    ? "Over Budget"
+                                    : upcoming > 0
+                                        ? `${formatCurrency(effectiveRemaining)} effective left`
+                                        : `${formatCurrency(bucket.remaining)} left`
+                                }
                             </p>
                         </div>
                     </div>
@@ -42,11 +62,33 @@ export default function BudgetProgressWidget({ buckets = [], formatCurrency, sta
                         {Math.round(bucket.percent)}%
                     </div>
                 </div>
-                <div className="relative h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${percent}%` }} />
+
+                {/* Progress Bar */}
+                <div className="relative h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex">
+                    {/* Spent */}
+                    <div
+                        className={`h-full rounded-l-full transition-all duration-500 ${barColor}`}
+                        style={{ width: `${Math.min(percentSpent, 100)}%` }}
+                    />
+                    {/* Upcoming */}
+                    {percentUpcoming > 0 && (
+                        <div
+                            className={`h-full transition-all duration-500 ${upcomingColor} relative`}
+                            style={{
+                                width: `${Math.min(percentUpcoming, 100 - Math.min(percentSpent, 100))}%`,
+                                backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)',
+                                backgroundSize: '0.75rem 0.75rem'
+                            }}
+                            title={`Upcoming: ${formatCurrency(upcoming)}`}
+                        />
+                    )}
                 </div>
+
                 <div className="flex justify-between mt-3 text-sm">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium">{formatCurrency(bucket.spent)}</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium flex gap-1">
+                        {formatCurrency(bucket.spent)}
+                        {upcoming > 0 && <span className="text-slate-400 opacity-75">+ {formatCurrency(upcoming)}</span>}
+                    </span>
                     <span className="text-slate-400 dark:text-slate-500">Of {formatCurrency(bucket.limit)}</span>
                 </div>
             </Link>

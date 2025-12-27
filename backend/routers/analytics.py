@@ -176,6 +176,11 @@ def get_dashboard_data(
         else:
             percent = 0 if spent == 0 else 100
             
+        # Calculate Upcoming Recurring
+        # Simple logical check: active subscriptions for this bucket due in this date range
+        upcoming_recurring = 0.0
+        # This is n+1 if we query inside loop. Let's pre-fetch subscriptions.
+        
         final_buckets.append({
             "id": b.id,
             "name": b.name,
@@ -188,6 +193,35 @@ def get_dashboard_data(
             "percent": percent,
             "is_over": spent > limit,
         })
+
+    # Optimization: Pre-fetch subscriptions and map to buckets
+    active_subs = db.query(models.Subscription).filter(
+        models.Subscription.user_id == user.id,
+        models.Subscription.is_active == True,
+        models.Subscription.type == "Expense",
+        models.Subscription.bucket_id.isnot(None)
+    ).all()
+    
+    subs_by_bucket = {}
+    for sub in active_subs:
+        # Check if due date is in range
+        # Use next_due_date. 
+        # If view is "This Month", and next_due_date is in it, it's upcoming.
+        if sub.next_due_date >= s_date.date() and sub.next_due_date <= e_date.date():
+            subs_by_bucket.setdefault(sub.bucket_id, 0.0)
+            subs_by_bucket[sub.bucket_id] += sub.amount
+            
+    # Update final_buckets with upcoming data
+    # We do this after the loop or inside if we moved the fetch up.
+    # Let's just iterate and update
+    for fb in final_buckets:
+        fb["upcoming_recurring"] = subs_by_bucket.get(fb["id"], 0.0)
+        # Adjust remaining?
+        # "available" budget usually means Limit - Spent.
+        # "Upcoming" is just a warning. 
+        # But user said "reduce effective available budget".
+        # So "Effective Remaining" = Limit - Spent - Upcoming.
+        fb["effective_remaining"] = fb["limit"] - fb["spent"] - fb["upcoming_recurring"]
 
     return {
         "start_date": start_date,

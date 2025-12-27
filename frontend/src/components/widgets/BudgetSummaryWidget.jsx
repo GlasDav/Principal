@@ -15,7 +15,11 @@ export default function BudgetSummaryWidget({ buckets = [], formatCurrency }) {
 
     const totalBudget = budgetCategories.reduce((sum, b) => sum + (b.limit || 0), 0);
     const totalSpent = budgetCategories.reduce((sum, b) => sum + (b.spent || 0), 0);
-    const percentUsed = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+    const totalUpcoming = budgetCategories.reduce((sum, b) => sum + (b.upcoming_recurring || 0), 0);
+
+    // Percentages
+    const percentSpent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+    const percentUpcoming = totalBudget > 0 ? (totalUpcoming / totalBudget) * 100 : 0;
 
     // Status color
     let statusColor = 'emerald';
@@ -30,12 +34,15 @@ export default function BudgetSummaryWidget({ buckets = [], formatCurrency }) {
         statusColor = 'amber';
         statusText = 'Approaching Limits';
         StatusIcon = AlertCircle;
+    } else if (totalUpcoming > 0) {
+        // Maybe change status text if a lot is upcoming?
+        // Keep it simple for now. 
     }
 
     const colorClasses = {
-        emerald: { bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400', bar: 'bg-emerald-500' },
-        amber: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-600 dark:text-amber-400', bar: 'bg-amber-500' },
-        red: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-600 dark:text-red-400', bar: 'bg-red-500' },
+        emerald: { bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400', bar: 'bg-emerald-500', upcoming: 'bg-emerald-300 dark:bg-emerald-800' },
+        amber: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-600 dark:text-amber-400', bar: 'bg-amber-500', upcoming: 'bg-amber-300 dark:bg-amber-800' },
+        red: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-600 dark:text-red-400', bar: 'bg-red-500', upcoming: 'bg-red-300 dark:bg-red-800' },
     };
 
     const colors = colorClasses[statusColor];
@@ -62,16 +69,34 @@ export default function BudgetSummaryWidget({ buckets = [], formatCurrency }) {
             </div>
 
             {/* Progress bar */}
-            <div className="relative h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-3">
+            <div className="relative h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-3 flex">
+                {/* Spent */}
                 <div
-                    className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ${colors.bar}`}
-                    style={{ width: `${Math.min(percentUsed, 100)}%` }}
+                    className={`h-full rounded-l-full transition-all duration-500 ${colors.bar}`}
+                    style={{ width: `${Math.min(percentSpent, 100)}%` }}
                 />
+                {/* Upcoming (Hashed/Patterned) */}
+                {percentUpcoming > 0 && (
+                    <div
+                        className={`h-full transition-all duration-500 ${colors.upcoming} relative`}
+                        style={{
+                            width: `${Math.min(percentUpcoming, 100 - Math.min(percentSpent, 100))}%`,
+                            backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)',
+                            backgroundSize: '1rem 1rem'
+                        }}
+                        title={`Upcoming: ${formatCurrency(totalUpcoming)}`}
+                    />
+                )}
             </div>
 
             <div className="flex justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">
-                    {formatCurrency(totalSpent)} spent
+                <span className="text-slate-500 dark:text-slate-400 flex gap-2">
+                    <span>{formatCurrency(totalSpent)} spent</span>
+                    {totalUpcoming > 0 && (
+                        <span className="text-slate-400 dark:text-slate-500">
+                            + {formatCurrency(totalUpcoming)} pending
+                        </span>
+                    )}
                 </span>
                 <span className="text-slate-400 dark:text-slate-500">
                     {formatCurrency(totalBudget)} budgeted

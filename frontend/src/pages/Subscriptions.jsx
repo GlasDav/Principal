@@ -141,8 +141,10 @@ export default function Subscriptions() {
     const [newAmount, setNewAmount] = useState("");
     const [newFreq, setNewFreq] = useState("Monthly");
     const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
+    const [newBucketId, setNewBucketId] = useState("");
 
     // Data
+    const { data: buckets = [] } = useQuery({ queryKey: ['buckets'], queryFn: api.getBuckets });
     const { data: active = [], isLoading: loadingActive } = useQuery({
         queryKey: ['subscriptions'],
         queryFn: api.getSubscriptions
@@ -185,6 +187,7 @@ export default function Subscriptions() {
         setNewAmount("");
         setNewFreq("Monthly");
         setNewDate(new Date().toISOString().split('T')[0]);
+        setNewBucketId("");
     };
 
     const handleEdit = (sub) => {
@@ -193,6 +196,7 @@ export default function Subscriptions() {
         setNewAmount(sub.amount);
         setNewFreq(sub.frequency);
         setNewDate(new Date(sub.next_due_date).toISOString().split('T')[0]); // Ensure date format
+        setNewBucketId(sub.bucket_id || "");
         setIsFormOpen(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -204,7 +208,8 @@ export default function Subscriptions() {
             amount: parseFloat(newAmount),
             frequency: newFreq,
             next_due_date: newDate,
-            is_active: true
+            is_active: true,
+            bucket_id: newBucketId ? parseInt(newBucketId) : null
         };
 
         if (editingId) {
@@ -338,6 +343,19 @@ export default function Subscriptions() {
                                 required
                             />
                         </div>
+                        <div className="w-full md:w-48">
+                            <label className="block text-xs font-medium text-slate-500 mb-1">Budget Category</label>
+                            <select
+                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2"
+                                value={newBucketId}
+                                onChange={(e) => setNewBucketId(e.target.value)}
+                            >
+                                <option value="">Select Category...</option>
+                                {buckets.filter(b => !b.is_transfer && !b.is_investment).map(b => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                            </select>
+                        </div>
                         <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-lg">
                             <Save size={20} />
                         </button>
@@ -383,112 +401,119 @@ export default function Subscriptions() {
             </div>
 
             {/* Content View */}
-            {view === "list" ? (
-                <div className="space-y-8">
-                    {/* Active Subscriptions */}
-                    <div>
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Active Subscriptions</h2>
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                            <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                                {active.length === 0 ? (
-                                    <div className="p-8 text-center text-slate-500">
-                                        No active subscriptions. Add one manually or approve a suggestion below.
-                                    </div>
-                                ) : active.map((sub) => (
-                                    <div key={sub.id} className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition group">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center font-bold text-indigo-600 dark:text-indigo-400 text-lg">
-                                                {sub.name.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-slate-900 dark:text-white">{sub.name}</h3>
-                                                <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
-                                                    <span className="flex items-center gap-1">
-                                                        <CheckCircle size={14} className="text-indigo-500" />
-                                                        {sub.frequency}
-                                                    </span>
-                                                    <span>•</span>
-                                                    <span>Next: {new Date(sub.next_due_date).toLocaleDateString('en-AU')}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-6">
-                                            <div className="text-right">
-                                                <div className="text-lg font-bold text-slate-900 dark:text-white">${sub.amount.toFixed(2)}</div>
-                                            </div>
-                                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => handleEdit(sub)}
-                                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-                                                    title="Edit"
-                                                >
-                                                    <Edit2 size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() => deleteMutation.mutate(sub.id)}
-                                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
-                                                    disabled={deleteMutation.isPending}
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Suggested Subscriptions */}
-                    {suggested.length > 0 && (
+            {
+                view === "list" ? (
+                    <div className="space-y-8">
+                        {/* Active Subscriptions */}
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span>Detected Suggestions</span>
-                                <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs font-medium">Auto-detected</span>
-                            </h2>
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Active Subscriptions</h2>
                             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                                 <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                                    {suggested.map((sub, idx) => (
-                                        <div key={idx} className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                                    {active.length === 0 ? (
+                                        <div className="p-8 text-center text-slate-500">
+                                            No active subscriptions. Add one manually or approve a suggestion below.
+                                        </div>
+                                    ) : active.map((sub) => (
+                                        <div key={sub.id} className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition group">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center font-bold text-amber-600 dark:text-amber-400 text-lg">
+                                                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center font-bold text-indigo-600 dark:text-indigo-400 text-lg">
                                                     {sub.name.charAt(0)}
                                                 </div>
                                                 <div>
                                                     <h3 className="font-bold text-slate-900 dark:text-white">{sub.name}</h3>
                                                     <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
                                                         <span className="flex items-center gap-1">
-                                                            Est. {sub.frequency}
+                                                            <CheckCircle size={14} className="text-indigo-500" />
+                                                            {sub.frequency}
                                                         </span>
                                                         <span>•</span>
-                                                        <span>Last paid: {new Date(sub.last_payment_date).toLocaleDateString('en-AU')}</span>
+                                                        <span>Next: {new Date(sub.next_due_date).toLocaleDateString('en-AU')}</span>
                                                     </div>
+                                                    {sub.bucket_id && (
+                                                        <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                                            {buckets.find(b => b.id === sub.bucket_id)?.name || "Unknown Category"}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-6">
                                                 <div className="text-right">
                                                     <div className="text-lg font-bold text-slate-900 dark:text-white">${sub.amount.toFixed(2)}</div>
-                                                    <div className="text-xs text-slate-400">{sub.confidence} confidence</div>
                                                 </div>
-                                                <button
-                                                    onClick={() => confirmSuggestion(sub)}
-                                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2"
-                                                >
-                                                    <Plus size={16} />
-                                                    Add
-                                                </button>
+                                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => handleEdit(sub)}
+                                                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit2 size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteMutation.mutate(sub.id)}
+                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                                                        disabled={deleteMutation.isPending}
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
-                    )}
-                </div>
-            ) : (
-                <CalendarView subscriptions={active} />
-            )}
-        </div>
+
+                        {/* Suggested Subscriptions */}
+                        {suggested.length > 0 && (
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <span>Detected Suggestions</span>
+                                    <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs font-medium">Auto-detected</span>
+                                </h2>
+                                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                    <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                                        {suggested.map((sub, idx) => (
+                                            <div key={idx} className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center font-bold text-amber-600 dark:text-amber-400 text-lg">
+                                                        {sub.name.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-bold text-slate-900 dark:text-white">{sub.name}</h3>
+                                                        <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
+                                                            <span className="flex items-center gap-1">
+                                                                Est. {sub.frequency}
+                                                            </span>
+                                                            <span>•</span>
+                                                            <span>Last paid: {new Date(sub.last_payment_date).toLocaleDateString('en-AU')}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="text-right">
+                                                        <div className="text-lg font-bold text-slate-900 dark:text-white">${sub.amount.toFixed(2)}</div>
+                                                        <div className="text-xs text-slate-400">{sub.confidence} confidence</div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => confirmSuggestion(sub)}
+                                                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2"
+                                                    >
+                                                        <Plus size={16} />
+                                                        Add
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <CalendarView subscriptions={active} />
+                )
+            }
+        </div >
     );
 }

@@ -148,6 +148,9 @@ Dedicated reporting section for deeper financial analysis.
 -   **Active Management**: List of known recurring subscriptions.
 -   **Discovery**: Automatically detects potential subscriptions from transaction history.
 -   **Editing**: Modify subscription details (Name, Amount, Frequency, Next Due Date).
+-   **Budget Mapping** *(New)*:
+    -   Link subscriptions to specific Budget Categories.
+    -   **Upcoming Visualization**: Dashboard progress bars show "Upcoming" costs as striped segments, reducing the effective remaining budget.
 
 ### Goals
 -   **Goal Creation**: Set specific financial targets with deadlines.

@@ -215,8 +215,10 @@ class Subscription(Base):
     next_due_date = Column(Date)
     is_active = Column(Boolean, default=True)
     description_keyword = Column(String, nullable=True) # Text to match in transactions
+    bucket_id = Column(Integer, ForeignKey("budget_buckets.id"), nullable=True)
     
-    user = relationship("User") # Relationships TaxSettings(Base):
+    user = relationship("User") 
+    bucket = relationship("BudgetBucket")
 class TaxSettings(Base):
     __tablename__ = "tax_settings"
     

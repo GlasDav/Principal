@@ -326,6 +326,7 @@ class SubscriptionBase(BaseModel):
     next_due_date: date
     is_active: bool = True
     description_keyword: Optional[str] = None
+    bucket_id: Optional[int] = None
 
 class SubscriptionCreate(SubscriptionBase):
     pass
@@ -338,6 +339,7 @@ class SubscriptionUpdate(BaseModel):
     next_due_date: Optional[date] = None
     is_active: Optional[bool] = None
     description_keyword: Optional[str] = None
+    bucket_id: Optional[int] = None
 
 class Subscription(SubscriptionBase):
     id: int
