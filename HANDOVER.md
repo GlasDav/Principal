@@ -1,48 +1,38 @@
 # Principal Finance - Agent Handover Note
 
 **Date:** December 27, 2025
-**Session Summary:** Bug fixes for onboarding, routing, and UI improvements
+**Session Summary:** Bug fixes for UI issues - calendar, split modal, and slow typing
 
 ---
 
 ## What Was Accomplished This Session
 
-### ✅ Completed Fixes (Dec 26-27, 2025)
+### ✅ Completed Fixes (Dec 27, 2025)
 
-1. **Rule Preview in Settings → Rules Page**
-   - Added Preview button to inline rule creation form
-   - Shows match count and sample transactions
-   - File: `frontend/src/components/RulesSection.jsx`
+1. **Calendar Not Showing Transactions**
+   - Root cause: Date key calculation used timezone offset which caused mismatches
+   - Fix: Changed to simple YYYY-MM-DD string formatting
+   - File: `frontend/src/pages/FinancialCalendar.jsx`
 
-2. **Rule Preview in Create Rule Modal (from Transactions)**
-   - Fixed 422 error - backend schema used `float = None` instead of `float | None = None`
-   - Replaced unreliable useQuery pattern with async/await state-based approach
-   - Files: 
-     - `backend/routers/rules.py` (schema fix)
-     - `frontend/src/components/CreateRuleModal.jsx` (frontend fix)
+2. **Split Transaction Modal UI Issues**
+   - Added $ prefix to amount fields for clarity
+   - Right-aligned amounts for better readability
+   - Fixed NaN on empty input with `|| 0` fallback
+   - File: `frontend/src/components/SplitTransactionModal.jsx`
 
-3. **FAB Blocking Table Row Clicks**
-   - QuickAddFAB container was blocking clicks on bottom table rows
-   - Added `pointer-events-none` to container, `pointer-events-auto` to buttons only
-   - File: `frontend/src/components/QuickAddFAB.jsx`
+3. **Slow Typing When Adding Family Member**
+   - Root cause: API call triggered on every keystroke
+   - Fix: Use local state for name, save only on blur/Enter
+   - File: `frontend/src/components/settings/MembersSettings.jsx`
 
-4. **Onboarding Wizard Simplified**
-   - Removed currency selection step (now defaults to AUD for Australian users)
-   - Progress bar updated from 4 steps to 3 steps
-   - File: `frontend/src/components/OnboardingWizard.jsx`
+### ✅ Previous Fixes (Dec 26, 2025)
 
-5. **Default Currency Changed to AUD**
-   - Backend model default changed from `$` to `A$`
-   - File: `backend/models.py`
-
-6. **Data Management Route Fixed**
-   - `/data-management` was incorrectly routing to Settings
-   - Now correctly routes to DataManagement component
-   - File: `frontend/src/App.jsx`
-
-7. **Documentation Updated**
-   - `feature_documentation.md` - Added Rule Preview feature description
-   - `Feature Roadmap.md` - Rule Preview marked complete, Phases 10-11 added
+4. **Rule Preview in Settings → Rules Page** - Added preview button
+5. **Rule Preview in Create Rule Modal** - Fixed 422 schema error
+6. **FAB Blocking Table Row Clicks** - Added pointer-events-none
+7. **Onboarding Wizard Simplified** - Removed currency step
+8. **Default Currency** - Changed to AUD
+9. **Data Management Route** - Fixed to use correct component
 
 ---
 
