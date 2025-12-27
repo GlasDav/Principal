@@ -1,9 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users, Plus, Trash2 } from 'lucide-react';
 import * as api from '../../services/api';
 
 const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation }) => {
+    // Local state for name to avoid API call on every keystroke
+    const [localName, setLocalName] = useState(member.name);
+
+    // Sync local state when member prop changes (e.g., after refetch)
+    useEffect(() => {
+        setLocalName(member.name);
+    }, [member.name]);
+
+    const handleNameBlur = () => {
+        // Only update if name actually changed
+        if (localName !== member.name && localName.trim()) {
+            updateMemberMutation.mutate({ id: member.id, data: { ...member, name: localName.trim() } });
+        }
+    };
+
     return (
         <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 space-y-3 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
@@ -18,8 +33,10 @@ const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation }) => {
                     <div className="flex items-center gap-2">
                         <input
                             className="font-semibold text-slate-800 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-indigo-500 outline-none transition px-1 flex-1"
-                            value={member.name}
-                            onChange={(e) => updateMemberMutation.mutate({ id: member.id, data: { ...member, name: e.target.value } })}
+                            value={localName}
+                            onChange={(e) => setLocalName(e.target.value)}
+                            onBlur={handleNameBlur}
+                            onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
                         />
                     </div>
                 </div>
