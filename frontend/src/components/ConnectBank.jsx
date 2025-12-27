@@ -1,19 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Building, Shield, CheckCircle, Loader2, X, Plus } from 'lucide-react';
+import { Building, Shield, CheckCircle, Loader2, X, Plus, ExternalLink } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
 import api from '../services/api';
 
-const BASIQ_SCRIPT_ID = 'basiq-connect-script';
+const BASIQ_CONSENT_URL = 'https://consent.basiq.io/home';
 
 export default function ConnectBank({ onConnectSuccess }) {
     const [isOpen, setIsOpen] = useState(false);
     const [mockStep, setMockStep] = useState('idle'); // idle, selecting, consenting, connecting, success
+    const [connectionError, setConnectionError] = useState(null);
     const queryClient = useQueryClient();
-    const containerRef = useRef(null);
 
     // Fetch Token
-    const { data: tokenData, isLoading: tokenLoading, error: tokenError } = useQuery({
+    const { data: tokenData, isLoading: tokenLoading, error: tokenError, refetch: refetchToken } = useQuery({
         queryKey: ['connectionToken'],
         queryFn: async () => (await api.get('/connections/token')).data,
         enabled: isOpen,
@@ -43,6 +43,7 @@ export default function ConnectBank({ onConnectSuccess }) {
 
     const handleConnect = () => {
         setIsOpen(true);
+        setConnectionError(null);
     };
 
     const handleMockFlow = () => {
@@ -56,65 +57,37 @@ export default function ConnectBank({ onConnectSuccess }) {
         }, 5000);
     };
 
-    // Load Basiq Script
-    useEffect(() => {
-        if (!document.getElementById(BASIQ_SCRIPT_ID)) {
-            const script = document.createElement('script');
-            script.id = BASIQ_SCRIPT_ID;
-            script.src = 'https://js.basiq.io/index.js'; // Check correct URL
-            script.async = true;
-            document.body.appendChild(script);
-        }
-    }, []);
+    // Handle redirect to Basiq Consent UI
+    const handleRedirectToBasiq = () => {
+        if (tokenData?.access_token) {
+            // Build the callback URL (where Basiq will redirect after consent)
+            const callbackUrl = `${window.location.origin}/basiq-callback`;
 
-    // Initialize Basiq or Mock
-    useEffect(() => {
-        if (isOpen && tokenData) {
-            if (isMock) {
-                if (mockStep === 'idle') handleMockFlow();
-            } else {
-                // Real Basiq Flow
-                // Wait for script to load if needed
-                const initBasiq = () => {
-                    if (window.Basiq && containerRef.current) {
-                        try {
-                            window.Basiq.render({
-                                token: tokenData.access_token,
-                                container: containerRef.current,
-                                action: "connect",
-                                onSuccess: (result) => {
-                                    console.log("Basiq Success:", result);
-                                    // result usually has { jobId: "job_..." }
-                                    // Or sometimes it's nested. Assume result.jobId based on common patterns.
-                                    // We will send the full ID string.
-                                    // If result is just ID? Let's log it.
-                                    const jobId = result?.id || result?.jobId || (typeof result === 'string' ? result : null);
-                                    if (jobId) {
-                                        setMockStep('connecting'); // Re-use step for showing loader
-                                        syncMutation.mutate(jobId);
-                                    } else {
-                                        alert("Connection successful but no Job ID returned.");
-                                    }
-                                },
-                                onCancel: () => {
-                                    setIsOpen(false);
-                                },
-                                onError: (err) => {
-                                    console.error("Basiq Error:", err);
-                                    alert("Connection Error: " + (err.message || "Unknown error"));
-                                }
-                            });
-                        } catch (e) {
-                            console.error("Failed to render Basiq:", e);
-                        }
-                    } else {
-                        setTimeout(initBasiq, 500); // Retry if script not ready
-                    }
-                };
-                initBasiq();
-            }
+            // Build consent URL with token and optional parameters
+            // Note: Check Basiq docs for exact parameter names they support
+            const params = new URLSearchParams({
+                token: tokenData.access_token,
+                // Add a state parameter to help track the connection
+                state: Date.now().toString()
+            });
+
+            const consentUrl = `${BASIQ_CONSENT_URL}?${params.toString()}`;
+
+            // Store callback info in sessionStorage for reference
+            sessionStorage.setItem('basiq_callback_url', callbackUrl);
+            sessionStorage.setItem('basiq_return_path', '/data-management');
+
+            // Redirect to Basiq consent UI
+            window.location.href = consentUrl;
         }
-    }, [isOpen, tokenData, isMock]);
+    };
+
+    // Initialize Mock Flow when opening
+    useEffect(() => {
+        if (isOpen && tokenData && isMock && mockStep === 'idle') {
+            handleMockFlow();
+        }
+    }, [isOpen, tokenData, isMock, mockStep]);
 
     return (
         <>
@@ -129,7 +102,7 @@ export default function ConnectBank({ onConnectSuccess }) {
             <Dialog open={isOpen} onClose={() => { if (mockStep !== 'connecting' && !syncMutation.isPending) setIsOpen(false); }} className="relative z-50">
                 <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
                 <div className="fixed inset-0 flex items-center justify-center p-4">
-                    <Dialog.Panel className={`w-full ${isMock ? 'max-w-md' : 'max-w-2xl'} bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden`}>
+                    <Dialog.Panel className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
 
                         {/* Header */}
                         <div className="bg-slate-50 dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
@@ -143,7 +116,7 @@ export default function ConnectBank({ onConnectSuccess }) {
                         </div>
 
                         {/* Content */}
-                        <div className="min-h-[400px] flex flex-col relative">
+                        <div className="min-h-[300px] flex flex-col relative">
                             {tokenLoading && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-800/80 z-20">
                                     <Loader2 className="animate-spin text-indigo-600 mb-4" size={48} />
@@ -158,14 +131,32 @@ export default function ConnectBank({ onConnectSuccess }) {
                                 </div>
                             )}
 
-                            {/* Real Basiq Container */}
-                            {!isMock && isOpen && tokenData && (
-                                <div
-                                    id="basiq-container"
-                                    ref={containerRef}
-                                    className="w-full h-[600px] bg-white"
-                                >
-                                    {/* Basiq UI renders here */}
+                            {connectionError && (
+                                <div className="p-8 text-center text-red-500">
+                                    <p>Connection failed.</p>
+                                    <p className="text-xs mt-1">{connectionError}</p>
+                                </div>
+                            )}
+
+                            {/* Real Basiq Redirect Flow */}
+                            {!isMock && tokenData && !tokenLoading && (
+                                <div className="p-8 text-center flex-1 flex flex-col items-center justify-center">
+                                    <Shield size={64} className="mx-auto text-green-500 mb-4" />
+                                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">Secure Bank Connection</h4>
+                                    <p className="text-sm text-slate-500 mt-2 mb-6 max-w-sm">
+                                        You'll be redirected to Basiq's secure consent portal to connect your bank.
+                                        Your credentials are never shared with us.
+                                    </p>
+                                    <button
+                                        onClick={handleRedirectToBasiq}
+                                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-bold transition"
+                                    >
+                                        <ExternalLink size={20} />
+                                        Continue to Basiq
+                                    </button>
+                                    <p className="text-xs text-slate-400 mt-4">
+                                        Powered by Basiq · Bank-grade security · CDR compliant
+                                    </p>
                                 </div>
                             )}
 

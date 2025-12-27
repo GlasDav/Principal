@@ -7,14 +7,20 @@ from pydantic import BaseModel
 from datetime import datetime
 
 router = APIRouter(prefix="/connections", tags=["connections"])
-basiq_service = BasiqService()
+
+# Use a dependency to create BasiqService AFTER load_dotenv() has run
+def get_basiq_service():
+    return BasiqService()
 
 class SyncRequest(BaseModel):
     job_id: str # From Basiq Frontend
     user_id: str = None # Basiq User ID
 
 @router.get("/token")
-async def get_client_token(current_user: models.User = Depends(auth.get_current_user)):
+async def get_client_token(
+    current_user: models.User = Depends(auth.get_current_user),
+    basiq_service: BasiqService = Depends(get_basiq_service)
+):
     """
     Get a client token to initialize the Basiq frontend SDK.
     """
@@ -30,7 +36,8 @@ async def get_client_token(current_user: models.User = Depends(auth.get_current_
 async def sync_connection(
     req: SyncRequest, 
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: models.User = Depends(auth.get_current_user),
+    basiq_service: BasiqService = Depends(get_basiq_service)
 ):
     """
     Called after frontend completes the Basiq flow.

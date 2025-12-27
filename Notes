@@ -1,64 +1,46 @@
 Tasks
-- Basiq integration
-- Customizable modular dashboard
-- Tiered subscription system
-- Forecasting
-- AI Chatbot/Tutorial
-- New rule - preview changes
-- Amazon extension
-- Budget
-    - Option to budget by group instead of by category
-    - When editing the budget, should show last 6 months of history for the account
-- Sankey diagram - break up income into different buckets
-- Default superannuation account
-- Move sankey diagram from dashboard onto reports page
+Transactions
+    - Allow user to leave a note on a transaction - action button
+    - Show upcoming recurring transactions in the budget cards as hashed or unfilled - to signifiy that it hasn't been spent yet but it's coming, so it reduces the effective available budget
 
-- Settings
-    - Notifications (email, in-app, push)
-        - Budget exceeded
-        - Recurring transaction detected
-        - Recurring transaction coming up
-        - Goal milestone
-    - Security
-        - Multi-factor auth
-        - Change email/password
-        - Add email
-    - Members
-        - Add household member instead of Couples Mode
-        - Give access to professional
-    - Accounts (connected bank accounts)
-        - Add account
-        - Delete account
-        - Hide account from budget (for reimbursements for example)
-    - Categories
-        - Add groups and categories
-        - Hide category in budget
-        - Change order
-    - Rules
-        - Add a new rule
-            - If transaction matches criteria:
-                - Merchant name (contains, does not contain etc)
-                - Amount (expense or income, greater than, less than, equal to etc)
-                - Categories
-            - Then apply these updates:
-                - Update category
-                - Add tags
-                - Hide transaction
-                - Add to review for user
-                - Link to goal
-                - Split transaction…
-    - Data
-        - Download transactions
-        - Download account balances
-        - Remove card access
-        - Delete transactions
+Integrations
+    - Basiq integration
+    - Amazon extension
 
-Things to fix:
-- Stocks don't add to net asset allocation graph
-- Import stocks from CSV
-- Stock cost base 
-- Adding family member - typing slow
-- AI insights - can't ask for non-standard timeframes (how much did I spend in the past 75 days)
-- Can't see any transactions in the calendar
-- Splitting transactions - can't enter negatives, and UI is ugly
-- Insights error 
+Commercialisation
+    - Tiered subscription system
+    - Referral links
+
+Budget
+    - Revamp the budget setting process - need to be able to see a history for each category somehow
+    - Smart rules should have its own tab in the budget page
+
+Net Worth
+    - Default superannuation account
+
+General UI/UX
+    - Ability to toggle on/off dashboard widgets
+    - Colour-coded sankey diagram, which should be moved to reports page
+    - Ability to add emoji to categories for visual appeal
+
+Account & Settings
+    - Invite family member - sends them an email to create their own login for the same account
+    - Security - set up MFA
+    - Security - email account validation
+
+Reports
+    - Forecast should have its own tab in the reports page
+    - Income by type
+    - Ability to run filtered reports (filtered by tags, dates, categories, accounts etc)
+    - Total expenses by month, with ability to click on each month to see the breakdown of expenses
+    - 
+
+Goals
+    - Ability to set expenditure/category budget goals (e.g. under budget on clothing 3 months in a row)
+
+Tutorial
+    - Ability to skip Tutorial
+    - Guide user to set up categories before importing transactions
+    - Guide user to set up smart rules before importing transactions
+    - More robust tutorial covering all features
+    

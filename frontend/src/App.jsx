@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, Zap, Target, TrendingUp, Wrench, PiggyBank, Users, BarChart3, MessageCircle } from 'lucide-react';
+import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, Zap, Target, TrendingUp, Wrench, PiggyBank, Users, BarChart3, MessageCircle, Briefcase } from 'lucide-react';
 import Settings from './pages/Settings';
 import DataManagement from './pages/DataManagement';
 import Transactions from './pages/Transactions';
@@ -15,10 +15,12 @@ import Review from './pages/Review';
 import Reports from './pages/Reports';
 import Insights from './pages/Insights';
 import Goals from './pages/Goals';
+import Investments from './pages/Investments';
 import TransactionsHub from './pages/TransactionsHub';
 import ReportsHub from './pages/ReportsHub';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import BasiqCallback from './pages/BasiqCallback';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -82,7 +84,9 @@ const PAGE_TITLES = {
   '/subscriptions': 'Subscriptions',
   '/review': 'Review',
   '/tools': 'Tools',
+  '/tools': 'Tools',
   '/insights': 'Insights',
+  '/investments': 'Investments',
 };
 
 // Header with page title
@@ -129,6 +133,7 @@ function Layout() {
             <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Money</div>
             <NavItem to="/transactions" icon={List}>Transactions</NavItem>
             <NavItem to="/budget" icon={PiggyBank}>Budget</NavItem>
+            <NavItem to="/investments" icon={Briefcase}>Investments</NavItem>
             <NavItem to="/net-worth" icon={LineChart}>Net Worth</NavItem>
           </div>
 
@@ -212,6 +217,7 @@ function App() {
                   <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="/basiq-callback" element={<BasiqCallback />} />
 
                   {/* Protected Routes */}
                   <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
@@ -219,6 +225,7 @@ function App() {
                     <Route path="/transactions" element={<TransactionsHub />} />
                     <Route path="/budget" element={<Budget />} />
                     <Route path="/net-worth" element={<NetWorth />} />
+                    <Route path="/investments" element={<Investments />} />
                     <Route path="/goals" element={<Goals />} />
                     <Route path="/reports" element={<ReportsHub />} />
                     <Route path="/settings" element={<Settings />} />

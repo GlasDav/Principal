@@ -14,6 +14,11 @@ class BasiqService:
         # If API key is present, we use REAL mode. Else Mock.
         self.is_mock = not self.api_key
         
+        # Debug logging
+        logger.info(f"BasiqService initialized - is_mock: {self.is_mock}, api_key present: {bool(self.api_key)}")
+        if self.api_key:
+            logger.info(f"API Key (first 20 chars): {self.api_key[:20]}...")
+        
         # We need a shared client in a real app, but for simplicity we create one per request or use context manager
         self.headers = {
             "Authorization": f"Basic {self.api_key}",

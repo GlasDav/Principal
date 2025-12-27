@@ -8,6 +8,7 @@ import {
 import { AreaChart, Area, PieChart, Pie, Cell, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import CheckInModal from '../components/CheckInModal';
 import AccountDetailsModal from '../components/AccountDetailsModal';
+import AddInvestmentModal from '../components/AddInvestmentModal';
 
 const getCategoryIcon = (category, type) => {
     const c = (category || '').toLowerCase();
@@ -27,6 +28,7 @@ export default function NetWorth() {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [chartMode, setChartMode] = useState('net_worth'); // 'net_worth' | 'investments'
     const [showProjection, setShowProjection] = useState(false);
+    const [isInvestmentModalOpen, setIsInvestmentModalOpen] = useState(false);
 
     // Helper
     const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
@@ -455,6 +457,14 @@ export default function NetWorth() {
                             </div>
                             <form onSubmit={(e) => {
                                 e.preventDefault();
+                                // For Investment category, open the AddInvestmentModal instead
+                                if (newAccountCategory === 'Investment') {
+                                    setIsAddAccountOpen(false);
+                                    setIsInvestmentModalOpen(true);
+                                    setNewAccountName("");
+                                    return;
+                                }
+                                // For other categories, create the account normally
                                 createAccountMutation.mutate({
                                     name: newAccountName,
                                     type: newAccountType,
@@ -467,7 +477,7 @@ export default function NetWorth() {
                                     <input
                                         type="text"
                                         placeholder="e.g. Chase Checkings"
-                                        required
+                                        required={newAccountCategory !== 'Investment'}
                                         className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
                                         value={newAccountName}
                                         onChange={(e) => setNewAccountName(e.target.value)}
@@ -514,13 +524,13 @@ export default function NetWorth() {
                                 <div className="flex items-end">
                                     <button type="submit" className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-6 py-2 text-sm font-medium transition flex items-center gap-2 justify-center">
                                         <Plus size={18} />
-                                        Create
+                                        {newAccountCategory === 'Investment' ? 'Add Holdings' : 'Create'}
                                     </button>
                                 </div>
                             </form>
                             {newAccountType === 'Asset' && newAccountCategory === 'Investment' && (
                                 <p className="mt-3 text-xs text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-2 rounded-lg">
-                                    💡 <strong>Investment accounts</strong> let you track individual stocks, ETFs, and their current prices!
+                                    💡 Click <strong>Add Holdings</strong> to search for and add stocks, ETFs, and track their prices!
                                 </p>
                             )}
                         </div>
@@ -605,6 +615,11 @@ export default function NetWorth() {
                 isOpen={isDetailsOpen}
                 onClose={() => { setIsDetailsOpen(false); setSelectedAccount(null); }}
                 account={selectedAccount}
+            />
+
+            <AddInvestmentModal
+                isOpen={isInvestmentModalOpen}
+                onClose={() => setIsInvestmentModalOpen(false)}
             />
         </div >
     );

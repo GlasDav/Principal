@@ -50,7 +50,12 @@ Dedicated reporting section for deeper financial analysis.
 
 ### Data Management (Import/Export)
 -   **Unified Hub**: Centralized `/data-management` page for all data input/output operations.
--   **Connect Bank**: Integrated button to link financial institutions (via Basiq/ConnectBank component - *In Progress*).
+-   **Connect Bank (Basiq Integration)** *(New)*:
+    -   Secure bank connection via Basiq's CDR-compliant consent portal.
+    -   Redirect flow: Users authenticate directly with their bank via Basiq.
+    -   Automatic account and transaction sync after consent.
+    -   Callback handling at `/basiq-callback` for seamless return.
+    -   Mock mode for development without API key.
 -   **File Import**: Support for manual file uploads.
     -   **PDF Statements**: Extract transactions from bank PDFs.
     -   **CSV Import**: Map and import CSV data from other sources.

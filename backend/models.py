@@ -138,9 +138,13 @@ class InvestmentHolding(Base):
     quantity = Column(Float)
     price = Column(Float)
     cost_basis = Column(Float, nullable=True)
-    currency = Column(String, default="AUD") # Default to AUD for holdings too? Maybe too aggressive, but safer for AU market.
+    currency = Column(String, default="USD") # Default to USD (since most yahoo symbols are)
     exchange_rate = Column(Float, default=1.0)
     value = Column(Float) # quantity * price * exchange_rate (cached)
+    
+    # New Fields for Better Portfolio Management
+    asset_type = Column(String, default="Stock") # Stock, ETF, Crypto, Fund, etc.
+    sector = Column(String, nullable=True) # Tech, Finance, etc.
     
     account = relationship("Account", back_populates="holdings")
 

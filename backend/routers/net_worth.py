@@ -196,6 +196,47 @@ def get_holdings(account_id: int, db: Session = Depends(get_db), current_user: m
     
     return db.query(models.InvestmentHolding).filter(models.InvestmentHolding.account_id == account_id).all()
 
+# --- Helpers ---
+
+def get_exchange_rate(holding_currency: str, user_currency: str) -> float:
+    """
+    Robust Exchange Rate Lookup: Foreign -> Home (e.g. USD -> AUD).
+    """
+    if holding_currency == user_currency:
+        return 1.0
+        
+    exchange_rate = 1.0
+    
+    # Try direct pair first: e.g. USDAUD=X (Price of 1 USD in AUD)
+    fx_symbol_direct = f"{holding_currency}{user_currency}=X"
+    
+    try:
+        fx = yf.Ticker(fx_symbol_direct)
+        rate = fx.fast_info.last_price
+        
+        if rate:
+             return rate
+             
+        # Try inverse pair: e.g. AUDUSD=X (Price of 1 AUD in USD)
+        fx_symbol_inv = f"{user_currency}{holding_currency}=X"
+        fx_inv = yf.Ticker(fx_symbol_inv)
+        rate_inv = fx_inv.fast_info.last_price
+        
+        if rate_inv:
+            return 1.0 / rate_inv
+            
+        # Final fallback: check for common hardcoded quirks
+        if user_currency == "AUD" and holding_currency == "USD":
+            # Try standard AUD=X (which is AUDUSD)
+            std_pair = yf.Ticker("AUD=X") 
+            std_rate = std_pair.fast_info.last_price
+            if std_rate:
+                return 1.0 / std_rate
+    except Exception:
+        pass # Return 1.0 on failure
+        
+    return exchange_rate
+
 @router.post("/accounts/{account_id}/holdings", response_model=schemas.InvestmentHolding)
 def create_holding(account_id: int, holding: schemas.InvestmentHoldingCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     # Verify account ownership
@@ -205,8 +246,19 @@ def create_holding(account_id: int, holding: schemas.InvestmentHoldingCreate, db
     
     db_holding = models.InvestmentHolding(**holding.dict())
     db_holding.account_id = account_id
+    
+    # Dynamic Currency Check
+    user_currency = (current_user.currency_symbol or "AUD").upper().replace("$", "").strip()
+    if user_currency in ["A", "AU"]: user_currency = "AUD"
+    if user_currency in ["US", "U"]: user_currency = "USD"
+    
     # Calculate System Value: Qty * Price * Exchange Rate
-    db_holding.value = holding.quantity * holding.price * holding.exchange_rate
+    # Fetch Exchange Rate if 1.0 was passed (default) or check match
+    if holding.exchange_rate == 1.0 and holding.currency != user_currency:
+        rate = get_exchange_rate(holding.currency, user_currency)
+        db_holding.exchange_rate = rate
+    
+    db_holding.value = holding.quantity * holding.price * db_holding.exchange_rate
     
     db.add(db_holding)
     db.commit()
@@ -235,10 +287,20 @@ def update_holding(holding_id: int, holding_update: schemas.InvestmentHoldingCre
     db_holding.price = holding_update.price
     db_holding.cost_basis = holding_update.cost_basis
     db_holding.currency = holding_update.currency
-    db_holding.exchange_rate = holding_update.exchange_rate
+    
+    # Dynamic Currency Check
+    user_currency = (current_user.currency_symbol or "AUD").upper().replace("$", "").strip()
+    if user_currency in ["A", "AU"]: user_currency = "AUD"
+    if user_currency in ["US", "U"]: user_currency = "USD"
+    
+    if holding_update.exchange_rate == 1.0 and holding_update.currency != user_currency:
+        rate = get_exchange_rate(holding_update.currency, user_currency)
+        db_holding.exchange_rate = rate
+    else:
+        db_holding.exchange_rate = holding_update.exchange_rate
     
     # Recalculate Value
-    db_holding.value = holding_update.quantity * holding_update.price * holding_update.exchange_rate
+    db_holding.value = holding_update.quantity * holding_update.price * db_holding.exchange_rate
     
     db.commit()
     db.refresh(db_holding)
@@ -276,6 +338,8 @@ def refresh_holding_prices(db: Session = Depends(get_db), current_user: models.U
     """
     Updates the price and value of ALL investment holdings for the current user
     using real-time data from Yahoo Finance.
+    
+    CRITICAL CHANGE: Converts EVERYTHING to User's Home Currency (e.g. AUD).
     """
     # 1. Get all holdings for user
     holdings = db.query(models.InvestmentHolding).join(models.Account).filter(models.Account.user_id == current_user.id).all()
@@ -287,6 +351,12 @@ def refresh_holding_prices(db: Session = Depends(get_db), current_user: models.U
     errors = []
     affected_account_ids = set()
     
+    # Clean up currency symbol (remove $)
+    raw_symbol = (current_user.currency_symbol or "AUD").upper().replace("$", "").strip()
+    user_currency = raw_symbol
+    if raw_symbol in ["A", "AU"]: user_currency = "AUD"
+    if raw_symbol in ["US", "U"]: user_currency = "USD"
+    
     # 2. Iterate and Update (Sequential for now, can optimize with batching later if needed)
     for holding in holdings:
         try:
@@ -294,35 +364,26 @@ def refresh_holding_prices(db: Session = Depends(get_db), current_user: models.U
             if not ticker_symbol: continue
             
             t = yf.Ticker(ticker_symbol)
+            # Use fast_info for speed
             info = t.fast_info
             
             # Fetch Price
             current_price = info.last_price
             if current_price is None:
-                # Try fallback
+                # Try fallback to standard info
                 current_price = t.info.get('regularMarketPrice') or t.info.get('currentPrice')
                 
             if current_price:
                 holding.price = current_price
                 
                 # Update Meta (Currency/Exchange Rate)
-                holding_currency = t.fast_info.currency
-                if holding_currency:
-                    holding.currency = holding_currency
-                    
-                    # Update Exchange Rate if needed
-                    # If we decide the system base currency is USD.
-                    if holding_currency != 'USD':
-                        fx_symbol = f"{holding_currency}USD=X"
-                        fx = yf.Ticker(fx_symbol)
-                        rate = fx.fast_info.last_price
-                        if not rate:
-                            rate = fx.info.get('regularMarketPrice') or 1.0
-                        holding.exchange_rate = rate
-                    else:
-                        holding.exchange_rate = 1.0
+                holding_currency = (t.fast_info.currency or "USD").upper()
+                holding.currency = holding_currency
                 
-                # Recalculate Value
+                # Update Exchange Rate Logic: Foreign -> Home (e.g. USD -> AUD)
+                holding.exchange_rate = get_exchange_rate(holding_currency, user_currency)
+                
+                # Recalculate Value (Quantity * Price * ExchangeRate)
                 holding.value = holding.quantity * holding.price * holding.exchange_rate
                 updated_count += 1
                 affected_account_ids.add(holding.account_id)

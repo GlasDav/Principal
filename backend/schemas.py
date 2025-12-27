@@ -278,6 +278,8 @@ class InvestmentHoldingBase(BaseModel):
     cost_basis: Optional[float] = None
     currency: str = "USD"
     exchange_rate: float = 1.0
+    asset_type: str = "Stock"
+    sector: Optional[str] = None
 
 class InvestmentHoldingCreate(InvestmentHoldingBase):
     pass
