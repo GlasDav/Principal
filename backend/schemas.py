@@ -180,9 +180,18 @@ class TransactionUpdate(BaseModel):
     assigned_to: Optional[str] = None  # For partner review: "A", "B", or None
     parent_transaction_id: Optional[int] = None
     
-    @field_validator('description', 'spender', 'assigned_to')
+    @field_validator('description', 'spender')
     @classmethod
     def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+        return sanitize_text(v, max_length=500) if v else None
+    
+    @field_validator('assigned_to')
+    @classmethod
+    def handle_assigned_to(cls, v: Optional[str]) -> Optional[str]:
+        # Preserve empty string so we can use it to clear the assignment
+        # Empty string "" means "clear", None means "don't change"
+        if v == '':
+            return ''  # Preserve empty string for clearing
         return sanitize_text(v, max_length=500) if v else None
 
 class Transaction(TransactionBase):
