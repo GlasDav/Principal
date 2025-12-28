@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LayoutDashboard, Settings as SettingsIcon, UploadCloud, List, LineChart, Calendar, CreditCard, Zap, Target, TrendingUp, Wrench, PiggyBank, Users, BarChart3, MessageCircle, Briefcase } from 'lucide-react';
 import Settings from './pages/Settings';
@@ -84,15 +84,14 @@ const PAGE_TITLES = {
   '/subscriptions': 'Subscriptions',
   '/review': 'Review',
   '/tools': 'Tools',
-  '/tools': 'Tools',
   '/insights': 'Insights',
   '/investments': 'Investments',
 };
 
 // Header with page title
 function Header() {
-  const location = window.location.pathname;
-  const title = PAGE_TITLES[location] || 'Principal';
+  const location = useLocation();
+  const title = PAGE_TITLES[location.pathname] || 'Principal';
 
   return (
     <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shadow-sm z-10">

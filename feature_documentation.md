@@ -357,3 +357,51 @@ Dedicated reporting section for deeper financial analysis.
 
 *Last Updated: December 2025*
 
+## 14. Drag-and-Drop Categories *(New)*
+-   **Visual Reordering**:
+    -   Drag handles on category rows for intuitive reordering.
+    -   Uses @dnd-kit library with vertical axis constraint.
+    -   Works for both top-level categories and subcategories.
+-   **Persistent Order**:
+    -   Changes saved to backend via `reorderBuckets` API.
+    -   `display_order` field tracks position.
+
+## 15. Smart Rules Enhancement *(New)*
+-   **Rule Suggestions**:
+    -   AI-powered analysis of uncategorized transactions.
+    -   Identifies common keywords appearing across multiple transactions.
+    -   Suggests category mappings based on keyword patterns.
+    -   One-click "Add Rule" button to create suggested rules.
+-   **Settings Location**: Settings → Rules → "Suggested Rules" section.
+
+## 16. API Access *(New)*
+-   **Personal API Keys**:
+    -   Generate API keys for programmatic access.
+    -   Keys shown only once at creation (copy immediately!).
+    -   Key format: `pk_live_<random_string>`
+-   **Key Management**:
+    -   View all keys with prefix, creation date, last used.
+    -   Revoke keys with one click.
+    -   Optional expiry (set days until expiration).
+-   **Scopes**: Read-only, Read+Write, or Read+Transactions.
+-   **Settings Location**: Settings → API Keys.
+
+## 17. Family Sharing *(New)*
+-   **Multi-User Households**:
+    -   Multiple users can share the same household data.
+    -   Each user logs in with their own email/password.
+-   **Invite System**:
+    -   Owner/Admin can invite family members by email.
+    -   Invites expire after 7 days.
+    -   Token-based join flow with hashed tokens.
+-   **Role-Based Permissions**:
+    -   **Owner**: Full control, can remove members, change roles.
+    -   **Admin**: Can invite new members, edit data.
+    -   **Member**: Can view and edit shared data.
+-   **Leave/Remove**: Members can leave; owners can remove members.
+-   **Settings Location**: Settings → Family Sharing.
+
+---
+
+*Note: Family Sharing creates a "Household" container for all financial data. Existing users automatically get a personal household on first access. "Members" (spender profiles) are separate from Family Sharing users - they're labels for tracking who spent money, while Family Sharing allows actual separate logins.*
+

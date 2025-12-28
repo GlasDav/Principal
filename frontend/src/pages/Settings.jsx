@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import {
     Bell, Shield, Users, Landmark, Tag, BookPlus, Save,
-    Settings as SettingsIcon, Moon, Sun, DollarSign
+    Settings as SettingsIcon, Moon, Sun, DollarSign, Key, Home
 } from 'lucide-react';
 
 // Sub-components
@@ -13,6 +13,8 @@ import AccountsSettings from '../components/settings/AccountsSettings';
 import CategoriesSettings from '../components/settings/CategoriesSettings';
 import RulesSettings from '../components/settings/RulesSettings';
 import DataSettings from '../components/settings/DataSettings';
+import ApiKeysSettings from '../components/settings/ApiKeysSettings';
+import HouseholdSettings from '../components/settings/HouseholdSettings';
 
 /**
  * Settings Page with Sidebar Navigation
@@ -24,10 +26,12 @@ export default function Settings() {
     const tabs = [
         { id: 'notifications', label: 'Notifications', icon: Bell, component: NotificationsSettings },
         { id: 'security', label: 'Security', icon: Shield, component: SecuritySettings },
+        { id: 'household', label: 'Family Sharing', icon: Home, component: HouseholdSettings },
         { id: 'members', label: 'Members', icon: Users, component: MembersSettings },
         { id: 'accounts', label: 'Accounts', icon: Landmark, component: AccountsSettings },
         { id: 'categories', label: 'Categories', icon: Tag, component: CategoriesSettings },
         { id: 'rules', label: 'Rules', icon: BookPlus, component: RulesSettings },
+        { id: 'api-keys', label: 'API Keys', icon: Key, component: ApiKeysSettings },
         { id: 'data', label: 'Data', icon: Save, component: DataSettings },
     ];
 
@@ -50,8 +54,8 @@ export default function Settings() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
-                                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300'
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+                                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50'
                                 }`}
                         >
                             <tab.icon size={18} />

@@ -15,6 +15,9 @@ class User(Base):
     is_email_verified = Column(Boolean, default=False)  # Email verification status
     token_version = Column(Integer, default=0)  # Incremented to invalidate all tokens
     
+    # Household (Family Sharing) - use_alter defers FK creation until after households table exists
+    household_id = Column(Integer, ForeignKey("households.id", use_alter=True, name="fk_user_household"), nullable=True)
+    
     # MFA Fields
     mfa_enabled = Column(Boolean, default=False)  # Is MFA active?
     mfa_secret = Column(String, nullable=True)  # TOTP secret (encrypted in production)
@@ -23,6 +26,7 @@ class User(Base):
     buckets = relationship("BudgetBucket", back_populates="user")
     transactions = relationship("Transaction", back_populates="user")
     tax_settings = relationship("TaxSettings", back_populates="user", uselist=False)
+    household = relationship("Household", back_populates="members", foreign_keys=[household_id])
 
 class BudgetBucket(Base):
     __tablename__ = "budget_buckets"
@@ -313,4 +317,103 @@ class NotificationSettings(Base):
     bill_reminder_days = Column(Integer, default=3)  # Days before bill due date to notify
     
     user = relationship("User", backref="notification_settings")
+
+
+class ApiKey(Base):
+    """
+    Personal API keys for programmatic access.
+    Keys are hashed; the plain key is shown once at creation.
+    """
+    __tablename__ = "api_keys"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    name = Column(String)  # User-provided label, e.g., "Zapier Integration"
+    key_prefix = Column(String, index=True)  # First 8 chars for identification (e.g., "pk_live_")
+    key_hash = Column(String, unique=True, index=True)  # Hashed full key
+    scopes = Column(String, default="read")  # Comma-separated: "read", "write", "transactions", etc.
+    
+    is_active = Column(Boolean, default=True)
+    expires_at = Column(DateTime, nullable=True)  # Optional expiry
+    last_used_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=func.now())
+    
+    # Rate limiting  
+    rate_limit_requests = Column(Integer, default=1000)  # Max requests per hour
+    rate_limit_remaining = Column(Integer, default=1000)
+    rate_limit_reset_at = Column(DateTime, nullable=True)
+    
+    user = relationship("User", backref="api_keys")
+
+
+# ============================================
+# HOUSEHOLD / FAMILY SHARING MODELS
+# ============================================
+
+class Household(Base):
+    """
+    A household that can have multiple user members.
+    All financial data (transactions, accounts, budgets) belongs to the household.
+    """
+    __tablename__ = "households"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, default="My Household")  # e.g., "Glasser Family"
+    created_at = Column(DateTime, default=func.now())
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Original creator
+    
+    # Relationships
+    members = relationship("User", back_populates="household", foreign_keys="User.household_id")
+    household_users = relationship("HouseholdUser", back_populates="household", cascade="all, delete-orphan")
+    invites = relationship("HouseholdInvite", back_populates="household", cascade="all, delete-orphan")
+
+
+class HouseholdUser(Base):
+    """
+    Links users to households with roles and status.
+    Tracks membership details beyond the simple User.household_id FK.
+    """
+    __tablename__ = "household_users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    household_id = Column(Integer, ForeignKey("households.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    member_id = Column(Integer, ForeignKey("household_members.id"), nullable=True)  # Link to spender profile
+    
+    role = Column(String, default="member")  # "owner", "admin", "member"
+    status = Column(String, default="active")  # "active", "pending", "invited"
+    
+    invited_at = Column(DateTime, default=func.now())
+    joined_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    household = relationship("Household", back_populates="household_users")
+    user = relationship("User")
+    spender_profile = relationship("HouseholdMember")
+
+
+class HouseholdInvite(Base):
+    """
+    Email invitations to join a household.
+    Token is hashed for security; plain token sent via email.
+    """
+    __tablename__ = "household_invites"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    household_id = Column(Integer, ForeignKey("households.id"))
+    email = Column(String, index=True)  # Email to invite
+    token_hash = Column(String, unique=True, index=True)  # Hashed invite token
+    
+    role = Column(String, default="member")  # Role to assign on join
+    expires_at = Column(DateTime)
+    accepted_at = Column(DateTime, nullable=True)
+    
+    invited_by_id = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=func.now())
+    
+    # Relationships
+    household = relationship("Household", back_populates="invites")
+    invited_by = relationship("User")
+
+
 

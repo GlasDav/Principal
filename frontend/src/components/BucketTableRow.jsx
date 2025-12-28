@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu } from '@headlessui/react';
-import { Trash2, Plus, CornerDownRight, ChevronDown, ChevronRight, ArrowUp, ArrowDown, Eye, EyeOff, Wallet } from 'lucide-react';
+import { Trash2, Plus, CornerDownRight, ChevronDown, ChevronRight, GripVertical, Eye, EyeOff, Wallet } from 'lucide-react';
 import { ICON_MAP } from '../utils/icons';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // Currency Code to Symbol Map
 const CURRENCY_MAP = {
@@ -32,6 +34,22 @@ export default function BucketTableRow({
     isFirst = false,
     isLast = false
 }) {
+    // Sortable hook for all rows
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: bucket.id });
+
+    const sortableStyle = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
     const Icon = ICON_MAP[bucket.icon_name] || Wallet;
     const [localName, setLocalName] = useState(bucket.name || '');
 
@@ -155,7 +173,11 @@ export default function BucketTableRow({
         : `hover:bg-slate-50 dark:hover:bg-slate-800/50 ${bucket.is_transfer ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''} ${bucket.is_investment ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''} ${isHidden ? 'opacity-50' : ''}`;
 
     return (
-        <tr className={`border-b border-slate-100 dark:border-slate-700 transition group ${rowBgClass}`}>
+        <tr
+            ref={setNodeRef}
+            style={sortableStyle}
+            className={`border-b border-slate-100 dark:border-slate-700 transition group ${rowBgClass}`}
+        >
             <td className="p-2 w-12 relative">
                 <div className="flex items-center" style={{ paddingLeft: depth * 20 }}>
                     {depth > 0 && <CornerDownRight size={12} className="text-slate-300 absolute left-4 top-1/2 -translate-y-1/2" style={{ left: (depth * 20) - 10 }} />}
@@ -331,27 +353,15 @@ export default function BucketTableRow({
             </td>
             <td className="p-2 w-10">
                 <div className="flex items-center gap-1">
-                    {/* Move Up/Down Buttons */}
-                    {onMoveBucket && (
-                        <>
-                            <button
-                                onClick={() => onMoveBucket(bucket.id, 'up')}
-                                disabled={isFirst}
-                                className={`${isFirst ? 'text-slate-200 dark:text-slate-600 cursor-not-allowed' : 'text-slate-300 hover:text-indigo-500'} opacity-0 group-hover:opacity-100 transition`}
-                                title="Move up"
-                            >
-                                <ArrowUp size={12} />
-                            </button>
-                            <button
-                                onClick={() => onMoveBucket(bucket.id, 'down')}
-                                disabled={isLast}
-                                className={`${isLast ? 'text-slate-200 dark:text-slate-600 cursor-not-allowed' : 'text-slate-300 hover:text-indigo-500'} opacity-0 group-hover:opacity-100 transition`}
-                                title="Move down"
-                            >
-                                <ArrowDown size={12} />
-                            </button>
-                        </>
-                    )}
+                    {/* Drag Handle */}
+                    <button
+                        {...attributes}
+                        {...listeners}
+                        className="text-slate-300 hover:text-indigo-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition p-0.5"
+                        title="Drag to reorder"
+                    >
+                        <GripVertical size={14} />
+                    </button>
                     {/* Hide/Show Toggle */}
                     <button
                         onClick={() => {

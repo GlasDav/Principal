@@ -18,6 +18,7 @@ export default function CategoriesSettings() {
         updateBucketMutation,
         createBucketMutation,
         deleteBucketMutation,
+        reorderBucketsMutation,
         moveBucket
     } = useBucketOperations();
 
@@ -43,6 +44,7 @@ export default function CategoriesSettings() {
                 groupName="Discretionary"
                 allTags={allTags.map(t => t.name)}
                 onMoveBucket={(id, dir) => moveBucket(buckets, id, dir)}
+                onReorderBuckets={(updates) => reorderBucketsMutation.mutate(updates)}
             />
         </div>
     );

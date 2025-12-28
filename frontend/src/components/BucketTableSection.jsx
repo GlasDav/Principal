@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import BucketTableRow from './BucketTableRow';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 
 export default function BucketTableSection({
     title,
@@ -13,8 +27,18 @@ export default function BucketTableSection({
     groupName,
     allTags = [],
     members = [],
-    onMoveBucket = null
+    onMoveBucket = null,
+    onReorderBuckets = null
 }) {
+    // Drag and drop sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: { distance: 5 }
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
     const [expandedIds, setExpandedIds] = useState(new Set());
 
     useEffect(() => {
@@ -46,6 +70,62 @@ export default function BucketTableSection({
 
     // Use buckets directly as roots (expecting Tree structure)
     const roots = buckets || [];
+
+    // Helper to get all bucket IDs recursively (for SortableContext)
+    const getAllBucketIds = (nodes) => {
+        let ids = [];
+        nodes.forEach(node => {
+            ids.push(node.id);
+            if (node.children && node.children.length > 0) {
+                ids = ids.concat(getAllBucketIds(node.children));
+            }
+        });
+        return ids;
+    };
+
+    // Handle drag end - reorder buckets (works for both roots and children)
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        // Find the bucket and its siblings (either roots or within a parent)
+        const findBucketAndSiblings = (nodes, parentId = null) => {
+            for (let i = 0; i < nodes.length; i++) {
+                if (nodes[i].id === active.id) {
+                    return { siblings: nodes, index: i, parentId };
+                }
+                if (nodes[i].children && nodes[i].children.length > 0) {
+                    const result = findBucketAndSiblings(nodes[i].children, nodes[i].id);
+                    if (result) return result;
+                }
+            }
+            return null;
+        };
+
+        const activeResult = findBucketAndSiblings(roots);
+        if (!activeResult) return;
+
+        const { siblings } = activeResult;
+        const oldIndex = siblings.findIndex(b => b.id === active.id);
+        const newIndex = siblings.findIndex(b => b.id === over.id);
+
+        // Only allow reordering within same parent group
+        if (oldIndex === -1 || newIndex === -1) return;
+
+        // Build new order array with updated display_order values
+        const reordered = [...siblings];
+        const [movedItem] = reordered.splice(oldIndex, 1);
+        reordered.splice(newIndex, 0, movedItem);
+
+        const orderUpdates = reordered.map((bucket, idx) => ({
+            id: bucket.id,
+            display_order: idx
+        }));
+
+        if (onReorderBuckets) {
+            onReorderBuckets(orderUpdates);
+        }
+    };
 
     const renderRows = (nodes, depth = 0) => {
         return nodes.map((bucket, index) => (
@@ -109,16 +189,28 @@ export default function BucketTableSection({
                                 <th className="p-3 w-10"></th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {renderRows(roots)}
-                            {roots.length === 0 && (
-                                <tr>
-                                    <td colSpan={colSpan} className="p-6 text-center text-slate-400 text-sm">
-                                        No categories yet
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                            modifiers={[restrictToVerticalAxis]}
+                        >
+                            <SortableContext
+                                items={getAllBucketIds(roots)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <tbody>
+                                    {renderRows(roots)}
+                                    {roots.length === 0 && (
+                                        <tr>
+                                            <td colSpan={colSpan} className="p-6 text-center text-slate-400 text-sm">
+                                                No categories yet
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </SortableContext>
+                        </DndContext>
                     </table>
                 </div>
 

@@ -526,3 +526,89 @@ class SavingsOpportunity(BaseModel):
     message: str
     action: str
     severity: str = "medium"  # low, medium, high
+
+
+# ============================================
+# HOUSEHOLD / FAMILY SHARING SCHEMAS
+# ============================================
+
+class HouseholdBase(BaseModel):
+    name: str = "My Household"
+    
+    @field_validator('name')
+    @classmethod
+    def sanitize_name(cls, v: str) -> str:
+        return sanitize_text(v, max_length=100) or "My Household"
+
+
+class HouseholdCreate(HouseholdBase):
+    pass
+
+
+class Household(HouseholdBase):
+    id: int
+    created_at: datetime
+    owner_id: Optional[int] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class HouseholdUserBase(BaseModel):
+    role: str = "member"  # "owner", "admin", "member"
+
+
+class HouseholdUserResponse(HouseholdUserBase):
+    id: int
+    household_id: int
+    user_id: int
+    member_id: Optional[int] = None
+    status: str
+    invited_at: datetime
+    joined_at: Optional[datetime] = None
+    # Include user info for display
+    user_email: Optional[str] = None
+    user_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class HouseholdInviteCreate(BaseModel):
+    email: EmailStr
+    role: str = "member"
+
+
+class HouseholdInviteResponse(BaseModel):
+    id: int
+    email: str
+    role: str
+    expires_at: datetime
+    created_at: datetime
+    accepted_at: Optional[datetime] = None
+    invited_by_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class HouseholdWithMembers(Household):
+    """Full household info with members list."""
+    members: List[HouseholdUserResponse] = []
+    pending_invites: List[HouseholdInviteResponse] = []
+
+
+class JoinHouseholdRequest(BaseModel):
+    token: str
+
+
+class UpdateMemberRoleRequest(BaseModel):
+    role: str  # "admin" or "member" (can't change to owner)
+    
+    @field_validator('role')
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        if v not in ["admin", "member"]:
+            raise ValueError("Role must be 'admin' or 'member'")
+        return v
+

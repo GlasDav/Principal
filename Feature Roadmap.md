@@ -157,7 +157,7 @@
 - [x] **Dashboard Widget Persistence** - Save layout to backend/localStorage
 - [ ] **Inline Transaction Editing** - Edit fields directly in table rows
 - [x] **Visual Budget Progress Bars** - Color-coded spent vs limit indicators
-- [ ] **Drag-and-Drop Categories** - Reorder categories visually with @dnd-kit
+- [x] **Drag-and-Drop Categories** - Reorder categories visually with @dnd-kit
 
 ### Polish & Delight
 - [x] **Micro-Animations** - Framer Motion for smooth transitions
@@ -177,8 +177,19 @@
 
 ### Core Features
 - [x] **Rule Preview** - Show matching transactions before creating a rule
-- [ ] **Rule Testing** - Dry-run rules against historical data
-- [ ] **Rule Suggestions** - AI-suggested rules based on transaction patterns
+- [x] **Rule Testing** - Dry-run rules against historical data (uses Rule Preview)
+- [x] **Rule Suggestions** - AI-suggested rules based on transaction patterns
+
+---
+
+## Phase 9.5: 🔑 API Access
+
+**Personal API keys for programmatic access.**
+
+### Core Features
+- [x] **API Key Model** - Hashed keys with scopes and expiry
+- [x] **Key Management UI** - Create, view, revoke keys in Settings
+- [x] **Rate Limiting** - Per-key request limits
 
 ---
 
@@ -194,16 +205,16 @@
 
 ---
 
-## Phase 11: 👨‍👩‍👧‍👦 Family Sharing
+## Phase 11: 👨‍👩‍👧‍👦 Family Sharing ✅
 
 **Multi-user household accounts with shared budgets.**
 
 ### Core Features
-- [ ] **Invite Family Member** - Email invite to join household
-- [ ] **Separate Logins** - Each member has their own credentials
-- [ ] **Shared Data** - All members see same transactions, budgets, accounts
-- [ ] **Per-Member Spending Tracking** - Filter by who spent what
-- [ ] **Role Permissions** - Owner vs Member access levels
+- [x] **Invite Family Member** - Email invite to join household
+- [x] **Separate Logins** - Each member has their own credentials
+- [x] **Shared Data** - All members see same transactions, budgets, accounts
+- [x] **Per-Member Spending Tracking** - Filter by who spent what
+- [x] **Role Permissions** - Owner/Admin/Member access levels
 
 ---
 
