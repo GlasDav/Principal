@@ -30,7 +30,6 @@ const fetchMembers = async () => {
  * BudgetProgressTab - Main container for budget progress view
  */
 export default function BudgetProgressTab({ userSettings }) {
-    const [historyMonths, setHistoryMonths] = useState(6);
     const [selectedMember, setSelectedMember] = useState('Combined');
 
     const formatCurrency = (val) => {
@@ -38,8 +37,8 @@ export default function BudgetProgressTab({ userSettings }) {
     };
 
     const { data: progress, isLoading } = useQuery({
-        queryKey: ['budget-progress', historyMonths, selectedMember],
-        queryFn: () => fetchBudgetProgress(historyMonths, selectedMember)
+        queryKey: ['budget-progress', 6, selectedMember],
+        queryFn: () => fetchBudgetProgress(6, selectedMember)
     });
 
     const { data: members = [] } = useQuery({
@@ -83,16 +82,7 @@ export default function BudgetProgressTab({ userSettings }) {
                     ))}
                 </select>
 
-                {/* History Range */}
-                <select
-                    value={historyMonths}
-                    onChange={(e) => setHistoryMonths(parseInt(e.target.value))}
-                    className="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-                >
-                    <option value={3}>3 months history</option>
-                    <option value={6}>6 months history</option>
-                    <option value={12}>12 months history</option>
-                </select>
+                {/* History Range Removed (Fixed 6 months) */}
 
                 {/* Period Label */}
                 <div className="ml-auto text-sm text-slate-500 dark:text-slate-400">

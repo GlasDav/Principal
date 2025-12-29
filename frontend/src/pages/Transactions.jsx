@@ -31,7 +31,7 @@ export default function Transactions() {
 
     // Local state
     const [search, setSearch] = useState("");
-    const [editingId, setEditingId] = useState(null);
+    const [editingCell, setEditingCell] = useState({ id: null, field: null });
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [splitModalOpen, setSplitModalOpen] = useState(false);
     const [transactionToSplit, setTransactionToSplit] = useState(null);
@@ -102,10 +102,12 @@ export default function Transactions() {
 
     // Update Transaction
     const updateMutation = useMutation({
-        mutationFn: async ({ id, bucket_id, description, spender, goal_id, assigned_to }) => {
+        mutationFn: async ({ id, bucket_id, description, date, amount, spender, goal_id, assigned_to }) => {
             const payload = {};
             if (bucket_id !== undefined) payload.bucket_id = bucket_id;
             if (description !== undefined) payload.description = description;
+            if (date !== undefined) payload.date = date;
+            if (amount !== undefined) payload.amount = amount;
             if (spender !== undefined) payload.spender = spender;
             if (goal_id !== undefined) payload.goal_id = goal_id;
             if (assigned_to !== undefined) payload.assigned_to = assigned_to;
@@ -442,39 +444,65 @@ export default function Transactions() {
                                                 onChange={() => toggleSelect(txn.id)}
                                             />
                                         </td>
-                                        <td className="px-3 py-3 text-sm text-slate-800 dark:text-slate-200 font-mono">
-                                            {new Date(txn.date).toLocaleDateString('en-AU')}
+                                        <td className="px-3 py-3 text-sm text-slate-800 dark:text-slate-200 font-mono" onClick={() => setEditingCell({ id: txn.id, field: 'date' })}>
+                                            {editingCell.id === txn.id && editingCell.field === 'date' ? (
+                                                <input
+                                                    autoFocus
+                                                    type="date"
+                                                    defaultValue={txn.date.split('T')[0]}
+                                                    onBlur={(e) => {
+                                                        if (e.target.value && e.target.value !== txn.date.split('T')[0]) {
+                                                            updateMutation.mutate({ id: txn.id, date: e.target.value });
+                                                        }
+                                                        setEditingCell({ id: null, field: null });
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') e.currentTarget.blur();
+                                                        if (e.key === 'Escape') setEditingCell({ id: null, field: null });
+                                                    }}
+                                                    className="bg-slate-50 dark:bg-slate-700 border-0 rounded px-1 py-0.5 text-xs w-full focus:ring-2 focus:ring-indigo-500"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                            ) : (
+                                                <span className="cursor-pointer hover:underline decoration-dashed decoration-slate-300 underline-offset-4">
+                                                    {new Date(txn.date).toLocaleDateString('en-AU')}
+                                                </span>
+                                            )}
                                         </td>
-                                        <td className="px-3 py-3 text-sm text-slate-700 dark:text-slate-300 group/cell max-w-[300px]">
-                                            {editingId === txn.id ? (
+                                        <td className="px-3 py-3 text-sm text-slate-700 dark:text-slate-300 group/cell max-w-[300px]" onClick={() => setEditingCell({ id: txn.id, field: 'description' })}>
+                                            {editingCell.id === txn.id && editingCell.field === 'description' ? (
                                                 <input
                                                     autoFocus
                                                     type="text"
                                                     defaultValue={txn.description}
                                                     onBlur={(e) => {
-                                                        updateMutation.mutate({ id: txn.id, description: e.target.value });
-                                                        setEditingId(null);
+                                                        if (e.target.value !== txn.description) {
+                                                            updateMutation.mutate({ id: txn.id, description: e.target.value });
+                                                        }
+                                                        setEditingCell({ id: null, field: null });
                                                     }}
                                                     onKeyDown={(e) => {
                                                         if (e.key === 'Enter') {
                                                             e.currentTarget.blur();
                                                         }
+                                                        if (e.key === 'Escape') setEditingCell({ id: null, field: null });
                                                     }}
                                                     className="w-full bg-slate-50 dark:bg-slate-700 border-0 rounded px-2 py-1 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 font-medium"
                                                     onClick={(e) => e.stopPropagation()}
                                                 />
                                             ) : (
-                                                <div className="flex items-center gap-2 cursor-pointer" onClick={() => setEditingId(txn.id)} title={`Original: ${txn.raw_description}`}>
-                                                    <span className="font-medium text-slate-900 dark:text-white truncate block">{txn.description}</span>
+                                                <div className="flex items-center gap-2 cursor-pointer" title={`Original: ${txn.raw_description}`}>
+                                                    <span className="font-medium text-slate-900 dark:text-white truncate block hover:underline decoration-dashed decoration-slate-300 underline-offset-4">{txn.description}</span>
                                                     <Pencil size={14} className="text-slate-400 opacity-0 group-hover/cell:opacity-100 transition-opacity flex-shrink-0" />
                                                 </div>
                                             )}
                                         </td>
                                         <td className="px-3 py-3">
                                             <select
-                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer max-w-[140px] truncate"
                                                 value={txn.bucket_id || ""}
                                                 onChange={(e) => updateMutation.mutate({ id: txn.id, bucket_id: parseInt(e.target.value) })}
+                                                onClick={(e) => e.stopPropagation()}
                                             >
                                                 <option value="">Uncategorized</option>
                                                 {sortBucketsByGroup(buckets).map(b => (
@@ -484,9 +512,10 @@ export default function Transactions() {
                                         </td>
                                         <td className="px-3 py-3">
                                             <select
-                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer max-w-[100px] truncate"
                                                 value={txn.spender || "Joint"}
                                                 onChange={(e) => updateMutation.mutate({ id: txn.id, spender: e.target.value })}
+                                                onClick={(e) => e.stopPropagation()}
                                             >
                                                 <option value="Joint">Joint</option>
                                                 {members.map(member => (
@@ -551,8 +580,39 @@ export default function Transactions() {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className={`px-3 py-3 text-sm font-semibold text-right ${txn.amount < 0 ? 'text-slate-900 dark:text-white' : 'text-green-600'}`}>
-                                            {txn.amount.toFixed(2)}
+                                        <td
+                                            className={`px-3 py-3 text-sm font-semibold text-right cursor-pointer group/amount`}
+                                            onClick={() => setEditingCell({ id: txn.id, field: 'amount' })}
+                                        >
+                                            {editingCell.id === txn.id && editingCell.field === 'amount' ? (
+                                                <input
+                                                    autoFocus
+                                                    type="number"
+                                                    step="0.01"
+                                                    defaultValue={Math.abs(txn.amount)}
+                                                    onBlur={(e) => {
+                                                        const newAmount = parseFloat(e.target.value);
+                                                        // Preserve sign (expense vs income)
+                                                        const originalSign = txn.amount < 0 ? -1 : 1;
+                                                        const finalAmount = Math.abs(newAmount) * originalSign;
+
+                                                        if (finalAmount !== txn.amount && !isNaN(newAmount)) {
+                                                            updateMutation.mutate({ id: txn.id, amount: finalAmount });
+                                                        }
+                                                        setEditingCell({ id: null, field: null });
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') e.currentTarget.blur();
+                                                        if (e.key === 'Escape') setEditingCell({ id: null, field: null });
+                                                    }}
+                                                    className="w-24 bg-slate-50 dark:bg-slate-700 border-0 rounded px-1 py-0.5 text-right text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 text-sm"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                            ) : (
+                                                <span className={`${txn.amount < 0 ? 'text-slate-900 dark:text-white' : 'text-green-600'} hover:underline decoration-dashed decoration-slate-300 underline-offset-4`}>
+                                                    {txn.amount.toFixed(2)}
+                                                </span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

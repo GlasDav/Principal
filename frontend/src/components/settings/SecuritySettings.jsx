@@ -1,13 +1,21 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Shield, Key, Lock, LogOut, CheckCircle, Smartphone } from 'lucide-react';
+import { Shield, Key, Lock, LogOut, CheckCircle, Smartphone, Trash2, AlertTriangle, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import * as api from '../../services/api';
 
 export default function SecuritySettings() {
+    const navigate = useNavigate();
     const [passwordData, setPasswordData] = useState({ current: '', new: '', confirm: '' });
     const [message, setMessage] = useState(null);
     const [error, setError] = useState(null);
     const [mfaEnabled, setMfaEnabled] = useState(false); // Placeholder state
+
+    // Delete Account States
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteStep, setDeleteStep] = useState(1); // 1 = warning, 2 = password confirmation
+    const [deletePassword, setDeletePassword] = useState('');
+    const [deleteError, setDeleteError] = useState(null);
 
     const changePasswordMutation = useMutation({
         mutationFn: (data) => api.updatePassword({
@@ -32,6 +40,19 @@ export default function SecuritySettings() {
         }
     });
 
+    const deleteAccountMutation = useMutation({
+        mutationFn: (password) => api.deleteUserAccount(password),
+        onSuccess: () => {
+            // Clear all local storage and redirect to login
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            navigate('/login', { replace: true });
+        },
+        onError: (err) => {
+            setDeleteError(err.response?.data?.detail || "Failed to delete account");
+        }
+    });
+
     const handleSubmit = (e) => {
         e.preventDefault();
         if (passwordData.new !== passwordData.confirm) {
@@ -43,6 +64,32 @@ export default function SecuritySettings() {
             return;
         }
         changePasswordMutation.mutate(passwordData);
+    };
+
+    const handleDeleteAccount = () => {
+        setShowDeleteModal(true);
+        setDeleteStep(1);
+        setDeletePassword('');
+        setDeleteError(null);
+    };
+
+    const handleDeleteConfirm = () => {
+        if (deleteStep === 1) {
+            setDeleteStep(2);
+        } else {
+            if (!deletePassword) {
+                setDeleteError("Password is required");
+                return;
+            }
+            deleteAccountMutation.mutate(deletePassword);
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setShowDeleteModal(false);
+        setDeleteStep(1);
+        setDeletePassword('');
+        setDeleteError(null);
     };
 
     return (
@@ -150,6 +197,129 @@ export default function SecuritySettings() {
                     </button>
                 </div>
             </div>
+
+            <hr className="border-slate-100 dark:border-slate-700" />
+
+            {/* Delete Account - Danger Zone */}
+            <div>
+                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                    <Trash2 size={16} /> Delete Account
+                </h3>
+                <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                    <div>
+                        <p className="text-sm font-medium text-red-900 dark:text-red-200">Permanently delete your account</p>
+                        <p className="text-xs text-red-700 dark:text-red-400">This action cannot be undone. All your data will be permanently deleted.</p>
+                    </div>
+                    <button
+                        onClick={handleDeleteAccount}
+                        className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-sm flex items-center gap-1.5"
+                    >
+                        <Trash2 size={14} />
+                        Delete My Account
+                    </button>
+                </div>
+            </div>
+
+            {/* Delete Account Modal */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full">
+                        {/* Header */}
+                        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+                                    <AlertTriangle size={20} />
+                                </div>
+                                <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+                                    {deleteStep === 1 ? 'Delete Account?' : 'Confirm Deletion'}
+                                </h2>
+                            </div>
+                            <button
+                                onClick={handleDeleteCancel}
+                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition"
+                            >
+                                <X size={20} className="text-slate-500" />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6 space-y-4">
+                            {deleteStep === 1 ? (
+                                <>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                                        You are about to permanently delete your account. This will:
+                                    </p>
+                                    <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-2 list-disc list-inside">
+                                        <li>Delete all your transactions and financial data</li>
+                                        <li>Remove all budget categories and rules</li>
+                                        <li>Delete all accounts and investment holdings</li>
+                                        <li>Remove your goals and net worth history</li>
+                                    </ul>
+                                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                                        <p className="text-sm font-medium text-red-900 dark:text-red-200 flex items-center gap-2">
+                                            <AlertTriangle size={16} />
+                                            This action cannot be undone!
+                                        </p>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                                        Please enter your password to confirm account deletion:
+                                    </p>
+                                    <input
+                                        type="password"
+                                        placeholder="Enter your password"
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                                        value={deletePassword}
+                                        onChange={(e) => {
+                                            setDeletePassword(e.target.value);
+                                            setDeleteError(null);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleDeleteConfirm();
+                                        }}
+                                        autoFocus
+                                    />
+                                    {deleteError && (
+                                        <p className="text-xs text-red-500 flex items-center gap-1">
+                                            <AlertTriangle size={12} />
+                                            {deleteError}
+                                        </p>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-700">
+                            <button
+                                onClick={handleDeleteCancel}
+                                className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
+                                disabled={deleteAccountMutation.isPending}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteConfirm}
+                                disabled={deleteAccountMutation.isPending}
+                                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {deleteAccountMutation.isPending ? (
+                                    <>Deleting...</>
+                                ) : deleteStep === 1 ? (
+                                    <>Continue</>
+                                ) : (
+                                    <>
+                                        <Trash2 size={14} />
+                                        Permanently Delete Account
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }

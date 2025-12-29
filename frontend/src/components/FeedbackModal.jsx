@@ -44,8 +44,6 @@ export function FeedbackModal({ isOpen, onClose }) {
             url: window.location.href,
         };
 
-        console.log('Feedback submitted:', feedbackData);
-
         // Store in localStorage for later retrieval (backup before proper backend)
         try {
             const existing = JSON.parse(localStorage.getItem('principal_feedback') || '[]');
@@ -144,8 +142,8 @@ export function FeedbackModal({ isOpen, onClose }) {
                                                         type="button"
                                                         onClick={() => setFeedbackType(type.id)}
                                                         className={`flex-1 flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${isSelected
-                                                                ? 'border-blue-500 bg-blue-50'
-                                                                : 'border-gray-200 hover:border-gray-300'
+                                                            ? 'border-blue-500 bg-blue-50'
+                                                            : 'border-gray-200 hover:border-gray-300'
                                                             }`}
                                                     >
                                                         <Icon
@@ -205,8 +203,8 @@ export function FeedbackModal({ isOpen, onClose }) {
                                             type="submit"
                                             disabled={isSubmitting || !message.trim()}
                                             className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${isSubmitting || !message.trim()
-                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                : 'bg-blue-600 text-white hover:bg-blue-700'
                                                 }`}
                                         >
                                             {isSubmitting ? (

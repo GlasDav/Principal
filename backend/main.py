@@ -1,9 +1,47 @@
 import os
+import logging
 from datetime import datetime
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO if os.getenv("ENVIRONMENT") == "production" else logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Environment Validation
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+# Validate production configuration
+if ENVIRONMENT == "production":
+    if not SECRET_KEY or SECRET_KEY in ["your-256-bit-secret-key-here", "dev-secret-key-change-in-production"]:
+        raise ValueError(
+            "SECRET_KEY must be set to a strong random value in production! "
+            "Generate one with: python -c 'import secrets; print(secrets.token_hex(32))'"
+        )
+    logger.info("✅ Production environment validated")
+
+# Optional: Initialize Sentry for error monitoring
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            environment=ENVIRONMENT,
+            traces_sample_rate=0.1,  # 10% of transactions for performance monitoring
+            profiles_sample_rate=0.1,  # 10% profiling in production
+        )
+        logger.info("✅ Sentry error monitoring initialized")
+    except ImportError:
+        logger.warning("⚠️  Sentry SDK not installed. Install with: pip install sentry-sdk")
+else:
+    logger.info("ℹ️  Sentry not configured (set SENTRY_DSN to enable error monitoring)")
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware

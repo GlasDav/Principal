@@ -1315,6 +1315,18 @@ def get_budget_progress(
             current = current.replace(month=current.month + 1)
     
     # ===== BUILD CATEGORY DATA =====
+    # Calculate upcoming recurring expenses
+    active_subs = db.query(models.Subscription).filter(
+        models.Subscription.user_id == user.id,
+        models.Subscription.is_active == True,
+        models.Subscription.bucket_id.isnot(None)
+    ).all()
+    
+    bucket_upcoming = {}
+    for sub in active_subs:
+        if sub.next_due_date and sub.next_due_date > today and sub.next_due_date <= current_end:
+            bucket_upcoming[sub.bucket_id] = bucket_upcoming.get(sub.bucket_id, 0) + sub.amount
+
     categories = []
     on_track = 0
     over_budget = 0
@@ -1327,6 +1339,7 @@ def get_budget_progress(
             continue
             
         spent = bucket_spent.get(b.id, 0)
+        upcoming = bucket_upcoming.get(b.id, 0)
         limit = sum(l.amount for l in b.limits) if b.limits else 0
         
         # Calculate percentage
@@ -1405,6 +1418,7 @@ def get_budget_progress(
             "group": b.group,
             "limit": round(limit, 2),
             "spent": round(spent, 2),
+            "upcoming": round(upcoming, 2),
             "remaining": round(max(0, limit - spent), 2),
             "percent": round(percent, 1),
             "status": status,

@@ -54,7 +54,7 @@ export default function Investments() {
             queryClient.invalidateQueries(['investments-allocation']);
             queryClient.invalidateQueries(['investments-holdings']);
             queryClient.invalidateQueries(['investments-history']);
-            console.log("Updated", data.updated_count, "holdings");
+            // Successfully updated holdings
         },
         onSettled: () => setRefreshing(false)
     });

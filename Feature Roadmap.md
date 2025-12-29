@@ -155,7 +155,7 @@
 ### Core UX Enhancements
 - [x] **Command Palette** - Global search/action modal (Cmd/Ctrl+K)
 - [x] **Dashboard Widget Persistence** - Save layout to backend/localStorage
-- [ ] **Inline Transaction Editing** - Edit fields directly in table rows
+- [~] **Inline Transaction Editing** - (Cancelled to rely on source of truth)
 - [x] **Visual Budget Progress Bars** - Color-coded spent vs limit indicators
 - [x] **Drag-and-Drop Categories** - Reorder categories visually with @dnd-kit
 - [x] **Budget Progress Tab** - Detailed performance view with history charts, trends, and member breakdown

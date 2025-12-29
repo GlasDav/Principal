@@ -74,11 +74,26 @@ export default function CategoryProgressCard({
                 </div>
 
                 {/* Progress Bar */}
-                <div className="h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden relative">
+                    {/* Spent Bar */}
                     <div
-                        className={`h-full rounded-full transition-all duration-500 ${getBarColor()}`}
+                        className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ${getBarColor()} z-10`}
                         style={{ width: `${Math.min(category.percent, 100)}%` }}
                     />
+
+                    {/* Upcoming Recurring Bar (Hashed) */}
+                    {category.upcoming > 0 && (
+                        <div
+                            className={`absolute top-0 h-full transition-all duration-500 ${getBarColor()} opacity-60`}
+                            style={{
+                                left: `${Math.min(category.percent, 100)}%`,
+                                width: `${Math.min((category.upcoming / category.limit) * 100, 100 - Math.min(category.percent, 100))}%`,
+                                backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,0.5) 25%,transparent 25%,transparent 50%,rgba(255,255,255,0.5) 50%,rgba(255,255,255,0.5) 75%,transparent 75%,transparent)',
+                                backgroundSize: '8px 8px'
+                            }}
+                            title={`Upcoming: $${category.upcoming.toLocaleString()}`}
+                        />
+                    )}
                 </div>
 
                 {/* Percentage and Remaining */}

@@ -64,3 +64,6 @@ redis==5.0.0
 
 # Background Jobs (optional)
 rq==1.16.0
+
+# Error Monitoring (optional - configure with SENTRY_DSN env var)
+sentry-sdk==2.22.0

@@ -75,7 +75,7 @@ export default function NetWorth() {
             queryClient.invalidateQueries(['netWorthHistory']);
             queryClient.invalidateQueries(['investmentHistory']);
             queryClient.invalidateQueries(['holdings']);
-            console.log(`Updated ${data.updated_count} holdings.`);
+            // Successfully updated holdings
         },
         onError: (err) => {
             console.error("Failed to refresh prices:", err);
