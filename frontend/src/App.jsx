@@ -113,9 +113,7 @@ function Layout() {
         {/* Logo */}
         <div className="p-4 border-b border-slate-100 dark:border-slate-700">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <TrendingUp className="text-white" size={20} />
-            </div>
+            <img src="/logo.svg" alt="Principal Finance" className="w-10 h-10" />
             <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Principal</h1>
           </div>
         </div>
