@@ -54,67 +54,21 @@ export default function ConnectBank({ onConnectSuccess }) {
         }, 5000);
     };
 
-    // Initialize Basiq Connect using iframe approach (most reliable)
-    useEffect(() => {
-        if (!isMock && tokenData?.access_token && isOpen) {
-            console.log('Loading Basiq Connect UI...');
+    // Handle Basiq redirect - user clicks button to go to Basiq
+    const handleBasiqRedirect = () => {
+        if (tokenData?.access_token) {
+            const redirectUrl = encodeURIComponent('http://localhost:5173/basiq-callback');
 
-            // Create hidden iframe to open Basiq Connect
-            const iframe = document.createElement('iframe');
-            const basiqUrl = `https://consent.basiq.io/home?token=${tokenData.access_token}`;
+            // Basiq Connect URL format
+            const basiqUrl = `https://consent.basiq.io/home?token=${tokenData.access_token}&redirect_uri=${redirectUrl}`;
 
-            iframe.src = basiqUrl;
-            iframe.style.position = 'fixed';
-            iframe.style.top = '50%';
-            iframe.style.left = '50%';
-            iframe.style.transform = 'translate(-50%, -50%)';
-            iframe.style.width = '450px';
-            iframe.style.height = '600px';
-            iframe.style.border = 'none';
-            iframe.style.borderRadius = '12px';
-            iframe.style.boxShadow = '0 20px 60px rgba(0,0,0,0.3)';
-            iframe.style.zIndex = '99999';
-            iframe.style.backgroundColor = 'white';
+            console.log('Redirecting to Basiq:', basiqUrl);
+            console.log('Callback URL:', redirectUrl);
 
-            console.log('Opening Basiq iframe at:', basiqUrl);
-
-            // Listen for messages from Basiq iframe
-            const handleMessage = (event) => {
-                // Basiq sends messages when connection completes
-                if (event.origin === 'https://consent.basiq.io') {
-                    console.log('Message from Basiq:', event.data);
-
-                    if (event.data.type === 'success' || event.data.event === 'completed') {
-                        console.log('Basiq connection successful');
-                        // Extract job ID from message
-                        const jobId = event.data.jobId || event.data.data?.jobId;
-                        if (jobId) {
-                            document.body.removeChild(iframe);
-                            syncMutation.mutate(jobId);
-                        }
-                    } else if (event.data.type === 'error') {
-                        console.error('Basiq error:', event.data);
-                        document.body.removeChild(iframe);
-                        setConnectionError(event.data.message || 'Connection failed');
-                    } else if (event.data.type === 'cancel' || event.data.event === 'cancelled') {
-                        console.log('User cancelled');
-                        document.body.removeChild(iframe);
-                        setIsOpen(false);
-                    }
-                }
-            };
-
-            window.addEventListener('message', handleMessage);
-            document.body.appendChild(iframe);
-
-            return () => {
-                window.removeEventListener('message', handleMessage);
-                if (document.body.contains(iframe)) {
-                    document.body.removeChild(iframe);
-                }
-            };
+            // Redirect to Basiq
+            window.location.href = basiqUrl;
         }
-    }, [tokenData, isMock, isOpen]);
+    };
 
     // Mock flow
     useEffect(() => {
@@ -172,14 +126,21 @@ export default function ConnectBank({ onConnectSuccess }) {
                                 </div>
                             )}
 
-                            {/* Real Basiq - Widget loads automatically */}
+                            {/* Real Basiq - Redirect Flow */}
                             {!isMock && tokenData && !tokenLoading && !connectionError && (
                                 <div className="p-8 text-center flex-1 flex flex-col items-center justify-center">
                                     <Shield size={64} className="mx-auto text-green-500 mb-4" />
-                                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">Opening Basiq Connect...</h4>
-                                    <p className="text-sm text-slate-500 mt-2">
-                                        The secure bank connection widget should open automatically.
+                                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">Connect Your Bank</h4>
+                                    <p className="text-sm text-slate-500 mt-2 mb-6 max-w-sm">
+                                        Click below to securely connect your bank via Basiq.
+                                        You'll be redirected to enter your bank credentials.
                                     </p>
+                                    <button
+                                        onClick={handleBasiqRedirect}
+                                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-lg"
+                                    >
+                                        Continue to Basiq
+                                    </button>
                                     <p className="text-xs text-slate-400 mt-4">
                                         Powered by Basiq · Bank-grade security · CDR compliant
                                     </p>
