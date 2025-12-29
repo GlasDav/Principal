@@ -415,6 +415,29 @@ Dedicated reporting section for deeper financial analysis.
     -   Filter by specific Member to see only their spending impact.
     -   Adjust history lookback (3, 6, or 12 months).
 
+## 19. Testing & DevOps *(New)*
+
+### Frontend Testing
+-   **Vitest Integration**: Modern, fast testing framework with Vite integration.
+-   **React Testing Library**: Component testing with best practices.
+-   **Test Utilities**: Custom `renderWithProviders()` function with QueryClient, AuthContext, and Router.
+-   **Test Coverage**: 11+ tests covering infrastructure and budget calculations.
+-   **Scripts**: `npm test`, `npm run test:ui`, `npm run test:coverage`.
+
+### Production Readiness
+-   **Environment Validation**: Startup checks for production SECRET_KEY security.
+-   **Error Monitoring**: Optional Sentry integration for error tracking and performance monitoring.
+-   **Structured Logging**: Configurable log levels (INFO in production, DEBUG in development).
+-   **Database Pooling**: Connection pool with pre-ping validation and recycling (PostgreSQL).
+-   **Security Headers**: XSS protection, CSP, HSTS, clickjacking prevention.
+-   **Rate Limiting**: API endpoint protection (100 req/min default, customizable per endpoint).
+
+### Code Quality
+-   **Console Cleanup**: All debug `console.log` statements removed from production code.
+-   **Currency Validation**: Fixed invalid ISO currency codes (migrated 'A$' → 'AUD').
+-   **CI/CD Pipeline**: GitHub Actions with automated testing and linting.
+-   **Dependency Security**: Zero vulnerabilities (npm audit, pip safety compatible).
+
 ---
 
 *Note: Family Sharing creates a "Household" container for all financial data. Existing users automatically get a personal household on first access. "Members" (spender profiles) are separate from Family Sharing users - they're labels for tracking who spent money, while Family Sharing allows actual separate logins.*
