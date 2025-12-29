@@ -6,16 +6,18 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO if os.getenv("ENVIRONMENT") == "production" else logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
 # Environment Validation
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 SECRET_KEY = os.getenv("SECRET_KEY")
+
+# Configure structured logging BEFORE any other imports
+from .logging_config import configure_logging
+logger = configure_logging(
+    environment=ENVIRONMENT,
+    log_level=os.getenv("LOG_LEVEL", "INFO")
+)
+
+logger.info(f"Starting Principal Finance API in {ENVIRONMENT} mode")
 
 # Validate production configuration
 if ENVIRONMENT == "production":
@@ -111,6 +113,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # === COMPRESSION ===
 # Compress responses > 500 bytes for faster network transfer
 app.add_middleware(GZipMiddleware, minimum_size=500)
+
+# === REQUEST ID MIDDLEWARE ===
+# Add unique request ID to each request for tracing through logs
+from .middleware.request_id import RequestIDMiddleware
+app.add_middleware(RequestIDMiddleware)
+logger.info("✅ Request ID middleware enabled")
 
 # Add security headers middleware FIRST (middleware runs in reverse order, so this runs AFTER CORS)
 app.add_middleware(SecurityHeadersMiddleware)
