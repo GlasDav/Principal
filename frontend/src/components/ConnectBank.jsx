@@ -1,27 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Building, Shield, CheckCircle, Loader2, X, Plus, ExternalLink } from 'lucide-react';
+import { Building, Shield, CheckCircle, Loader2, X, Plus } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
 import api from '../services/api';
 
-const BASIQ_CONSENT_URL = 'https://consent.basiq.io/home';
-
 export default function ConnectBank({ onConnectSuccess }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [mockStep, setMockStep] = useState('idle'); // idle, selecting, consenting, connecting, success
+    const [mockStep, setMockStep] = useState('idle');
     const [connectionError, setConnectionError] = useState(null);
     const queryClient = useQueryClient();
+    const basiqRef = useRef(null);
 
     // Fetch Token
-    const { data: tokenData, isLoading: tokenLoading, error: tokenError, refetch: refetchToken } = useQuery({
+    const { data: tokenData, isLoading: tokenLoading, error: tokenError } = useQuery({
         queryKey: ['connectionToken'],
         queryFn: async () => (await api.get('/connections/token')).data,
         enabled: isOpen,
         retry: false,
-        staleTime: 0 // Always fetch fresh
+        staleTime: 0
     });
 
-    // Validating token type
     const isMock = tokenData?.access_token?.startsWith("mock_");
 
     // Sync Mutation
@@ -47,7 +45,6 @@ export default function ConnectBank({ onConnectSuccess }) {
     };
 
     const handleMockFlow = () => {
-        // Simulate the user journey
         setMockStep('selecting');
         setTimeout(() => setMockStep('consenting'), 1500);
         setTimeout(() => setMockStep('connecting'), 3000);
@@ -57,34 +54,51 @@ export default function ConnectBank({ onConnectSuccess }) {
         }, 5000);
     };
 
-    // Handle redirect to Basiq Consent UI
-    const handleRedirectToBasiq = () => {
-        if (tokenData?.access_token) {
-            // Build the callback URL (where Basiq will redirect after consent)
-            const callbackUrl = `${window.location.origin}/basiq-callback`;
+    // Initialize Basiq Connect SDK (embedded widget)
+    useEffect(() => {
+        if (!isMock && tokenData?.access_token && !basiqRef.current) {
+            // Load Basiq Connect SDK
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/@basiq/connect-auth@latest/dist/basiq-connect.umd.js';
+            script.async = true;
+            script.onload = () => {
+                // Initialize Basiq Connect
+                if (window.BasiqConnect) {
+                    basiqRef.current = new window.BasiqConnect({
+                        token: tokenData.access_token,
+                        onSuccess: (result) => {
+                            console.log('Basiq connection success:', result);
+                            // result contains jobId
+                            if (result.jobId) {
+                                syncMutation.mutate(result.jobId);
+                            }
+                        },
+                        onError: (error) => {
+                            console.error('Basiq connection error:', error);
+                            setConnectionError(error.message || 'Connection failed');
+                        },
+                        onCancel: () => {
+                            console.log('User cancelled Basiq connection');
+                            setIsOpen(false);
+                        }
+                    });
 
-            // Basiq Connect v3 requires these parameters
-            const params = new URLSearchParams({
-                token: tokenData.access_token,
-                callback_url: callbackUrl,
-                // Optional: customize the UI
-                mobile: 'false',
-                // Optional: institution_id to pre-select a bank
-            });
+                    // Open the widget
+                    basiqRef.current.open();
+                }
+            };
+            document.body.appendChild(script);
 
-            // Basiq Connect UI endpoint
-            const consentUrl = `https://consent.basiq.io/connect?${params.toString()}`;
-
-            // Store callback info in sessionStorage for reference
-            sessionStorage.setItem('basiq_callback_url', callbackUrl);
-            sessionStorage.setItem('basiq_return_path', '/data-management');
-
-            // Redirect to Basiq consent UI
-            window.location.href = consentUrl;
+            return () => {
+                if (basiqRef.current) {
+                    basiqRef.current.close();
+                    basiqRef.current = null;
+                }
+            };
         }
-    };
+    }, [tokenData, isMock]);
 
-    // Initialize Mock Flow when opening
+    // Mock flow
     useEffect(() => {
         if (isOpen && tokenData && isMock && mockStep === 'idle') {
             handleMockFlow();
@@ -140,32 +154,23 @@ export default function ConnectBank({ onConnectSuccess }) {
                                 </div>
                             )}
 
-                            {/* Real Basiq Redirect Flow */}
-                            {!isMock && tokenData && !tokenLoading && (
+                            {/* Real Basiq - Widget loads automatically */}
+                            {!isMock && tokenData && !tokenLoading && !connectionError && (
                                 <div className="p-8 text-center flex-1 flex flex-col items-center justify-center">
                                     <Shield size={64} className="mx-auto text-green-500 mb-4" />
-                                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">Secure Bank Connection</h4>
-                                    <p className="text-sm text-slate-500 mt-2 mb-6 max-w-sm">
-                                        You'll be redirected to Basiq's secure consent portal to connect your bank.
-                                        Your credentials are never shared with us.
+                                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">Opening Basiq Connect...</h4>
+                                    <p className="text-sm text-slate-500 mt-2">
+                                        The secure bank connection widget should open automatically.
                                     </p>
-                                    <button
-                                        onClick={handleRedirectToBasiq}
-                                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-bold transition"
-                                    >
-                                        <ExternalLink size={20} />
-                                        Continue to Basiq
-                                    </button>
                                     <p className="text-xs text-slate-400 mt-4">
                                         Powered by Basiq · Bank-grade security · CDR compliant
                                     </p>
                                 </div>
                             )}
 
-                            {/* Mock UI Overlay / Fallback */}
+                            {/* Mock UI */}
                             {isMock && (
                                 <div className="p-8 text-center flex-1 flex flex-col items-center justify-center">
-                                    {/* ... Existing Mock UI code ... */}
                                     <div className="space-y-6 w-full">
                                         {mockStep === 'selecting' && (
                                             <div className="animate-in fade-in zoom-in duration-500">
@@ -215,7 +220,7 @@ export default function ConnectBank({ onConnectSuccess }) {
                                 </div>
                             )}
 
-                            {/* Shared Syncing State for Real Mode too */}
+                            {/* Syncing State */}
                             {!isMock && (syncMutation.isPending || syncMutation.isSuccess) && (
                                 <div className="absolute inset-0 bg-white dark:bg-slate-800 flex flex-col items-center justify-center z-30">
                                     {syncMutation.isPending ? (
