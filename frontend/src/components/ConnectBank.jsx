@@ -54,49 +54,67 @@ export default function ConnectBank({ onConnectSuccess }) {
         }, 5000);
     };
 
-    // Initialize Basiq Connect SDK (embedded widget)
+    // Initialize Basiq Connect using iframe approach (most reliable)
     useEffect(() => {
-        if (!isMock && tokenData?.access_token && !basiqRef.current) {
-            // Load Basiq Connect SDK
-            const script = document.createElement('script');
-            script.src = 'https://unpkg.com/@basiq/connect-auth@latest/dist/basiq-connect.umd.js';
-            script.async = true;
-            script.onload = () => {
-                // Initialize Basiq Connect
-                if (window.BasiqConnect) {
-                    basiqRef.current = new window.BasiqConnect({
-                        token: tokenData.access_token,
-                        onSuccess: (result) => {
-                            console.log('Basiq connection success:', result);
-                            // result contains jobId
-                            if (result.jobId) {
-                                syncMutation.mutate(result.jobId);
-                            }
-                        },
-                        onError: (error) => {
-                            console.error('Basiq connection error:', error);
-                            setConnectionError(error.message || 'Connection failed');
-                        },
-                        onCancel: () => {
-                            console.log('User cancelled Basiq connection');
-                            setIsOpen(false);
-                        }
-                    });
+        if (!isMock && tokenData?.access_token && isOpen) {
+            console.log('Loading Basiq Connect UI...');
 
-                    // Open the widget
-                    basiqRef.current.open();
+            // Create hidden iframe to open Basiq Connect
+            const iframe = document.createElement('iframe');
+            const basiqUrl = `https://consent.basiq.io/home?token=${tokenData.access_token}`;
+
+            iframe.src = basiqUrl;
+            iframe.style.position = 'fixed';
+            iframe.style.top = '50%';
+            iframe.style.left = '50%';
+            iframe.style.transform = 'translate(-50%, -50%)';
+            iframe.style.width = '450px';
+            iframe.style.height = '600px';
+            iframe.style.border = 'none';
+            iframe.style.borderRadius = '12px';
+            iframe.style.boxShadow = '0 20px 60px rgba(0,0,0,0.3)';
+            iframe.style.zIndex = '99999';
+            iframe.style.backgroundColor = 'white';
+
+            console.log('Opening Basiq iframe at:', basiqUrl);
+
+            // Listen for messages from Basiq iframe
+            const handleMessage = (event) => {
+                // Basiq sends messages when connection completes
+                if (event.origin === 'https://consent.basiq.io') {
+                    console.log('Message from Basiq:', event.data);
+
+                    if (event.data.type === 'success' || event.data.event === 'completed') {
+                        console.log('Basiq connection successful');
+                        // Extract job ID from message
+                        const jobId = event.data.jobId || event.data.data?.jobId;
+                        if (jobId) {
+                            document.body.removeChild(iframe);
+                            syncMutation.mutate(jobId);
+                        }
+                    } else if (event.data.type === 'error') {
+                        console.error('Basiq error:', event.data);
+                        document.body.removeChild(iframe);
+                        setConnectionError(event.data.message || 'Connection failed');
+                    } else if (event.data.type === 'cancel' || event.data.event === 'cancelled') {
+                        console.log('User cancelled');
+                        document.body.removeChild(iframe);
+                        setIsOpen(false);
+                    }
                 }
             };
-            document.body.appendChild(script);
+
+            window.addEventListener('message', handleMessage);
+            document.body.appendChild(iframe);
 
             return () => {
-                if (basiqRef.current) {
-                    basiqRef.current.close();
-                    basiqRef.current = null;
+                window.removeEventListener('message', handleMessage);
+                if (document.body.contains(iframe)) {
+                    document.body.removeChild(iframe);
                 }
             };
         }
-    }, [tokenData, isMock]);
+    }, [tokenData, isMock, isOpen]);
 
     // Mock flow
     useEffect(() => {
