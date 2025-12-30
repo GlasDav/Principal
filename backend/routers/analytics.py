@@ -240,6 +240,7 @@ def get_analytics_history(
     end_date: str = Query(..., description="ISO Date string"),
     spender: str = Query(default="Combined"), # Combined, User A, User B
     bucket_id: Optional[int] = Query(None),
+    bucket_ids: Optional[str] = Query(None), # Comma-separated bucket IDs
     group: Optional[str] = Query(None), # Non-Discretionary, Discretionary
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
@@ -264,7 +265,37 @@ def get_analytics_history(
     # Calculate Limit per month based on filters
     # Note: Using CURRENT limits for history (limitation of current data model)
     buckets_query = db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id)
-    if bucket_id:
+    
+    # Handle multiple bucket selection (new feature)
+    if bucket_ids:
+        # Parse comma-separated IDs
+        try:
+            selected_ids = [int(bid.strip()) for bid in bucket_ids.split(',') if bid.strip()]
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid bucket_ids format. Use comma-separated integers.")
+        
+        # Fetch all hierarchy info for user
+        hierarchy = db.query(models.BudgetBucket.id, models.BudgetBucket.parent_id).filter(models.BudgetBucket.user_id == user.id).all()
+        
+        # Build adjacency list
+        adj = {}
+        for bid, pid in hierarchy:
+            if pid:
+                adj.setdefault(pid, []).append(bid)
+        
+        # For each selected bucket, find all descendants
+        subtree_ids = set(selected_ids)
+        queue = list(selected_ids)
+        while queue:
+            curr = queue.pop(0)
+            children = adj.get(curr, [])
+            for child in children:
+                if child not in subtree_ids:
+                    subtree_ids.add(child)
+                    queue.append(child)
+        
+        buckets_query = buckets_query.filter(models.BudgetBucket.id.in_(subtree_ids))
+    elif bucket_id:
         # Hierarchy: Find all descendants of the selected bucket
         # 1. Fetch all hierarchy info for user
         hierarchy = db.query(models.BudgetBucket.id, models.BudgetBucket.parent_id).filter(models.BudgetBucket.user_id == user.id).all()
@@ -317,14 +348,14 @@ def get_analytics_history(
         if spender != "Combined":
             query = query.filter(models.Transaction.spender == spender)
         
-        if bucket_id or group:
+        if bucket_id or bucket_ids or group:
              query = query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))
         
         # Note: If no filters, we include ALL expenses, even unassigned? 
         # Typically "Performance vs Budget" implies comparing against budgeted buckets.
         # But "Total" usually means "Total Spending".
         # Let's align: matching buckets only.
-        if not bucket_id and not group:
+        if not bucket_id and not bucket_ids and not group:
              # If "Total", maybe we want everything?
              # For now, let's keep it simple: Filter by ALL known buckets to match Limits.
              # Or just raw total. 

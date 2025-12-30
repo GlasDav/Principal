@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api, { getMembers } from '../services/api';
 import { Download, RefreshCw, Filter, Calendar as CalendarIcon, PieChart, BarChart2 } from 'lucide-react';
 import { ComposedChart, Bar, Line, LineChart, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend, PieChart as RePieChart, Pie, Cell } from 'recharts';
-import { CategorySelect } from '../components/CategoryTree';
+import MultiSelectCategoryFilter from '../components/MultiSelectCategoryFilter';
 
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
@@ -14,7 +14,7 @@ export default function Reports() {
     const [customStart, setCustomStart] = useState(new Date().toISOString().split('T')[0]);
     const [customEnd, setCustomEnd] = useState(new Date().toISOString().split('T')[0]);
     const [spenderFilter, setSpenderFilter] = useState("Combined");
-    const [categoryFilter, setCategoryFilter] = useState(null);
+    const [categoryFilters, setCategoryFilters] = useState([]); // Changed to array for multi-select
 
     // Helper to calculate dates
     const getDateRange = (type) => {
@@ -51,8 +51,9 @@ export default function Reports() {
 
     // Fetch Categories Tree for Filter
     const { data: categories = [] } = useQuery({
-        queryKey: ['bucketsTree'],
-        queryFn: api.getBucketsTree
+        queryKey: ['buckets'], // Match Budget.jsx for cache sharing
+        queryFn: api.getBucketsTree,
+        staleTime: 30 * 60 * 1000, // 30 minutes - categories rarely change
     });
 
     // Fetch Household Members
@@ -72,17 +73,19 @@ export default function Reports() {
         }
     });
 
-    // Fetch History Data (Chart)
+    // Fetch History Data (Chart) - Updated to handle multiple categories
     const { data: historyData = [], isLoading: loadingHistory } = useQuery({
-        queryKey: ['reports_history', start, end, spenderFilter, categoryFilter],
+        queryKey: ['reports_history', start, end, spenderFilter, categoryFilters],
         queryFn: async () => {
-            const res = await api.get(`/analytics/history`, {
-                params: {
-                    start_date: start,
-                    end_date: end,
-                    bucket_id: categoryFilter
-                }
-            });
+            const params = {
+                start_date: start,
+                end_date: end,
+            };
+            // Send comma-separated bucket IDs if multiple selected
+            if (categoryFilters.length > 0) {
+                params.bucket_ids = categoryFilters.join(',');
+            }
+            const res = await api.get(`/analytics/history`, { params });
             return res.data;
         }
     });
@@ -249,11 +252,11 @@ export default function Reports() {
 
                 {/* Category Filter */}
                 <div className="w-64">
-                    <CategorySelect
+                    <MultiSelectCategoryFilter
                         categories={categories}
-                        value={categoryFilter}
-                        onChange={setCategoryFilter}
-                        placeholder="Filter by Category"
+                        selectedIds={categoryFilters}
+                        onChange={setCategoryFilters}
+                        placeholder="Filter by categories..."
                     />
                 </div>
             </div>

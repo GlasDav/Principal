@@ -20,6 +20,69 @@
   .animate-slide-up {
     animation: slideUp 0.3s ease-out;
   }
+
+  /* ===== INSTANT BUTTON FEEDBACK ===== */
+  /* All buttons get smooth transitions */
+  button,
+  a[role="button"] {
+    @apply transition-all duration-100 ease-out;
+  }
+
+  /* Active state - instant visual press */
+  button:active:not(:disabled),
+  a[role="button"]:active {
+    @apply scale-[0.97] brightness-95;
+  }
+
+  /* Primary buttons (indigo/violet) */
+  .btn-primary {
+    @apply transition-all duration-150 ease-in-out;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    @apply brightness-110 shadow-md;
+  }
+
+  .btn-primary:active:not(:disabled) {
+    @apply scale-95 brightness-90 shadow-sm;
+  }
+
+  /* Secondary buttons */
+  .btn-secondary:active:not(:disabled) {
+    @apply scale-95 opacity-80;
+  }
+
+  /* Interactive cards - subtle lift on hover */
+  .card-interactive {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .card-interactive:hover {
+    @apply -translate-y-0.5 shadow-md;
+  }
+
+  .card-interactive:active {
+    @apply translate-y-0 shadow-sm scale-[0.99];
+  }
+
+  /* Icon buttons - common in nav and actions */
+  .icon-btn {
+    @apply transition-all duration-150 ease-out;
+  }
+
+  .icon-btn:hover:not(:disabled) {
+    @apply scale-110;
+  }
+
+  .icon-btn:active:not(:disabled) {
+    @apply scale-95;
+  }
+
+  /* Smooth focus rings */
+  button:focus-visible,
+  a:focus-visible {
+    @apply outline-2 outline-offset-2 outline-indigo-500 transition-all duration-150;
+  }
 }
 
 @keyframes slideInRight {

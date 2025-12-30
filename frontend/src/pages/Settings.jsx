@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import {
     Bell, Shield, Users, Landmark, Tag, BookPlus, Save,
-    Settings as SettingsIcon, Moon, Sun, DollarSign, Key, Home
+    Settings as SettingsIcon, Moon, Sun, DollarSign, Key, UserCircle
 } from 'lucide-react';
 
 // Sub-components
+import AccountInfoSettings from '../components/settings/AccountInfoSettings';
 import NotificationsSettings from '../components/settings/NotificationsSettings';
 import SecuritySettings from '../components/settings/SecuritySettings';
 import MembersSettings from '../components/settings/MembersSettings';
@@ -14,19 +15,18 @@ import CategoriesSettings from '../components/settings/CategoriesSettings';
 import RulesSettings from '../components/settings/RulesSettings';
 import DataSettings from '../components/settings/DataSettings';
 import ApiKeysSettings from '../components/settings/ApiKeysSettings';
-import HouseholdSettings from '../components/settings/HouseholdSettings';
 
 /**
  * Settings Page with Sidebar Navigation
  */
 export default function Settings() {
     const { theme, toggleTheme } = useTheme();
-    const [activeTab, setActiveTab] = useState('notifications');
+    const [activeTab, setActiveTab] = useState('account');
 
     const tabs = [
+        { id: 'account', label: 'Account', icon: UserCircle, component: AccountInfoSettings },
         { id: 'notifications', label: 'Notifications', icon: Bell, component: NotificationsSettings },
         { id: 'security', label: 'Security', icon: Shield, component: SecuritySettings },
-        { id: 'household', label: 'Family Sharing', icon: Home, component: HouseholdSettings },
         { id: 'members', label: 'Members', icon: Users, component: MembersSettings },
         { id: 'accounts', label: 'Accounts', icon: Landmark, component: AccountsSettings },
         { id: 'categories', label: 'Categories', icon: Tag, component: CategoriesSettings },
@@ -35,7 +35,7 @@ export default function Settings() {
         { id: 'data', label: 'Data', icon: Save, component: DataSettings },
     ];
 
-    const ActiveComponent = tabs.find(t => t.id === activeTab)?.component || NotificationsSettings;
+    const ActiveComponent = tabs.find(t => t.id === activeTab)?.component || AccountInfoSettings;
 
     return (
         <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-slate-50 dark:bg-slate-900">

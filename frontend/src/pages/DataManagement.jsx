@@ -356,8 +356,8 @@ export default function Ingest() {
                 `}>
                     <div className="flex flex-col items-center justify-center space-y-4">
                         {/* Spender Selection */}
-                        {/* Spender Selection - Only show if in Couple Mode */}
-                        {userSettings?.is_couple_mode && (
+                        {/* Spender Selection - Show if household members exist */}
+                        {members.length > 0 && (
                             <div className="mb-4 relative z-10">
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Who does this statement belong to?</label>
                                 <Listbox value={spender} onChange={setSpender} disabled={file !== null}>

@@ -1,7 +1,74 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Plus, Trash2 } from 'lucide-react';
+import { Users, Plus, Trash2, Check } from 'lucide-react';
 import * as api from '../../services/api';
+
+// Preset color palette
+const COLOR_PALETTE = [
+    '#6366f1', // Indigo
+    '#ec4899', // Pink
+    '#f59e0b', // Amber
+    '#10b981', // Emerald
+    '#3b82f6', // Blue
+    '#8b5cf6', // Purple
+    '#ef4444', // Red
+    '#14b8a6', // Teal
+    '#f97316', // Orange
+    '#06b6d4', // Cyan
+    '#84cc16', // Lime
+    '#a855f7', // Violet
+];
+
+const ColorPicker = ({ currentColor, onChange }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div className="relative">
+            {/* Current Color Button */}
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-8 h-8 rounded-full shadow-sm border-2 border-white dark:border-slate-600 hover:scale-105 transition-transform cursor-pointer"
+                style={{ backgroundColor: currentColor || '#6366f1' }}
+                title="Change member color"
+            />
+
+            {/* Color Palette Dropdown */}
+            {isOpen && (
+                <>
+                    {/* Backdrop to close */}
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsOpen(false)}
+                    />
+
+                    {/* Color Grid */}
+                    <div className="absolute right-0 mt-2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 grid grid-cols-4 gap-2">
+                        {COLOR_PALETTE.map((color) => (
+                            <button
+                                key={color}
+                                type="button"
+                                onClick={() => {
+                                    onChange(color);
+                                    setIsOpen(false);
+                                }}
+                                className="w-8 h-8 rounded-full hover:scale-110 transition-transform relative group"
+                                style={{ backgroundColor: color }}
+                                title={color}
+                            >
+                                {currentColor === color && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <Check size={16} className="text-white drop-shadow-lg" strokeWidth={3} />
+                                    </div>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};
 
 const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation }) => {
     // Local state for name to avoid API call on every keystroke
@@ -43,15 +110,10 @@ const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation }) => {
 
                 <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-400 font-medium">Theme</span>
-                    <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-sm border border-slate-200 dark:border-slate-600 cursor-pointer hover:scale-105 transition">
-                        <input
-                            type="color"
-                            value={member.color || '#6366f1'}
-                            onChange={(e) => updateMemberMutation.mutate({ id: member.id, data: { ...member, color: e.target.value } })}
-                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] p-0 border-0 cursor-pointer"
-                            title="Pick member color"
-                        />
-                    </div>
+                    <ColorPicker
+                        currentColor={member.color}
+                        onChange={(color) => updateMemberMutation.mutate({ id: member.id, data: { ...member, color } })}
+                    />
                 </div>
 
                 <button

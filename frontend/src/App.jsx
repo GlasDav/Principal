@@ -42,7 +42,21 @@ import AIChatBot from './components/AIChatBot';
 import QuickAddFAB from './components/QuickAddFAB';
 import CommandPalette from './components/CommandPalette';
 
-const queryClient = new QueryClient();
+// Optimized QueryClient configuration for better performance and UX
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh, reduces refetches
+      cacheTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
+      refetchOnWindowFocus: false, // Stop aggressive refetching on window focus
+      refetchOnReconnect: 'always', // Refetch only when reconnecting after offline
+      retry: 1, // Retry failed requests once instead of 3 times
+    },
+    mutations: {
+      retry: 0, // Don't retry mutations automatically (user-triggered)
+    },
+  },
+});
 
 // Enhanced NavItem component with left accent indicator
 function NavItem({ to, icon: Icon, children, end = false }) {

@@ -12,11 +12,30 @@ export default function Budget() {
     const { theme } = useTheme();
     const [activeTab, setActiveTab] = useState('progress');
 
-    // Queries
-    const { data: userSettings, isLoading: settingsLoading } = useQuery({ queryKey: ['settings'], queryFn: api.getSettings });
-    const { data: buckets = [], isLoading: bucketsLoading } = useQuery({ queryKey: ['buckets'], queryFn: api.getBucketsTree });
-    const { data: allTags = [], isLoading: tagsLoading } = useQuery({ queryKey: ['tags'], queryFn: api.getTags });
-    const { data: members = [], isLoading: membersLoading } = useQuery({ queryKey: ['members'], queryFn: api.getMembers });
+    // Queries with optimized stale times
+    const { data: userSettings, isLoading: settingsLoading } = useQuery({
+        queryKey: ['settings'],
+        queryFn: api.getSettings,
+        staleTime: 30 * 60 * 1000, // 30 minutes - settings rarely change
+    });
+
+    const { data: buckets = [], isLoading: bucketsLoading } = useQuery({
+        queryKey: ['buckets'],
+        queryFn: api.getBucketsTree,
+        staleTime: 30 * 60 * 1000, // 30 minutes - categories rarely change
+    });
+
+    const { data: allTags = [], isLoading: tagsLoading } = useQuery({
+        queryKey: ['tags'],
+        queryFn: api.getTags,
+        staleTime: 30 * 60 * 1000, // 30 minutes - tags rarely change
+    });
+
+    const { data: members = [], isLoading: membersLoading } = useQuery({
+        queryKey: ['members'],
+        queryFn: api.getMembers,
+        staleTime: 30 * 60 * 1000, // 30 minutes - members rarely change
+    });
 
     const isLoading = settingsLoading || bucketsLoading || tagsLoading || membersLoading;
 
@@ -68,8 +87,8 @@ export default function Budget() {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === tab.id
-                                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                                     }`}
                             >
                                 <Icon size={16} />
