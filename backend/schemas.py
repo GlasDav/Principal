@@ -67,10 +67,16 @@ class BudgetBucketBase(BaseModel):
     parent_id: Optional[int] = None  # Hierarchy: reference to parent category
     display_order: int = 0  # For ordering within parent
     
-    @field_validator('name', 'icon_name', 'group')
+    
+    @field_validator('name', 'icon_name', 'group', mode='before')
     @classmethod
     def sanitize_text_fields(cls, v: str) -> str:
-        return sanitize_text(v, max_length=200) or ""
+        # Only sanitize on input (when creating/updating buckets)
+        # Don't re-escape when reading from database (prevents &amp; display bug)
+        if isinstance(v, str):
+            return sanitize_text(v, max_length=200) or ""
+        return v or ""
+
 
 class BudgetBucketCreate(BudgetBucketBase):
     pass
