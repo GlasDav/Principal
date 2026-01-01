@@ -63,6 +63,10 @@ from .routers import (
 # Create tables
 Base.metadata.create_all(bind=engine)
 
+# Run auto-migrations for schema updates
+from .migrations import run_migrations
+run_migrations(engine)
+
 # === RATE LIMITER ===
 # Configurable via environment, default: 100 requests per minute per IP
 limiter = Limiter(key_func=get_remote_address)

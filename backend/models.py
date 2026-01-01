@@ -36,6 +36,7 @@ class BudgetBucket(Base):
     icon_name = Column(String, default="Wallet") # New: Lucide icon name
     user_id = Column(Integer, ForeignKey("users.id"))
 
+    is_shared = Column(Boolean, default=False)  # Shared between household members
     is_rollover = Column(Boolean, default=False) # New: Sinking Funds
     is_transfer = Column(Boolean, default=False)  # Transfer buckets excluded from spending analytics
     is_investment = Column(Boolean, default=False)  # Investment buckets excluded from expenses but shown in Sankey

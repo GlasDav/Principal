@@ -283,10 +283,14 @@ def get_tags(db: Session = Depends(get_db), current_user: models.User = Depends(
     """Get all unique tags used by the user"""
     # Fetch all tags. Actually, tags are shared in current model, but we want all tags for now.
     # If we want only tags used by user:
+    # Query tags associated with user's buckets
+    # Using explicit join to avoid ambiguity
     tags = db.query(models.Tag)\
-        .join(models.Tag.buckets)\
+        .join(models.bucket_tags)\
+        .join(models.BudgetBucket)\
         .filter(models.BudgetBucket.user_id == current_user.id)\
-        .distinct().all()
+        .group_by(models.Tag.id)\
+        .all()
     return tags
 
 
@@ -349,19 +353,25 @@ def create_bucket(bucket: schemas.BudgetBucketCreate, db: Session = Depends(get_
         parent_id=bucket.parent_id,
         display_order=bucket.display_order
     )
-    db.add(db_bucket)
-    db.commit()
-    db.refresh(db_bucket)
-    
-    if bucket.tags:
-        process_tags(db, db_bucket, bucket.tags)
-    
-    if bucket.limits:
-        process_limits(db, db_bucket, bucket.limits)
+    try:
+        db.add(db_bucket)
+        db.commit()
+        db.refresh(db_bucket)
         
-    db.commit()
-    db.refresh(db_bucket)
-    return db_bucket
+        if bucket.tags:
+            process_tags(db, db_bucket, bucket.tags)
+        
+        if bucket.limits:
+            process_limits(db, db_bucket, bucket.limits)
+            
+        db.commit()
+        db.refresh(db_bucket)
+        return db_bucket
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create bucket: {str(e)}")
 
 @router.put("/buckets/{bucket_id}", response_model=schemas.BudgetBucket)
 def update_bucket(bucket_id: int, bucket: schemas.BudgetBucketCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
