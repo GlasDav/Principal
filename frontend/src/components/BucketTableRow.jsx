@@ -172,7 +172,7 @@ export default function BucketTableRow({
         }, 0);
     };
 
-    const parentIsGroupBudget = bucket.parent?.is_group_budget || false; // This might need to come from props if 'bucket.parent' isn't populated
+
 
     return (
         <tr
