@@ -145,9 +145,11 @@ def update_household(
     if not hu or hu.role not in ["owner", "admin"]:
         raise HTTPException(status_code=403, detail="Only owner or admin can update household")
     
+    print(f"[DEBUG] Updating household {household.id} name from '{household.name}' to '{data.name}'")
     household.name = data.name
     db.commit()
     db.refresh(household)
+    print(f"[DEBUG] Household name after save: '{household.name}'")
     
     return household
 

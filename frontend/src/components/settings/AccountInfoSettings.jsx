@@ -143,8 +143,7 @@ export default function AccountSettings() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
     const [copied, setCopied] = useState(false);
-    const [editingName, setEditingName] = useState(false);
-    const [householdName, setHouseholdName] = useState('');
+
 
     // Fetch household data
     const { data: household } = useQuery({
@@ -177,39 +176,7 @@ export default function AccountSettings() {
         onSuccess: () => queryClient.invalidateQueries(['members']),
     });
 
-    const createHouseholdMutation = useMutation({
-        mutationFn: async (name) => {
-            // Using PUT as it auto-creates if missing, effectively "Creating" with a name
-            const res = await api.put('/household/', { name });
-            return res.data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['household']);
-            // Reload to ensure state is fresh
-            window.location.reload();
-        },
-    });
 
-    const updateHouseholdMutation = useMutation({
-        mutationFn: async (data) => {
-            console.log("Updating household with data:", data);
-            // Trailing slash added to prevent 307 redirect which can cause 405 error
-            const res = await api.put('/household/', data);
-            console.log("Update response:", res.data);
-            return res.data;
-        },
-        onSuccess: (data) => {
-            console.log("Update success:", data);
-            queryClient.invalidateQueries(['household']);
-            setEditingName(false);
-            // Force reload to ensure fresh data if cache is sticky
-            window.location.reload();
-        },
-        onError: (error) => {
-            console.error("Failed to update household:", error);
-            alert("Failed to update household name. Please try again.");
-        }
-    });
 
     const inviteMemberMutation = useMutation({
         mutationFn: async (email) => {
@@ -246,27 +213,6 @@ export default function AccountSettings() {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         }
-    };
-
-    const handleCreateHousehold = () => {
-        const defaultName = (user?.name || user?.email?.split('@')[0] || 'My') + "'s Household";
-        const name = prompt('Enter a name for your household:', defaultName);
-        if (name && name.trim()) {
-            createHouseholdMutation.mutate(name.trim());
-        }
-    };
-
-    const handleSaveName = () => {
-        if (householdName.trim() && householdName.trim() !== household?.name) {
-            updateHouseholdMutation.mutate({ name: householdName.trim() });
-        } else {
-            setEditingName(false);
-        }
-    };
-
-    const startEditingName = () => {
-        setHouseholdName(household?.name || '');
-        setEditingName(true);
     };
 
     if (!user) {
@@ -369,139 +315,37 @@ export default function AccountSettings() {
                 </div>
 
                 {!household ? (
-                    <div className="space-y-6">
-                        {/* Spending Profiles - Show even without household sharing */}
-                        <div>
-                            <div className="flex items-center justify-between mb-3">
-                                <div>
-                                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Spending Profiles</h3>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                        Track spending by person (e.g., you, partner, kids)
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() => createSpenderMemberMutation.mutate({ name: "New Member", color: "#6366f1", avatar: "User" })}
-                                    className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium flex items-center gap-1"
-                                >
-                                    <Plus size={14} />
-                                    Add Member
-                                </button>
-                            </div>
-
-                            <div className="space-y-2">
-                                {spenderMembers.map((member) => (
-                                    <MemberCard
-                                        key={member.id}
-                                        member={member}
-                                        updateMemberMutation={updateSpenderMemberMutation}
-                                        deleteMemberMutation={deleteSpenderMemberMutation}
-                                        isOnlyMember={spenderMembers.length <= 1}
-                                    />
-                                ))}
-                                {spenderMembers.length === 0 && (
-                                    <p className="text-sm text-slate-400 italic py-3 text-center bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                                        No members yet. Add a member to track individual spending.
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Invite Others Section */}
-                        <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                                Want to share your budget with other users? Create a household to collaborate with family members.
-                            </p>
-                            <button
-                                onClick={handleCreateHousehold}
-                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition flex items-center gap-2"
-                            >
-                                <Plus size={18} />
-                                Create Household
-                            </button>
-                        </div>
+                    <div className="p-8 text-center bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+                        <div className="animate-spin w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Loading family sharing...</p>
                     </div>
                 ) : (
                     <div className="space-y-6">
-                        {/* Household Info */}
-                        <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    {editingName ? (
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="text"
-                                                value={householdName}
-                                                onChange={(e) => setHouseholdName(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') handleSaveName();
-                                                    if (e.key === 'Escape') setEditingName(false);
-                                                }}
-                                                className="flex-1 px-3 py-1.5 border border-purple-300 dark:border-purple-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                                placeholder="Household name"
-                                                autoFocus
-                                            />
-                                            <button
-                                                onClick={handleSaveName}
-                                                disabled={updateHouseholdMutation.isPending || !householdName.trim()}
-                                                className={`p-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition ${updateHouseholdMutation.isPending || !householdName.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                title="Save"
-                                            >
-                                                <Check size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => setEditingName(false)}
-                                                className="p-1.5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition"
-                                                title="Cancel"
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="font-semibold text-slate-800 dark:text-slate-100">
-                                                    {household.name || 'Your Household'}
-                                                </h3>
-                                                <button
-                                                    onClick={startEditingName}
-                                                    className="p-1 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition"
-                                                    title="Rename household"
-                                                >
-                                                    <Edit2 size={14} />
-                                                </button>
-                                            </div>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                                {Math.max(household.members?.length || 0, 1)} member{(household.members?.length || 1) !== 1 ? 's' : ''} with shared access
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                                {household.invite_code && !editingName && (
-                                    <button
-                                        onClick={handleCopyInviteLink}
-                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-700 rounded-lg text-sm font-medium hover:bg-purple-50 dark:hover:bg-purple-900/30 transition"
-                                    >
-                                        {copied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
-                                        {copied ? 'Copied!' : 'Copy Invite Link'}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
                         {/* Shared Access List */}
                         <div>
                             <div className="flex items-center justify-between mb-3">
                                 <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Shared Access</h3>
-                                <button
-                                    onClick={() => {
-                                        const email = prompt('Enter email address to invite:');
-                                        if (email) inviteMemberMutation.mutate(email);
-                                    }}
-                                    className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium flex items-center gap-1"
-                                >
-                                    <Plus size={14} />
-                                    Invite Member
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    {household.invite_code && (
+                                        <button
+                                            onClick={handleCopyInviteLink}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-700 rounded-lg text-xs font-medium hover:bg-purple-50 dark:hover:bg-purple-900/30 transition text-slate-700 dark:text-slate-300"
+                                        >
+                                            {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                                            {copied ? 'Copied Link' : 'Copy Invite Link'}
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => {
+                                            const email = prompt('Enter email address to invite:');
+                                            if (email) inviteMemberMutation.mutate(email);
+                                        }}
+                                        className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium flex items-center gap-1"
+                                    >
+                                        <Plus size={14} />
+                                        Invite Member
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="space-y-2">
@@ -591,7 +435,7 @@ export default function AccountSettings() {
                                     />
                                 ))}
                                 {spenderMembers.length === 0 && (
-                                    <p className="text-sm text-slate-400 italic py-3 text-center">
+                                    <p className="text-sm text-slate-400 italic py-3 text-center bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                                         No members yet. Add a member to track individual spending.
                                     </p>
                                 )}
@@ -606,6 +450,7 @@ export default function AccountSettings() {
                                         leaveHouseholdMutation.mutate();
                                     }
                                 }}
+
                                 className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium"
                             >
                                 Leave Household
