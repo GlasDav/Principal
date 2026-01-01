@@ -302,14 +302,9 @@ export default function BucketTableRow({
                         }
                     } else {
                         // Child Logic
-                        // We need to know if Parent is in Group Budget mode.
-                        // passed via prop `parentIsGroupBudget` (need to add to props)
-                        if (props.parentIsGroupBudget) {  // Using props. to access explicit prop if destructuring missed it? No, need to add to destructuring.
-                            // Wait, I missed adding 'parentIsGroupBudget' to the destructured props at top of file.
-                            // I will assume it's passed.
+                        // If parent is in Group Budget mode, children become read-only
+                        if (parentIsGroupBudget) {
                             isEditable = false;
-                            // We still show the value, but it's effectively "ignored" or just descriptive? 
-                            // Usually valid to keep it, but maybe grayed out.
                         }
                     }
 
