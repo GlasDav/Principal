@@ -160,6 +160,16 @@ export default function BucketTableRow({
         updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, tags: newTagNames } });
     };
 
+    const handleAddSubCategory = () => {
+        createBucketMutation.mutate({
+            name: "New Sub-Category",
+            group: bucket.group,
+            parent_id: bucket.id,
+            is_shared: bucket.is_shared
+        });
+        if (!isExpanded) onToggleExpand();
+    };
+
     // Calculate sum of children limits for display when not in group budget mode
     // Note: This requires children to be passed or available. 
     // Since we don't have children props directly populated with *their* limits easily here (recursive issue),
