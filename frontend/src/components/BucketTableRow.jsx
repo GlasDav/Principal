@@ -166,11 +166,27 @@ export default function BucketTableRow({
         if (!node.children || node.children.length === 0) return 0;
         return node.children.reduce((sum, child) => {
             const childAmount = (child.limits?.find(l => l.member_id === memberId)?.amount || 0);
-            // Verify if child is also a group budget? Unlikely for 2-level depth but good to know.
-            // For now assuming 1 level of children for budgeting
             return sum + childAmount;
         }, 0);
     };
+
+    // --- Derived State & UI Helpers ---
+    const isParent = hasChildren || depth === 0;
+
+    const rowBgClass = isParent
+        ? 'bg-slate-50/80 dark:bg-slate-800/50'
+        : 'hover:bg-slate-50 dark:hover:bg-slate-800/50';
+
+    const tags = bucket.tags || [];
+    const visibleTags = tags.slice(0, 3);
+    const hiddenCount = Math.max(0, tags.length - 3);
+
+    const currentTagNames = new Set(tags.map(t => t.name.toLowerCase()));
+
+    const suggestions = allTags
+        .map(t => t.name)
+        .filter(name => !currentTagNames.has(name.toLowerCase()))
+        .slice(0, 5);
 
 
 
