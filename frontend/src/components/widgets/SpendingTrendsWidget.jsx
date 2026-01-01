@@ -9,8 +9,11 @@ export default function SpendingTrendsWidget({
     trendHistory,
     trendOption,
     onTrendOptionChange,
-    buckets = []
+    buckets: bucketsProp = []
 }) {
+    // Defensive: ensure buckets is always an array to prevent .map() crashes
+    const buckets = Array.isArray(bucketsProp) ? bucketsProp : [];
+
     return (
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">

@@ -6,7 +6,10 @@ import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 /**
  * NetWorthWidget - Mini net worth chart with sparkline
  */
-export default function NetWorthWidget({ history = [], formatCurrency }) {
+export default function NetWorthWidget({ history: historyProp = [], formatCurrency }) {
+    // Defensive: ensure history is always an array to prevent crashes
+    const history = Array.isArray(historyProp) ? historyProp : [];
+
     const latestSnapshot = history.length > 0 ? history[history.length - 1] : null;
     const prevSnapshot = history.length > 1 ? history[history.length - 2] : null;
 

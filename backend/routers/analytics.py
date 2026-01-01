@@ -701,8 +701,8 @@ def get_anomalies(
     bucket_monthly = defaultdict(lambda: defaultdict(float))
     
     for t in hist_txns:
-        # Skip transfer buckets
-        if t.bucket_id in transfer_bucket_ids:
+        # Skip transfer buckets and one-offs
+        if t.bucket_id in excluded_bucket_ids:
             continue
         month_key = t.date.strftime("%Y-%m")
         bucket_monthly[t.bucket_id][month_key] += abs(t.amount)

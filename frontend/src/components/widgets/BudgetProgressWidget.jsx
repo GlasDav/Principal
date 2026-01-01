@@ -6,7 +6,10 @@ import { ICON_MAP } from '../../utils/icons';
 /**
  * BudgetProgressWidget - Displays budget progress cards for Needs and Wants
  */
-export default function BudgetProgressWidget({ buckets = [], formatCurrency, startDate, endDate }) {
+export default function BudgetProgressWidget({ buckets: bucketsProp = [], formatCurrency, startDate, endDate }) {
+    // Defensive: ensure buckets is always an array to prevent .filter() crashes
+    const buckets = Array.isArray(bucketsProp) ? bucketsProp : [];
+
     const needsBuckets = buckets.filter(b => b.group === "Non-Discretionary");
     const wantsBuckets = buckets.filter(b => (b.group || "Discretionary") === "Discretionary");
 

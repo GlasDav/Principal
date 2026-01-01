@@ -4,7 +4,10 @@ import { Calendar } from 'lucide-react';
 /**
  * UpcomingBillsWidget - Displays upcoming bills in the next 7 days
  */
-export default function UpcomingBillsWidget({ bills = [], formatCurrency }) {
+export default function UpcomingBillsWidget({ bills: billsProp = [], formatCurrency }) {
+    // Defensive: ensure bills is always an array to prevent .map() crashes
+    const bills = Array.isArray(billsProp) ? billsProp : [];
+
     return (
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
             <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">

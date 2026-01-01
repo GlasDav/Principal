@@ -8,10 +8,13 @@ import api from '../../services/api';
  * GoalsWidget - Displays top 3 financial goals with progress
  */
 export default function GoalsWidget({ formatCurrency }) {
-    const { data: goals = [], isLoading } = useQuery({
+    const { data: goalsRaw = [], isLoading } = useQuery({
         queryKey: ['goals'],
         queryFn: async () => (await api.get('/goals')).data
     });
+
+    // Defensive: ensure goals is always an array to prevent .filter() crashes
+    const goals = Array.isArray(goalsRaw) ? goalsRaw : [];
 
     // Show top 3 incomplete goals
     const topGoals = goals

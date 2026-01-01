@@ -9,10 +9,13 @@ import api from '../../services/api';
  */
 export default function InvestmentsSummaryWidget({ formatCurrency }) {
     // Fetch all accounts to find investment accounts
-    const { data: accounts = [] } = useQuery({
+    const { data: accountsRaw = [] } = useQuery({
         queryKey: ['accounts'],
         queryFn: async () => (await api.get('/net-worth/accounts')).data
     });
+
+    // Defensive: ensure accounts is always an array to prevent .filter() crashes
+    const accounts = Array.isArray(accountsRaw) ? accountsRaw : [];
 
     // Fetch holdings for investment accounts
     const investmentAccounts = accounts.filter(a => a.category === 'Investment');

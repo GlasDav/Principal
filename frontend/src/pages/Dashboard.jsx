@@ -118,17 +118,21 @@ export default function Dashboard() {
         }
     });
 
-    const { data: members = [] } = useQuery({
+    const { data: membersRaw = [] } = useQuery({
         queryKey: ['members'],
         queryFn: getMembers
     });
+    // Defensive: ensure members is always an array
+    const members = Array.isArray(membersRaw) ? membersRaw : [];
 
-    const { data: netWorthHistory = [] } = useQuery({
+    const { data: netWorthHistoryRaw = [] } = useQuery({
         queryKey: ['netWorthHistory'],
         queryFn: async () => (await api.get('/net-worth/history')).data
     });
+    // Defensive: ensure netWorthHistory is always an array
+    const netWorthHistory = Array.isArray(netWorthHistoryRaw) ? netWorthHistoryRaw : [];
 
-    const { data: trendHistory = [] } = useQuery({
+    const { data: trendHistoryRaw = [] } = useQuery({
         queryKey: ['trendHistory', start, end, trendOption],
         queryFn: async () => {
             const params = { start_date: start, end_date: end };
@@ -138,6 +142,8 @@ export default function Dashboard() {
             return (await api.get('/analytics/history', { params })).data;
         }
     });
+    // Defensive: ensure trendHistory is always an array
+    const trendHistory = Array.isArray(trendHistoryRaw) ? trendHistoryRaw : [];
 
     const { data: sankeyData } = useQuery({
         queryKey: ['sankey', start, end, spenderMode, excludeOneOffs],
@@ -149,11 +155,13 @@ export default function Dashboard() {
         }
     });
 
-    const { data: upcomingBills = [] } = useQuery({
+    const { data: upcomingBillsRaw = [] } = useQuery({
         queryKey: ['upcomingBills'],
         queryFn: () => getUpcomingBills(7),
         staleTime: 300000
     });
+    // Defensive: ensure upcomingBills is always an array
+    const upcomingBills = Array.isArray(upcomingBillsRaw) ? upcomingBillsRaw : [];
 
     // --- Loading / Error States ---
     if (isLoading) return <div className="p-8 text-center text-slate-500">Loading Dashboard...</div>;

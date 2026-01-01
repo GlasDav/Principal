@@ -6,7 +6,10 @@ import { PiggyBank, AlertCircle, CheckCircle, ChevronRight } from 'lucide-react'
  * BudgetSummaryWidget - Compact budget health indicator for Dashboard
  * Shows overall status and links to full Budget page
  */
-export default function BudgetSummaryWidget({ buckets = [], formatCurrency }) {
+export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatCurrency }) {
+    // Defensive: ensure buckets is always an array to prevent .filter() crashes
+    const buckets = Array.isArray(bucketsProp) ? bucketsProp : [];
+
     // Calculate budget health metrics
     const budgetCategories = buckets.filter(b => !b.is_transfer && !b.is_investment && b.limit > 0);
     const overBudget = budgetCategories.filter(b => b.percent > 100);
