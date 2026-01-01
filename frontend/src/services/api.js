@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+    baseURL: API_BASE_URL,
 });
 
 // Request Interceptor - Add Auth Token
@@ -30,7 +31,7 @@ api.interceptors.response.use(
                 const refreshToken = localStorage.getItem('refreshToken');
                 if (refreshToken) {
                     // Attempt refresh
-                    const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/refresh`, {
+                    const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
                         refresh_token: refreshToken
                     });
 

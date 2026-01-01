@@ -3,7 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Target, TrendingUp, AlertTriangle, PiggyBank, Filter, BarChart3 } from 'lucide-react';
 import CategoryProgressCard from './CategoryProgressCard';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { API_BASE_URL } from '../config';
+
+const API_URL = API_BASE_URL;
 
 // Fetch budget progress data
 const fetchBudgetProgress = async (months, spender) => {

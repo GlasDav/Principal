@@ -4,8 +4,9 @@ import {
     Users, UserPlus, Crown, Shield, User, Mail, Trash2,
     Copy, Check, Loader2, LogOut, Settings
 } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = API_BASE_URL;
 
 // API calls
 const getHousehold = async () => {

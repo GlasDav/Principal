@@ -6,8 +6,11 @@ fastapi==0.124.4
 uvicorn==0.38.0
 starlette==0.50.0
 
+
 # Database
 sqlalchemy==2.0.45
+psycopg2-binary==2.9.9
+
 
 # Validation & Settings
 pydantic==2.12.5

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Save, Tag as TagIcon, Trash2, Play, Eye, Loader2 } from 'lucide-react';
 import * as api from '../services/api';
+import { API_BASE_URL } from '../config';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = API_BASE_URL;
 
 // Direct fetch for preview (not in api.js yet)
 const previewRule = async ({ keywords }) => {

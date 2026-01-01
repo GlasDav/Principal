@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { API_BASE_URL } from '../config';
 
-const API_URL = "http://localhost:8000";
+const API_URL = API_BASE_URL;
 
 // Simple UI Components to replace missing shadcn/ui
 const Card = ({ children, className = "" }) => (

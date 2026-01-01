@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from '../../services/api';
 import RulesSection from '../RulesSection';
 import { Lightbulb, Plus, Loader2 } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = API_BASE_URL;
 
 // Fetch rule suggestions
 const getRuleSuggestions = async () => {

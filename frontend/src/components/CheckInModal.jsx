@@ -2,6 +2,7 @@ import { Dialog, Transition } from '@headlessui/react'
 import { Fragment, useState } from 'react'
 import axios from 'axios'
 import { X } from 'lucide-react'
+import { API_BASE_URL } from '../config';
 
 export default function CheckInModal({ isOpen, onClose, accounts, onSuccess }) {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -38,7 +39,7 @@ export default function CheckInModal({ isOpen, onClose, accounts, onSuccess }) {
                 }))
             }
 
-            await axios.post('http://localhost:8000/net-worth/snapshot', payload)
+            await axios.post(`${API_BASE_URL}/net-worth/snapshot`, payload)
             onSuccess()
             onClose()
             // Reset form?

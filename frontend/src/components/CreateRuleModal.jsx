@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { X, BookPlus, Loader2, Eye, AlertCircle } from 'lucide-react';
 import { createRule } from '../services/api';
+import { API_BASE_URL } from '../config';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = API_BASE_URL;
 
 // API call for preview
 const previewRule = async ({ keywords, min_amount, max_amount }) => {
