@@ -4,22 +4,24 @@ Migration: Sync Database Schema
 This migration ensures all model columns exist in the database.
 Safe to run multiple times (idempotent).
 
-Usage:
-    python -m migrations.sync_schema
+Usage (from /app directory in container):
+    cd /app && python -c "from backend.migrations.sync_schema import run_migration; run_migration()"
 
 Or via Docker:
-    docker compose exec backend python -m migrations.sync_schema
+    docker compose exec backend sh -c "cd /app && python -c \"from backend.migrations.sync_schema import run_migration; run_migration()\""
 """
 import os
 import sys
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Set up Python path for backend imports
+backend_dir = Path(__file__).parent.parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
 
+# Now we can import from backend
 from sqlalchemy import text, inspect
 from database import engine
-import models  # Import all models to register them
 
 # Define all expected columns per table
 # Format: table_name -> [(column_name, column_type, default_value), ...]
