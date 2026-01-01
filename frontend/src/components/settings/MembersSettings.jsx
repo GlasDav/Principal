@@ -20,13 +20,20 @@ const ColorPicker = ({ currentColor, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <div className="relative">
+        <div style={{ position: 'relative', display: 'inline-block' }}>
             {/* Current Color Button */}
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-6 h-6 rounded-full shadow-sm border-2 border-white dark:border-slate-600 hover:scale-105 transition-transform cursor-pointer"
-                style={{ backgroundColor: currentColor || '#6366f1' }}
+                style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    backgroundColor: currentColor || '#6366f1',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    cursor: 'pointer',
+                    padding: 0,
+                }}
                 title="Change member color"
             />
 
@@ -35,12 +42,26 @@ const ColorPicker = ({ currentColor, onChange }) => {
                 <>
                     {/* Backdrop to close */}
                     <div
-                        className="fixed inset-0 z-40"
+                        style={{ position: 'fixed', inset: 0, zIndex: 40 }}
                         onClick={() => setIsOpen(false)}
                     />
 
-                    {/* Color Grid */}
-                    <div className="absolute right-0 mt-2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 grid grid-cols-3 gap-2">
+                    {/* Color Grid - 3x3 */}
+                    <div style={{
+                        position: 'absolute',
+                        right: 0,
+                        marginTop: '8px',
+                        padding: '8px',
+                        backgroundColor: 'var(--color-slate-800, #1e293b)',
+                        border: '1px solid var(--color-slate-700, #334155)',
+                        borderRadius: '8px',
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                        zIndex: 50,
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: '6px',
+                        width: '90px',
+                    }}>
                         {COLOR_PALETTE.map((color) => (
                             <button
                                 key={color}
@@ -49,16 +70,17 @@ const ColorPicker = ({ currentColor, onChange }) => {
                                     onChange(color);
                                     setIsOpen(false);
                                 }}
-                                className="w-6 h-6 rounded-full hover:scale-110 transition-transform relative group"
-                                style={{ backgroundColor: color }}
+                                style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    backgroundColor: color,
+                                    border: currentColor === color ? '2px solid white' : 'none',
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                }}
                                 title={color}
-                            >
-                                {currentColor === color && (
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <Check size={16} className="text-white drop-shadow-lg" strokeWidth={3} />
-                                    </div>
-                                )}
-                            </button>
+                            />
                         ))}
                     </div>
                 </>
