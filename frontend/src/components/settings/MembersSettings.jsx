@@ -5,18 +5,15 @@ import * as api from '../../services/api';
 
 // Preset color palette
 const COLOR_PALETTE = [
-    '#6366f1', // Indigo
-    '#ec4899', // Pink
+    '#ef4444', // Red
+    '#f97316', // Orange
     '#f59e0b', // Amber
     '#10b981', // Emerald
-    '#3b82f6', // Blue
-    '#8b5cf6', // Purple
-    '#ef4444', // Red
     '#14b8a6', // Teal
-    '#f97316', // Orange
-    '#06b6d4', // Cyan
-    '#84cc16', // Lime
-    '#a855f7', // Violet
+    '#3b82f6', // Blue
+    '#6366f1', // Indigo
+    '#8b5cf6', // Violet
+    '#ec4899', // Pink
 ];
 
 const ColorPicker = ({ currentColor, onChange }) => {
@@ -43,7 +40,7 @@ const ColorPicker = ({ currentColor, onChange }) => {
                     />
 
                     {/* Color Grid */}
-                    <div className="absolute right-0 mt-2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 grid grid-cols-4 gap-2">
+                    <div className="absolute right-0 mt-2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 grid grid-cols-3 gap-2">
                         {COLOR_PALETTE.map((color) => (
                             <button
                                 key={color}

@@ -108,7 +108,7 @@ function Header() {
   const title = PAGE_TITLES[location.pathname] || 'Principal';
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shadow-sm z-10">
+    <header className="h-[72px] bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shadow-sm z-10">
       <h1 className="text-lg font-semibold text-slate-800 dark:text-white">{title}</h1>
       <NotificationBell />
     </header>
