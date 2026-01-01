@@ -165,9 +165,9 @@ export default function BucketTableRow({
     const getChildrenSumWithRecursion = (node, memberId) => {
         if (!node.children || node.children.length === 0) return 0;
         return node.children.reduce((sum, child) => {
-            if (memberId === 'shared') {
-                // Sum children's shared limits (member_id === 'shared')
-                const sharedLimit = child.limits?.find(l => l.member_id === 'shared')?.amount || 0;
+            if (memberId === -1) {
+                // Sum children's shared limits (member_id === -1)
+                const sharedLimit = child.limits?.find(l => l.member_id === -1)?.amount || 0;
                 return sum + sharedLimit;
             } else if (memberId === 'all') {
                 // Sum ALL member limits for each child
@@ -314,10 +314,10 @@ export default function BucketTableRow({
                                         }
                                     `}
                                     value={isParent && !bucket.is_group_budget
-                                        ? getChildrenSumWithRecursion(bucket, 'shared')
-                                        : (localLimits['shared'] ?? '')}
-                                    onChange={(e) => handleLimitChange('shared', e.target.value)}
-                                    onBlur={() => !(isParent && !bucket.is_group_budget) && handleLimitBlur('shared')}
+                                        ? getChildrenSumWithRecursion(bucket, -1)
+                                        : (localLimits[-1] ?? '')}
+                                    onChange={(e) => handleLimitChange(-1, e.target.value)}
+                                    onBlur={() => !(isParent && !bucket.is_group_budget) && handleLimitBlur(-1)}
                                 />
                             </div>
                         </td>
