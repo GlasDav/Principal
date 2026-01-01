@@ -451,7 +451,9 @@ export default function AccountSettings() {
                                     ) : (
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <h3 className="font-semibold text-slate-800 dark:text-slate-100">{household.name}</h3>
+                                                <h3 className="font-semibold text-slate-800 dark:text-slate-100">
+                                                    {household.name || 'Your Household'}
+                                                </h3>
                                                 <button
                                                     onClick={startEditingName}
                                                     className="p-1 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition"
