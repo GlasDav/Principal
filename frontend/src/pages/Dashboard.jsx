@@ -159,7 +159,9 @@ export default function Dashboard() {
     if (isLoading) return <div className="p-8 text-center text-slate-500">Loading Dashboard...</div>;
     if (!dashboardData) return <div className="p-8 text-center text-red-500">Error loading data. Please check connection.</div>;
 
-    const { buckets, totals } = dashboardData;
+    const { buckets: rawBuckets, totals } = dashboardData;
+    // Defensive: ensure buckets is always an array to prevent .filter() crashes
+    const buckets = Array.isArray(rawBuckets) ? rawBuckets : [];
     const netWorth = netWorthHistory.length > 0 ? netWorthHistory[netWorthHistory.length - 1].net_worth : 0;
 
     // Formatting helper

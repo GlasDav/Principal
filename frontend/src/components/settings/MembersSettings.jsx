@@ -60,7 +60,7 @@ const ColorPicker = ({ currentColor, onChange }) => {
                         display: 'grid',
                         gridTemplateColumns: 'repeat(3, 1fr)',
                         gap: '6px',
-                        width: '90px',
+                        width: '102px',
                     }}>
                         {COLOR_PALETTE.map((color) => (
                             <button
