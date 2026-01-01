@@ -280,61 +280,90 @@ export default function BucketTableRow({
                 </div>
             </td>
 
-            {/* Dynamic Member Columns */}
-            {members.length > 0 ? (
-                members.map(member => {
-                    // Logic for Value Display & Editable State
-                    let displayValue = localLimits[member.id] || 0;
-                    let isEditable = true;
-                    let isDerived = false;
-
-                    if (isParent) {
-                        // Parent Logic
-                        if (bucket.is_group_budget) {
-                            // Manual Group Budget mode: Editable, use local/stored value
-                            displayValue = localLimits[member.id] || 0;
-                            isEditable = true;
-                        } else {
-                            // Sum Mode (Default): Read-only, calculate sum of children
-                            displayValue = getChildrenSumWithRecursion(bucket, member.id);
-                            isEditable = false;
-                            isDerived = true;
-                        }
-                    } else {
-                        // Child Logic
-                        // If parent is in Group Budget mode, children become read-only
-                        if (parentIsGroupBudget) {
-                            isEditable = false;
-                        }
-                    }
-
-                    return (
-                        <td key={member.id} className="p-2 w-28">
-                            <div className="relative">
-                                <span className={`absolute left-2 top-1/2 -translate-y-1/2 text-xs ${!isEditable ? 'text-slate-300' : 'text-slate-400'}`}>{currencySymbol}</span>
+            {/* Dynamic Member Columns - Single field for shared, multiple for individual */}
+            {bucket.is_shared ? (
+                // SHARED: Single budget column spanning all member columns
+                <>
+                    {members.length > 0 && (
+                        <td className="p-2" colSpan={members.length}>
+                            <div className="relative max-w-[120px]">
+                                <span className={`absolute left-2 top-1/2 -translate-y-1/2 text-xs ${isParent && !bucket.is_group_budget ? 'text-slate-300' : 'text-slate-400'}`}>{currencySymbol}</span>
                                 <input
                                     type="number"
-                                    disabled={!isEditable}
+                                    disabled={isParent && !bucket.is_group_budget}
                                     className={`w-full pl-6 pr-2 py-1 text-sm border rounded outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition
-                                        ${!isEditable
-                                            ? 'bg-slate-50/50 dark:bg-slate-800/50 text-slate-400 border-transparent cursor-default font-medium'
+                                        ${isParent && !bucket.is_group_budget
+                                            ? 'bg-slate-50/50 dark:bg-slate-800/50 text-slate-400 border-transparent cursor-default font-medium italic'
                                             : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 focus:border-indigo-500'
                                         }
-                                        ${isDerived ? 'italic' : ''}
                                     `}
-                                    value={displayValue}
-                                    onChange={(e) => handleLimitChange(member.id, e.target.value)}
-                                    // Only fire update if editable
-                                    onBlur={() => isEditable && handleLimitBlur(member.id)}
+                                    value={isParent && !bucket.is_group_budget
+                                        ? getChildrenSumWithRecursion(bucket, -1) // Sum children's shared limits
+                                        : (localLimits[-1] || localLimits[members[0]?.id] || 0)}
+                                    onChange={(e) => handleLimitChange(-1, e.target.value)}
+                                    onBlur={() => !(isParent && !bucket.is_group_budget) && handleLimitBlur(-1)}
+                                    placeholder="Shared limit"
                                 />
                             </div>
                         </td>
-                    );
-                })
+                    )}
+                    {members.length === 0 && (
+                        <td className="p-2 w-28">
+                            <span className="text-xs text-slate-400">Loading...</span>
+                        </td>
+                    )}
+                </>
             ) : (
-                <td className="p-2 w-28">
-                    <span className="text-xs text-slate-400">Loading...</span>
-                </td>
+                // NOT SHARED: Individual budget per member
+                members.length > 0 ? (
+                    members.map(member => {
+                        // Logic for Value Display & Editable State
+                        let displayValue = localLimits[member.id] || 0;
+                        let isEditable = true;
+                        let isDerived = false;
+
+                        if (isParent) {
+                            if (bucket.is_group_budget) {
+                                displayValue = localLimits[member.id] || 0;
+                                isEditable = true;
+                            } else {
+                                displayValue = getChildrenSumWithRecursion(bucket, member.id);
+                                isEditable = false;
+                                isDerived = true;
+                            }
+                        } else {
+                            if (parentIsGroupBudget) {
+                                isEditable = false;
+                            }
+                        }
+
+                        return (
+                            <td key={member.id} className="p-2 w-28">
+                                <div className="relative">
+                                    <span className={`absolute left-2 top-1/2 -translate-y-1/2 text-xs ${!isEditable ? 'text-slate-300' : 'text-slate-400'}`}>{currencySymbol}</span>
+                                    <input
+                                        type="number"
+                                        disabled={!isEditable}
+                                        className={`w-full pl-6 pr-2 py-1 text-sm border rounded outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition
+                                            ${!isEditable
+                                                ? 'bg-slate-50/50 dark:bg-slate-800/50 text-slate-400 border-transparent cursor-default font-medium'
+                                                : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 focus:border-indigo-500'
+                                            }
+                                            ${isDerived ? 'italic' : ''}
+                                        `}
+                                        value={displayValue}
+                                        onChange={(e) => handleLimitChange(member.id, e.target.value)}
+                                        onBlur={() => isEditable && handleLimitBlur(member.id)}
+                                    />
+                                </div>
+                            </td>
+                        );
+                    })
+                ) : (
+                    <td className="p-2 w-28">
+                        <span className="text-xs text-slate-400">Loading...</span>
+                    </td>
+                )
             )}
 
             <td className="p-2 w-16 text-center">
