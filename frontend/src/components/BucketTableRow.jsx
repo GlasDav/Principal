@@ -541,7 +541,7 @@ export default function BucketTableRow({
                     {/* Hide/Show Toggle */}
                     <button
                         onClick={() => {
-                            updateBucketMutation.mutate({ id: bucket.id, data: { is_hidden: !bucket.is_hidden } });
+                            updateBucketMutation.mutate({ id: bucket.id, data: { ...bucket, is_hidden: !bucket.is_hidden } });
                         }}
                         className={`p-1 rounded transition ${bucket.is_hidden
                             ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
