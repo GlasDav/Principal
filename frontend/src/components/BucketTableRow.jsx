@@ -291,13 +291,29 @@ export default function BucketTableRow({
             </td>
             <td className="p-2">
                 <div className="flex flex-col">
-                    <input
-                        className={`w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none transition text-sm py-1 ${isParent ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-800 dark:text-slate-100'}`}
-                        value={localName}
-                        onChange={(e) => setLocalName(e.target.value)}
-                        onBlur={handleBlurName}
-                        placeholder="Category name..."
-                    />
+                    <div className="flex items-center gap-2">
+                        <input
+                            className={`flex-1 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none transition text-sm py-1 ${isParent ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-800 dark:text-slate-100'}`}
+                            value={localName}
+                            onChange={(e) => setLocalName(e.target.value)}
+                            onBlur={handleBlurName}
+                            placeholder="Category name..."
+                        />
+                        {/* Group Toggle Pill - Discretionary vs Non-Discretionary */}
+                        <button
+                            onClick={() => updateBucketMutation.mutate({
+                                id: bucket.id,
+                                data: { ...bucket, group: bucket.group === 'Discretionary' ? 'Non-Discretionary' : 'Discretionary' }
+                            })}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition whitespace-nowrap ${bucket.group === 'Non-Discretionary'
+                                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50'
+                                    : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
+                                }`}
+                            title={bucket.group === 'Non-Discretionary' ? 'Click to mark as Discretionary (Wants)' : 'Click to mark as Non-Discretionary (Needs)'}
+                        >
+                            {bucket.group === 'Non-Discretionary' ? 'Needs' : 'Wants'}
+                        </button>
+                    </div>
 
                     {/* Budget by Group Toggle for Parents */}
                     {isParent && (
