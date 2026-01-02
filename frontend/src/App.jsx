@@ -119,6 +119,7 @@ function Header() {
 function Layout() {
   const { logout, user } = useAuth();
   const [showFeedback, setShowFeedback] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans">
@@ -192,7 +193,8 @@ function Layout() {
                 <Outlet />
               </div>
             </ErrorBoundary>
-            <Footer />
+            {/* Hide footer on Settings page to keep sidebar fixed */}
+            {location.pathname !== '/settings' && <Footer />}
           </div>
         </div>
       </div>
