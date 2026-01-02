@@ -26,6 +26,44 @@ const cleanKeywords = (str) => {
     return [...new Set(str.split(',').map(k => k.trim()).filter(k => k))].join(', ');
 };
 
+// Helper to render hierarchical category options
+const renderCategoryOptions = (treeBuckets) => {
+    if (!treeBuckets || treeBuckets.length === 0) return null;
+
+    return treeBuckets.map(parent => {
+        // Skip the Income parent category itself but show its children
+        if (parent.name === 'Income' && parent.group === 'Income') {
+            // Render children directly with Income label
+            if (parent.children && parent.children.length > 0) {
+                return (
+                    <optgroup key={parent.id} label="Income">
+                        {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
+                            <option key={child.id} value={child.id}>{child.name}</option>
+                        ))}
+                    </optgroup>
+                );
+            }
+            return null;
+        }
+
+        // For parents with children, render as optgroup
+        if (parent.children && parent.children.length > 0) {
+            return (
+                <optgroup key={parent.id} label={parent.name}>
+                    {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
+                        <option key={child.id} value={child.id}>
+                            {child.name}
+                        </option>
+                    ))}
+                </optgroup>
+            );
+        }
+
+        // For leaf categories (no children), render as plain option
+        return <option key={parent.id} value={parent.id}>{parent.name}</option>;
+    });
+};
+
 const RuleItem = ({ rule, buckets, updateRuleMutation, deleteRuleMutation, isSelected, onToggleSelect }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localKeywords, setLocalKeywords] = useState(rule.keywords);
@@ -72,15 +110,7 @@ const RuleItem = ({ rule, buckets, updateRuleMutation, deleteRuleMutation, isSel
                         onChange={(e) => setLocalBucketId(e.target.value)}
                     >
                         <option value="">Select Category...</option>
-                        <optgroup label="Income">
-                            {buckets?.filter(b => b.group === 'Income' && b.name !== 'Income').sort((a, b) => a.name.localeCompare(b.name)).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                        </optgroup>
-                        <optgroup label="Non-Discretionary (Needs)">
-                            {buckets?.filter(b => b.group === 'Non-Discretionary').sort((a, b) => a.name.localeCompare(b.name)).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                        </optgroup>
-                        <optgroup label="Discretionary (Wants)">
-                            {buckets?.filter(b => b.group === 'Discretionary' || !b.group).sort((a, b) => a.name.localeCompare(b.name)).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                        </optgroup>
+                        {renderCategoryOptions(treeBuckets)}
                     </select>
                 </div>
                 <div className="col-span-4 md:col-span-2 flex items-center gap-2">
@@ -133,7 +163,7 @@ const RuleItem = ({ rule, buckets, updateRuleMutation, deleteRuleMutation, isSel
     );
 };
 
-export default function RulesSection({ buckets }) {
+export default function RulesSection({ buckets, treeBuckets }) {
     const queryClient = useQueryClient();
     const [keyword, setKeyword] = useState("");
     const [bucketId, setBucketId] = useState("");
@@ -286,21 +316,7 @@ export default function RulesSection({ buckets }) {
                             onChange={(e) => setBucketId(e.target.value)}
                         >
                             <option value="">Select Category...</option>
-                            <optgroup label="Income">
-                                {buckets?.filter(b => b.group === 'Income' && b.name !== 'Income').sort((a, b) => a.name.localeCompare(b.name)).map(b => (
-                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                ))}
-                            </optgroup>
-                            <optgroup label="Non-Discretionary (Needs)">
-                                {buckets?.filter(b => b.group === 'Non-Discretionary').sort((a, b) => a.name.localeCompare(b.name)).map(b => (
-                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                ))}
-                            </optgroup>
-                            <optgroup label="Discretionary (Wants)">
-                                {buckets?.filter(b => b.group === 'Discretionary' || !b.group).sort((a, b) => a.name.localeCompare(b.name)).map(b => (
-                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                ))}
-                            </optgroup>
+                            {renderCategoryOptions(treeBuckets)}
                         </select>
                     </div>
                     <div className="w-[100px]">

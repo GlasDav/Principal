@@ -127,7 +127,7 @@ export default function RulesSettings() {
                 </div>
             )}
 
-            <RulesSection buckets={flatBuckets} />
+            <RulesSection buckets={flatBuckets} treeBuckets={buckets} />
         </div>
     );
 }

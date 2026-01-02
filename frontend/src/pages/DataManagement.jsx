@@ -2,9 +2,44 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Listbox, Transition } from '@headlessui/react';
 import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight, Pencil, Table, ChevronDown, Check, Loader2, UserCheck, Download, Calendar, LineChart } from 'lucide-react';
-import api, { getMembers } from '../services/api';
+import api, { getMembers, getBucketsTree } from '../services/api';
 import ConnectBank from '../components/ConnectBank';
 import { sortBucketsByGroup } from '../utils/bucketUtils';
+
+// Helper to render hierarchical category options
+const renderCategoryOptions = (treeBuckets) => {
+    if (!treeBuckets || treeBuckets.length === 0) return null;
+
+    return treeBuckets.map(parent => {
+        // Skip the Income parent category itself but show its children
+        if (parent.name === 'Income' && parent.group === 'Income') {
+            if (parent.children && parent.children.length > 0) {
+                return (
+                    <optgroup key={parent.id} label="Income">
+                        {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
+                            <option key={child.id} value={child.id}>{child.name}</option>
+                        ))}
+                    </optgroup>
+                );
+            }
+            return null;
+        }
+
+        // For parents with children, render as optgroup
+        if (parent.children && parent.children.length > 0) {
+            return (
+                <optgroup key={parent.id} label={parent.name}>
+                    {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
+                        <option key={child.id} value={child.id}>{child.name}</option>
+                    ))}
+                </optgroup>
+            );
+        }
+
+        // For leaf categories (no children), render as plain option
+        return <option key={parent.id} value={parent.id}>{parent.name}</option>;
+    });
+};
 
 
 const uploadFile = async ({ file, spender }) => {
@@ -75,13 +110,10 @@ export default function Ingest() {
 
     // ... (render) ...
 
-    // Fetch Buckets
+    // Fetch Buckets Tree
     const { data: buckets = [] } = useQuery({
-        queryKey: ['buckets'],
-        queryFn: async () => {
-            const res = await api.get('/settings/buckets');
-            return res.data;
-        }
+        queryKey: ['bucketsTree'],
+        queryFn: getBucketsTree
     });
 
     // State
@@ -756,21 +788,7 @@ export default function Ingest() {
                                                 onChange={(e) => handleCategoryChange(txn.id, e.target.value)}
                                             >
                                                 <option value="">Uncategorized</option>
-                                                <optgroup label="Income">
-                                                    {buckets.filter(b => b.group === 'Income' && b.name !== 'Income').sort((a, b) => a.name.localeCompare(b.name)).map(b => (
-                                                        <option key={b.id} value={b.id}>{b.name}</option>
-                                                    ))}
-                                                </optgroup>
-                                                <optgroup label="Non-Discretionary (Needs)">
-                                                    {buckets.filter(b => b.group === 'Non-Discretionary').sort((a, b) => a.name.localeCompare(b.name)).map(b => (
-                                                        <option key={b.id} value={b.id}>{b.name}</option>
-                                                    ))}
-                                                </optgroup>
-                                                <optgroup label="Discretionary (Wants)">
-                                                    {buckets.filter(b => b.group === 'Discretionary' || !b.group).sort((a, b) => a.name.localeCompare(b.name)).map(b => (
-                                                        <option key={b.id} value={b.id}>{b.name}</option>
-                                                    ))}
-                                                </optgroup>
+                                                {renderCategoryOptions(buckets)}
                                             </select>
                                         </td>
                                         <td className="p-4">
