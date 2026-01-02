@@ -64,8 +64,8 @@ export default function Settings() {
                     ))}
                 </nav>
 
-                {/* Footer Controls - aligned with main sidebar footer */}
-                <div className="p-3 border-t border-slate-200 dark:border-slate-700 space-y-1">
+                {/* Footer Controls - mt-auto pushes to bottom to align with main sidebar */}
+                <div className="mt-auto p-3 border-t border-slate-200 dark:border-slate-700 space-y-1">
                     <div className="flex items-center justify-between px-3 py-2">
                         <span className="text-sm text-slate-500 dark:text-slate-400">Appearance</span>
                         <button

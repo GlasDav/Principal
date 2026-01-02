@@ -70,3 +70,6 @@ rq==1.16.0
 
 # Error Monitoring (optional - configure with SENTRY_DSN env var)
 sentry-sdk==2.22.0
+
+# AI Categorization (Google Gemini)
+google-generativeai==0.8.5
