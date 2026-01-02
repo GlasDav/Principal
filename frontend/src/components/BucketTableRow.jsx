@@ -527,7 +527,7 @@ export default function BucketTableRow({
                     </div>
                 )}
             </td>
-            <td className="p-2 w-10">
+            <td className="p-2 w-20">
                 <div className="flex items-center gap-1">
                     {/* Drag Handle */}
                     <button

@@ -17,6 +17,7 @@ import ApiKeysSettings from '../components/settings/ApiKeysSettings';
 
 /**
  * Settings Page with Sidebar Navigation
+ * Uses sticky sidebar that stays fixed within the viewport
  */
 export default function Settings() {
     const { theme, toggleTheme } = useTheme();
@@ -36,9 +37,9 @@ export default function Settings() {
     const ActiveComponent = tabs.find(t => t.id === activeTab)?.component || AccountInfoSettings;
 
     return (
-        <div className="flex h-full overflow-hidden bg-slate-50 dark:bg-slate-900">
-            {/* Sidebar - matches main sidebar height */}
-            <aside className="w-64 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden">
+        <div className="flex bg-slate-50 dark:bg-slate-900 min-h-full">
+            {/* Sidebar - sticky to stay in view while content scrolls */}
+            <aside className="w-64 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 sticky top-0 h-[calc(100vh-72px)] flex flex-col">
                 <div className="p-6">
                     <h1 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <SettingsIcon className="text-indigo-600" />
@@ -84,8 +85,8 @@ export default function Settings() {
             </aside>
 
             {/* Content Area */}
-            <main className="flex-1 overflow-y-auto p-6 md:p-8">
-                <div className="max-w-4xl mx-auto h-full">
+            <main className="flex-1 p-6 md:p-8">
+                <div className="max-w-4xl mx-auto">
                     <ActiveComponent />
                 </div>
             </main>
