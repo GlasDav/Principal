@@ -42,3 +42,6 @@ principal*.db
 # Test artifacts
 .pytest_cache/
 htmlcov/
+
+# Agent workflows (contains sensitive deploy credentials)
+.agent/

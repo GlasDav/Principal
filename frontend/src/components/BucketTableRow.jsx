@@ -300,19 +300,22 @@ export default function BucketTableRow({
                             placeholder="Category name..."
                         />
                         {/* Group Toggle Pill - Discretionary vs Non-Discretionary */}
-                        <button
-                            onClick={() => updateBucketMutation.mutate({
-                                id: bucket.id,
-                                data: { ...bucket, group: bucket.group === 'Discretionary' ? 'Non-Discretionary' : 'Discretionary' }
-                            })}
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition whitespace-nowrap ${bucket.group === 'Non-Discretionary'
+                        {/* Only show for non-Income categories AND (children OR parents with Budget by Group enabled) */}
+                        {bucket.group !== 'Income' && (!isParent || bucket.is_group_budget) && (
+                            <button
+                                onClick={() => updateBucketMutation.mutate({
+                                    id: bucket.id,
+                                    data: { ...bucket, group: bucket.group === 'Discretionary' ? 'Non-Discretionary' : 'Discretionary' }
+                                })}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition whitespace-nowrap ${bucket.group === 'Non-Discretionary'
                                     ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50'
                                     : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
-                                }`}
-                            title={bucket.group === 'Non-Discretionary' ? 'Click to mark as Discretionary (Wants)' : 'Click to mark as Non-Discretionary (Needs)'}
-                        >
-                            {bucket.group === 'Non-Discretionary' ? 'Needs' : 'Wants'}
-                        </button>
+                                    }`}
+                                title={bucket.group === 'Non-Discretionary' ? 'Click to mark as Discretionary (Wants)' : 'Click to mark as Non-Discretionary (Needs)'}
+                            >
+                                {bucket.group === 'Non-Discretionary' ? 'Needs' : 'Wants'}
+                            </button>
+                        )}
                     </div>
 
                     {/* Budget by Group Toggle for Parents */}
