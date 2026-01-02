@@ -33,7 +33,8 @@ export default function BucketTableRow({
     onMoveBucket = null,
     isFirst = false,
     isLast = false,
-    parentIsGroupBudget = false
+    parentIsGroupBudget = false,
+    parentGroup = null
 }) {
     // Sortable hook for all rows
     const {
@@ -300,8 +301,8 @@ export default function BucketTableRow({
                             placeholder="Category name..."
                         />
                         {/* Group Toggle Pill - Discretionary vs Non-Discretionary */}
-                        {/* Only show for non-Income categories AND (children OR parents with Budget by Group enabled) */}
-                        {bucket.group !== 'Income' && (!isParent || bucket.is_group_budget) && (
+                        {/* Hide for: Income categories, children of Income, parents without Budget by Group */}
+                        {bucket.group !== 'Income' && parentGroup !== 'Income' && (!isParent || bucket.is_group_budget) && (
                             <button
                                 onClick={() => updateBucketMutation.mutate({
                                     id: bucket.id,
