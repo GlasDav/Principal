@@ -106,6 +106,7 @@ class RuleBase(BaseModel):
     max_amount: Optional[float] = None  # Optional: only match if amount <= max_amount
     apply_tags: Optional[str] = None # Optional: comma separated tags
     mark_for_review: bool = False
+    assign_to: Optional[str] = None # Optional: family member name to assign
     
     @field_validator('keywords', 'apply_tags')
     @classmethod

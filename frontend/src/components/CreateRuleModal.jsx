@@ -26,7 +26,7 @@ const previewRule = async ({ keywords, min_amount, max_amount }) => {
  * Pre-populates keyword from transaction description.
  * Includes preview of matching transactions.
  */
-export default function CreateRuleModal({ isOpen, onClose, transaction, buckets }) {
+export default function CreateRuleModal({ isOpen, onClose, transaction, buckets, members = [] }) {
     const queryClient = useQueryClient();
     const [keyword, setKeyword] = useState(transaction?.description || '');
     const [bucketId, setBucketId] = useState(transaction?.bucket_id || '');
@@ -35,6 +35,7 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
     const [maxAmount, setMaxAmount] = useState('');
     const [applyTags, setApplyTags] = useState('');
     const [markForReview, setMarkForReview] = useState(false);
+    const [assignTo, setAssignTo] = useState('');  // Family member to assign
     const [error, setError] = useState('');
     const [showPreview, setShowPreview] = useState(false);
 
@@ -53,6 +54,7 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
             setMaxAmount('');
             setApplyTags('');
             setMarkForReview(false);
+            setAssignTo(transaction.spender || '');
             setError('');
             setShowPreview(false);
             setPreviewData(null);
@@ -85,7 +87,8 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
             min_amount: minAmount ? parseFloat(minAmount) : null,
             max_amount: maxAmount ? parseFloat(maxAmount) : null,
             apply_tags: applyTags.trim() || null,
-            mark_for_review: markForReview
+            mark_for_review: markForReview,
+            assign_to: assignTo || null
         });
     };
 
@@ -301,6 +304,27 @@ export default function CreateRuleModal({ isOpen, onClose, transaction, buckets 
                             Higher priority rules are applied first
                         </p>
                     </div>
+
+                    {members.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                Assign to member (optional)
+                            </label>
+                            <select
+                                value={assignTo}
+                                onChange={(e) => setAssignTo(e.target.value)}
+                                className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            >
+                                <option value="">Joint (default)</option>
+                                {members.map(member => (
+                                    <option key={member.id} value={member.name}>{member.name}</option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                Matched transactions will be assigned to this member
+                            </p>
+                        </div>
+                    )}
 
                     <div className="flex justify-end gap-3 pt-2">
                         <button

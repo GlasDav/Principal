@@ -189,6 +189,7 @@ class CategorizationRule(Base):
     max_amount = Column(Float, nullable=True)  # Optional: only match if amount <= max_amount
     apply_tags = Column(String, nullable=True) # Optional: comma separated tags to apply
     mark_for_review = Column(Boolean, default=False) # Optional: if True, set is_verified=False
+    assign_to = Column(String, nullable=True) # Optional: family member name to assign transaction
     
     user = relationship("User")
     bucket = relationship("BudgetBucket")

@@ -64,7 +64,7 @@ const renderCategoryOptions = (treeBuckets) => {
     });
 };
 
-const RuleItem = ({ rule, buckets, updateRuleMutation, deleteRuleMutation, isSelected, onToggleSelect }) => {
+const RuleItem = ({ rule, buckets, treeBuckets, updateRuleMutation, deleteRuleMutation, isSelected, onToggleSelect }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localKeywords, setLocalKeywords] = useState(rule.keywords);
     const [localBucketId, setLocalBucketId] = useState(rule.bucket_id);
@@ -411,6 +411,7 @@ export default function RulesSection({ buckets, treeBuckets }) {
                         key={rule.id}
                         rule={rule}
                         buckets={buckets}
+                        treeBuckets={treeBuckets}
                         updateRuleMutation={updateRuleMutation}
                         deleteRuleMutation={deleteRuleMutation}
                         isSelected={selectedRules.has(rule.id)}

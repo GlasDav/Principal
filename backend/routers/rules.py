@@ -40,7 +40,8 @@ def create_rule(rule: schemas.RuleCreate, db: Session = Depends(get_db), current
         min_amount=rule.min_amount,
         max_amount=rule.max_amount,
         apply_tags=rule.apply_tags,
-        mark_for_review=rule.mark_for_review
+        mark_for_review=rule.mark_for_review,
+        assign_to=rule.assign_to
     )
     db.add(db_rule)
     db.commit()
@@ -100,6 +101,7 @@ def update_rule(rule_id: int, rule: schemas.RuleCreate, db: Session = Depends(ge
     db_rule.max_amount = rule.max_amount
     db_rule.apply_tags = rule.apply_tags
     db_rule.mark_for_review = rule.mark_for_review
+    db_rule.assign_to = rule.assign_to
     
     db.commit()
     db.refresh(db_rule)
@@ -212,12 +214,16 @@ def run_rules(db: Session = Depends(get_db), current_user: models.User = Depends
         
         rule = categorizer.apply_rules(clean_desc, rules, amount=txn.amount)
         
-        if rule and rule.bucket_id != txn.bucket_id:
+        if rule and (txn.bucket_id is None or rule.bucket_id != txn.bucket_id):
             txn.bucket_id = rule.bucket_id
             
             # Apply Tags if present
             if rule.apply_tags:
                 txn.tags = rule.apply_tags
+            
+            # Apply assign_to (spender) if present
+            if rule.assign_to:
+                txn.spender = rule.assign_to
                 
             # Logically, if we match a rule, we usually verify it.
             # But if "mark_for_review" is True, we explicitly keep it Unverified.

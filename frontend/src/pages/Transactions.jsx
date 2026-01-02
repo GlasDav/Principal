@@ -305,6 +305,7 @@ export default function Transactions() {
                 onClose={() => setRuleModalOpen(false)}
                 transaction={transactionForRule}
                 buckets={buckets}
+                members={members}
             />
 
             {/* Show empty state if no transactions at all */}
