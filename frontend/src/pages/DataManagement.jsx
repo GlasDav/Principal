@@ -756,11 +756,21 @@ export default function Ingest() {
                                                 onChange={(e) => handleCategoryChange(txn.id, e.target.value)}
                                             >
                                                 <option value="">Uncategorized</option>
-                                                {sortBucketsByGroup(buckets).map(b => (
-                                                    <option key={b.id} value={b.id}>
-                                                        {b.name}
-                                                    </option>
-                                                ))}
+                                                <optgroup label="Income">
+                                                    {buckets.filter(b => b.group === 'Income' && b.name !== 'Income').sort((a, b) => a.name.localeCompare(b.name)).map(b => (
+                                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                                    ))}
+                                                </optgroup>
+                                                <optgroup label="Non-Discretionary (Needs)">
+                                                    {buckets.filter(b => b.group === 'Non-Discretionary').sort((a, b) => a.name.localeCompare(b.name)).map(b => (
+                                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                                    ))}
+                                                </optgroup>
+                                                <optgroup label="Discretionary (Wants)">
+                                                    {buckets.filter(b => b.group === 'Discretionary' || !b.group).sort((a, b) => a.name.localeCompare(b.name)).map(b => (
+                                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                                    ))}
+                                                </optgroup>
                                             </select>
                                         </td>
                                         <td className="p-4">

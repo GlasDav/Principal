@@ -40,8 +40,8 @@ export default function Settings() {
         <div className="flex bg-slate-50 dark:bg-slate-900 min-h-full">
             {/* Sidebar - sticky to stay in view while content scrolls */}
             <aside className="w-64 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 sticky top-0 h-[calc(100vh-72px)] flex flex-col">
-                {/* Header - matches main sidebar logo height */}
-                <div className="h-[72px] px-4 border-b border-slate-100 dark:border-slate-700 flex items-center">
+                {/* Header - simple padding, no fixed height since we're already below main app header */}
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700">
                     <h1 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <SettingsIcon className="text-indigo-600" />
                         Settings
