@@ -55,7 +55,20 @@ export default function BucketTableSection({
     }, [buckets]);
 
     const handleAddNew = () => {
-        createBucketMutation.mutate({ name: "New Category", group: groupName, is_shared: false });
+        // For Income group, auto-parent under the "Income" category to maintain hierarchy
+        let parentId = null;
+        if (groupName === 'Income') {
+            const incomeParent = roots.find(b => b.name === 'Income' && b.group === 'Income');
+            if (incomeParent) {
+                parentId = incomeParent.id;
+            }
+        }
+        createBucketMutation.mutate({
+            name: "New Category",
+            group: groupName,
+            is_shared: false,
+            parent_id: parentId
+        });
     };
 
     const handleToggleExpand = (id) => {
