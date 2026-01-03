@@ -546,6 +546,7 @@ export default function RulesSection({ buckets, treeBuckets, members = [] }) {
                                     onChange={(e) => setAssignTo(e.target.value)}
                                 >
                                     <option value="">Unchanged</option>
+                                    <option value="Joint">Joint</option>
                                     {members.map(member => (
                                         <option key={member.id} value={member.name}>{member.name}</option>
                                     ))}
