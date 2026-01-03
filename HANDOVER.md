@@ -73,8 +73,8 @@ Fixed critical Smart Rules bugs and added owner assignment feature.
 # SSH into server
 ssh root@43.224.182.196
 
-# Create .env with API key (if not exists)
-echo 'GEMINI_API_KEY=AIzaSyBU3Io2ARjDmvQU4wZgWJUQth6Q04FaP5Q' >> /opt/principal/.env
+# Create .env with API key (get key from Google Cloud Console)
+echo 'GEMINI_API_KEY=your-gemini-api-key-here' >> /opt/principal/.env
 
 # Deploy
 cd /opt/principal && git pull origin main && docker compose down && docker compose up -d --build
