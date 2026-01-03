@@ -101,7 +101,7 @@ export default function Transactions() {
 
     // Update Transaction
     const updateMutation = useMutation({
-        mutationFn: async ({ id, bucket_id, description, date, amount, spender, goal_id, assigned_to }) => {
+        mutationFn: async ({ id, bucket_id, description, date, amount, spender, goal_id, assigned_to, is_verified }) => {
             const payload = {};
             if (bucket_id !== undefined) payload.bucket_id = bucket_id;
             if (description !== undefined) payload.description = description;
@@ -110,6 +110,7 @@ export default function Transactions() {
             if (spender !== undefined) payload.spender = spender;
             if (goal_id !== undefined) payload.goal_id = goal_id;
             if (assigned_to !== undefined) payload.assigned_to = assigned_to;
+            if (is_verified !== undefined) payload.is_verified = is_verified;
 
             await api.put(`/transactions/${id}`, payload);
         },
@@ -583,7 +584,7 @@ export default function Transactions() {
                                             <select
                                                 className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 dark:focus:bg-slate-800 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer max-w-[140px] truncate"
                                                 value={txn.bucket_id || ""}
-                                                onChange={(e) => updateMutation.mutate({ id: txn.id, bucket_id: parseInt(e.target.value) })}
+                                                onChange={(e) => updateMutation.mutate({ id: txn.id, bucket_id: parseInt(e.target.value), is_verified: true })}
                                                 onClick={(e) => e.stopPropagation()}
                                             >
                                                 <option value="">Uncategorized</option>
