@@ -32,6 +32,8 @@ export default function MultiSelectCategoryFilter({ categories = [], selectedIds
         return result;
     };
 
+    const flattened = flattenAndSort(categories);
+
     // Group categories by their Root Parent (e.g. Food, Housing) instead of high-level Group
     const grouped = {};
 
