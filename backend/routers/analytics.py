@@ -325,19 +325,35 @@ def get_analytics_history(
     elif group:
         buckets_query = buckets_query.filter(models.BudgetBucket.group == group)
     
-    # OPTIMIZATION: Use SQL aggregation instead of Python N+1 loop
-    # This was likely causing timeouts with many buckets
-    relevant_buckets = buckets_query.all()
-    relevant_bucket_ids = [b.id for b in relevant_buckets]
-
-    if not relevant_bucket_ids:
-        monthly_limit_total = 0.0
-    else:
-        monthly_limit_total = db.query(func.sum(models.BudgetLimit.amount))\
-            .filter(models.BudgetLimit.bucket_id.in_(relevant_bucket_ids))\
-            .scalar() or 0.0
+    # Default filters: Exclude Income and Transfers if no specific filter is applied
+    if not bucket_id and not bucket_ids and not group:
+        buckets_query = buckets_query.filter(
+            models.BudgetBucket.group != "Income",
+            models.BudgetBucket.is_transfer == False
+        )
     
-    logger.info(f"Optimized Limit Calc: {monthly_limit_total} across {len(relevant_bucket_ids)} buckets")
+    # OPTIMIZATION: Use smart Python aggregation to avoid double counting limits
+    # We eager load limits to perform the sum in application memory
+    relevant_buckets = buckets_query.options(joinedload(models.BudgetBucket.limits)).all()
+    relevant_bucket_ids = {b.id for b in relevant_buckets}
+
+    monthly_limit_total = 0.0
+    
+    for b in relevant_buckets:
+        # Check if we should skip this bucket's limit to avoid double counting
+        should_skip = False
+        
+        # Case 1: Child bucket whose parent is also in the list AND parent 'owns' the budget
+        if b.parent_id and b.parent_id in relevant_bucket_ids:
+            # Find parent (optimization: could map beforehand, but relevant_buckets is usually small)
+            parent = next((p for p in relevant_buckets if p.id == b.parent_id), None)
+            if parent and (parent.is_group_budget or getattr(parent, 'is_shared', False)):
+                should_skip = True
+        
+        if not should_skip:
+            monthly_limit_total += sum(l.amount for l in b.limits) if b.limits else 0.0
+    
+    logger.info(f"Optimized Limit Calc: {monthly_limit_total} across {len(relevant_buckets)} buckets")
     
     history_data = []
     
