@@ -226,9 +226,9 @@ export default function Transactions() {
             if (parent.name === 'Income' && parent.group === 'Income') {
                 if (parent.children && parent.children.length > 0) {
                     return (
-                        <optgroup key={parent.id} label="Income">
+                        <optgroup key={parent.id} label="Income" className="dark:bg-slate-800">
                             {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
-                                <option key={child.id} value={child.id}>{child.name}</option>
+                                <option key={child.id} value={child.id} className="dark:bg-slate-800">{child.name}</option>
                             ))}
                         </optgroup>
                     );
@@ -239,16 +239,16 @@ export default function Transactions() {
             // For parents with children, render as optgroup
             if (parent.children && parent.children.length > 0) {
                 return (
-                    <optgroup key={parent.id} label={parent.name}>
+                    <optgroup key={parent.id} label={parent.name} className="dark:bg-slate-800">
                         {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
-                            <option key={child.id} value={child.id}>{child.name}</option>
+                            <option key={child.id} value={child.id} className="dark:bg-slate-800">{child.name}</option>
                         ))}
                     </optgroup>
                 );
             }
 
             // For leaf categories (no children), render as plain option
-            return <option key={parent.id} value={parent.id}>{parent.name}</option>;
+            return <option key={parent.id} value={parent.id} className="dark:bg-slate-800">{parent.name}</option>;
         });
     };
 
