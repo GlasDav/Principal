@@ -230,6 +230,7 @@ const RuleItem = ({ rule, buckets, treeBuckets, members = [], updateRuleMutation
                                 onChange={(e) => setLocalAssignTo(e.target.value)}
                             >
                                 <option value="">Unchanged</option>
+                                <option value="Joint">Joint</option>
                                 {members.map(m => (
                                     <option key={m.id} value={m.name}>{m.name}</option>
                                 ))}
