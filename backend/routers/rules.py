@@ -246,9 +246,20 @@ def run_rules(
     from ..services.categorizer import Categorizer
     categorizer = Categorizer()
 
-    # 1. Fetch all rules
-    # 1. Fetch all rules (Sort by Priority DESC, then Newest (ID DESC))
-    rules = db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == current_user.id).order_by(models.CategorizationRule.priority.desc(), models.CategorizationRule.id.desc()).all()
+    # 1. Fetch all rules (Sort by Priority DESC, then Specificity (Has Filters) DESC, then Newest (ID DESC))
+    from sqlalchemy import case, or_
+    
+    # Rules with min/max filters are considered "more specific" and thus higher priority than generic rules
+    specificity_score = case(
+        (or_(models.CategorizationRule.min_amount.isnot(None), models.CategorizationRule.max_amount.isnot(None)), 1),
+        else_=0
+    )
+    
+    rules = db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == current_user.id).order_by(
+        models.CategorizationRule.priority.desc(), 
+        specificity_score.desc(),
+        models.CategorizationRule.id.desc()
+    ).all()
     
     from sqlalchemy import or_
     

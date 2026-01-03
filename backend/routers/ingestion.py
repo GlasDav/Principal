@@ -209,7 +209,19 @@ def process_transactions_preview(extracted_data, user, db, spender, skip_duplica
     bucket_names = [b.name for b in buckets]  # Keep original casing for AI
             
     # Fetch Smart Rules (Prioritized) - this is now the primary categorization method
-    smart_rules = db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == user.id).order_by(models.CategorizationRule.priority.desc(), models.CategorizationRule.id.desc()).all()
+    from sqlalchemy import case, or_
+    
+    # Sort by Priority DESC, then Specificity (Has Filters) DESC, then Newest (ID DESC)
+    specificity_score = case(
+        (or_(models.CategorizationRule.min_amount.isnot(None), models.CategorizationRule.max_amount.isnot(None)), 1),
+        else_=0
+    )
+    
+    smart_rules = db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == user.id).order_by(
+        models.CategorizationRule.priority.desc(),
+        specificity_score.desc(), 
+        models.CategorizationRule.id.desc()
+    ).all()
 
     # First pass: Apply rule-based categorization
     pending_transactions = []  # Store (index, data, clean_desc) for AI fallback
