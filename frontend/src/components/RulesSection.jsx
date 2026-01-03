@@ -509,6 +509,14 @@ export default function RulesSection({ buckets, treeBuckets, members = [] }) {
                 )}
             </div>
 
+            <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800 p-4 text-sm text-blue-700 dark:text-blue-300 flex gap-2">
+                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                <p>
+                    <strong>Rule Priority:</strong> Rules are executed from top to bottom. Drag specific rules (e.g. "Dining Out &lt; $15")
+                    above generic rules (e.g. "Groceries") to ensure they match first.
+                </p>
+            </div>
+
             <div id="add-rule-form" className="p-4 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Row 1: Keywords, Category, Priority */}
@@ -676,7 +684,7 @@ export default function RulesSection({ buckets, treeBuckets, members = [] }) {
                 </div>
                 <div className="col-span-5">Keywords</div>
                 <div className="col-span-4">Category</div>
-                <div className="col-span-2 text-right">Order</div>
+                <div className="col-span-2 text-right"></div>
             </div>
 
             <div className="divide-y divide-slate-100 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
