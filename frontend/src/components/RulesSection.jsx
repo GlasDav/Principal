@@ -512,8 +512,8 @@ export default function RulesSection({ buckets, treeBuckets, members = [] }) {
             <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800 p-4 text-sm text-blue-700 dark:text-blue-300 flex gap-2">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
                 <p>
-                    <strong>Rule Priority:</strong> Rules are executed from top to bottom. Drag specific rules (e.g. "Dining Out &lt; $15")
-                    above generic rules (e.g. "Groceries") to ensure they match first.
+                    <strong>Rule Priority:</strong> Rules with amount filters (e.g. "$0-$15") always take precedence over generic rules.
+                    Within each group, rules are matched from top to bottom. Drag to reorder.
                 </p>
             </div>
 

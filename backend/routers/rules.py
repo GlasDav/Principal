@@ -286,15 +286,16 @@ def run_rules(
     # 1. Fetch all rules (Sort by Priority DESC, then Specificity (Has Filters) DESC, then Newest (ID DESC))
     from sqlalchemy import case, or_
     
-    # Rules with min/max filters are considered "more specific" and thus higher priority than generic rules
+    # Rules with min/max filters ALWAYS take precedence over generic rules (regardless of drag-drop order)
     specificity_score = case(
         (or_(models.CategorizationRule.min_amount.isnot(None), models.CategorizationRule.max_amount.isnot(None)), 1),
         else_=0
     )
     
+    # Order: Specificity FIRST (filtered rules win), then by priority (drag-drop order), then by ID
     rules = db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == current_user.id).order_by(
+        specificity_score.desc(),  # Filtered rules always take precedence
         models.CategorizationRule.priority.desc(), 
-        specificity_score.desc(),
         models.CategorizationRule.id.desc()
     ).all()
     
