@@ -176,34 +176,25 @@ const SankeyChart = ({ data }) => {
         );
     };
 
-    // Custom Link with gradient matching source/target colors
+    // Custom Link with color matching TARGET node (where money flows TO)
     const CustomLink = ({ sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index, payload }) => {
-        const gradientId = `linkGradient${index}`;
         const width = Math.max(linkWidth || 1, 2);
 
-        // Get colors from source and target nodes
-        const sourceNode = sanitizedData.nodes[payload.source];
+        // Get color from target node (destination of the flow)
         const targetNode = sanitizedData.nodes[payload.target];
-        const sourceColor = getNodeColor(sourceNode?.name, sourceNode?.group);
-        const targetColor = getNodeColor(targetNode?.name, targetNode?.group);
+        const linkColor = getNodeColor(targetNode?.name, targetNode?.group);
 
         return (
             <Layer key={`link-${index}`}>
-                <defs>
-                    <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor={sourceColor} stopOpacity={0.5} />
-                        <stop offset="100%" stopColor={targetColor} stopOpacity={0.3} />
-                    </linearGradient>
-                </defs>
                 <path
                     d={`
                         M${sourceX},${sourceY}
                         C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}
                     `}
-                    stroke={`url(#${gradientId})`}
+                    stroke={linkColor}
                     strokeWidth={width}
                     fill="none"
-                    strokeOpacity={0.8}
+                    strokeOpacity={0.4}
                 />
             </Layer>
         );
