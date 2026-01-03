@@ -230,7 +230,8 @@ def get_buckets_tree(db: Session = Depends(get_db), current_user: models.User = 
     tree = []
     for bucket_id, bucket_dict in id_to_dict.items():
         parent_id = bucket_dict["parent_id"]
-        if parent_id and parent_id in id_to_dict:
+        # Prevent self-reference in tree building (bucket cannot be its own child)
+        if parent_id and parent_id in id_to_dict and parent_id != bucket_id:
             id_to_dict[parent_id]["children"].append(bucket_dict)
         else:
             tree.append(bucket_dict)
@@ -399,6 +400,11 @@ def update_bucket(bucket_id: int, bucket: schemas.BudgetBucketCreate, db: Sessio
     db_bucket.group = bucket.group
     db_bucket.target_amount = bucket.target_amount
     db_bucket.target_date = bucket.target_date
+    
+    # Prevent self-referencing parent
+    if bucket.parent_id == bucket_id:
+        raise HTTPException(status_code=400, detail="A category cannot be its own parent")
+        
     db_bucket.parent_id = bucket.parent_id
     db_bucket.display_order = bucket.display_order
     
