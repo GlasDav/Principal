@@ -280,14 +280,29 @@ def get_rule_suggestions(
     bucket_by_id = {b.id: b for b in buckets}
     bucket_by_name = {b.name.lower(): b for b in buckets}
     
-    # Get existing rule keywords to avoid duplicates
+    # Get existing rule keywords to avoid duplicates and overlaps
     existing_rules = db.query(models.CategorizationRule).filter(
         models.CategorizationRule.user_id == current_user.id
     ).all()
     existing_keywords = set()
+    existing_keywords_full = []  # For substring matching
     for rule in existing_rules:
         for kw in rule.keywords.split(","):
-            existing_keywords.add(kw.strip().lower())
+            kw_clean = kw.strip().lower()
+            existing_keywords.add(kw_clean)
+            existing_keywords_full.append(kw_clean)
+    
+    def overlaps_existing_rule(keyword: str) -> bool:
+        """Check if keyword overlaps with any existing rule keyword."""
+        kw_lower = keyword.lower()
+        # Exact match
+        if kw_lower in existing_keywords:
+            return True
+        # Substring match: suggested keyword contains or is contained by existing
+        for existing in existing_keywords_full:
+            if kw_lower in existing or existing in kw_lower:
+                return True
+        return False
     
     from ..services.categorizer import Categorizer
     categorizer = Categorizer()
@@ -315,7 +330,7 @@ def get_rule_suggestions(
         words = re.findall(r'\b[a-z]{3,}\b', clean)
         if words:
             keyword = words[0]  # Primary keyword
-            if keyword not in existing_keywords and len(keyword) >= 4:
+            if not overlaps_existing_rule(keyword) and len(keyword) >= 4:
                 key = (keyword, txn.bucket_id)
                 pattern_counts[key] += 1
                 if key not in pattern_to_txns:
@@ -364,7 +379,7 @@ def get_rule_suggestions(
         clean = categorizer.clean_description(txn.raw_description or txn.description).lower()
         words = set(re.findall(r'\b[a-z]{3,}\b', clean))
         for word in words:
-            if word not in existing_keywords and len(word) >= 4:
+            if not overlaps_existing_rule(word) and len(word) >= 4:
                 word_counter[word] += 1
                 if word not in word_to_txns:
                     word_to_txns[word] = []
