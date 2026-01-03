@@ -48,6 +48,54 @@ def create_rule(rule: schemas.RuleCreate, db: Session = Depends(get_db), current
     db.refresh(db_rule)
     return db_rule
 
+
+
+@router.post("/bulk-create", response_model=dict)
+def bulk_create_rules(rules: List[schemas.RuleCreate], db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """Create multiple rules at once."""
+    created_count = 0
+    errors = 0
+    
+    for rule in rules:
+        try:
+            # Validate bucket ownership
+            bucket = db.query(models.BudgetBucket).filter(models.BudgetBucket.id == rule.bucket_id, models.BudgetBucket.user_id == current_user.id).first()
+            if not bucket:
+                errors += 1
+                continue
+
+            # Deduplicate and sort keywords
+            norm_keywords = ", ".join(sorted(list(set([k.strip() for k in rule.keywords.split(",") if k.strip()]))))
+
+            # Check for duplicates
+            existing_rule = db.query(models.CategorizationRule).filter(
+                models.CategorizationRule.user_id == current_user.id,
+                models.CategorizationRule.keywords == norm_keywords
+            ).first()
+            
+            if existing_rule:
+                errors += 1
+                continue
+
+            db_rule = models.CategorizationRule(
+                user_id=current_user.id,
+                bucket_id=rule.bucket_id,
+                keywords=norm_keywords,
+                priority=rule.priority,
+                min_amount=rule.min_amount,
+                max_amount=rule.max_amount,
+                apply_tags=rule.apply_tags,
+                mark_for_review=rule.mark_for_review,
+                assign_to=rule.assign_to
+            )
+            db.add(db_rule)
+            created_count += 1
+        except Exception:
+            errors += 1
+            
+    db.commit()
+    return {"created_count": created_count, "errors": errors}
+
 @router.delete("/{rule_id}")
 def delete_rule(rule_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     rule = db.query(models.CategorizationRule).filter(models.CategorizationRule.id == rule_id, models.CategorizationRule.user_id == current_user.id).first()
@@ -257,6 +305,67 @@ class RuleSuggestionsResponse(schemas.BaseModel):
     suggestions: List[RuleSuggestion]
 
 
+class DismissSuggestionRequest(schemas.BaseModel):
+    keyword: str
+
+class DismissAllRequest(schemas.BaseModel):
+    keywords: List[str]
+
+
+@router.post("/suggestions/dismiss")
+def dismiss_suggestion(
+    request: DismissSuggestionRequest,
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """Dismiss a suggestion by adding its keyword to the ignored list."""
+    keyword_clean = request.keyword.strip().lower()
+    
+    # Check if already ignored
+    exists = db.query(models.IgnoredRulePattern).filter(
+        models.IgnoredRulePattern.user_id == current_user.id,
+        models.IgnoredRulePattern.keyword == keyword_clean
+    ).first()
+    
+    if not exists:
+        ignored = models.IgnoredRulePattern(
+            user_id=current_user.id,
+            keyword=keyword_clean
+        )
+        db.add(ignored)
+        db.commit()
+        
+    return {"message": "Suggestion dismissed"}
+
+
+@router.post("/suggestions/dismiss-all")
+def dismiss_all_suggestions(
+    request: DismissAllRequest,
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """Dismiss multiple suggestions."""
+    count = 0
+    for kw in request.keywords:
+        keyword_clean = kw.strip().lower()
+        
+        exists = db.query(models.IgnoredRulePattern).filter(
+            models.IgnoredRulePattern.user_id == current_user.id,
+            models.IgnoredRulePattern.keyword == keyword_clean
+        ).first()
+        
+        if not exists:
+            ignored = models.IgnoredRulePattern(
+                user_id=current_user.id,
+                keyword=keyword_clean
+            )
+            db.add(ignored)
+            count += 1
+            
+    db.commit()
+    return {"message": f"Dismissed {count} suggestions"}
+
+
 @router.get("/suggestions", response_model=RuleSuggestionsResponse)
 def get_rule_suggestions(
     db: Session = Depends(get_db),
@@ -291,6 +400,14 @@ def get_rule_suggestions(
             kw_clean = kw.strip().lower()
             existing_keywords.add(kw_clean)
             existing_keywords_full.append(kw_clean)
+
+    # Get ignored keywords
+    ignored_patterns = db.query(models.IgnoredRulePattern).filter(
+        models.IgnoredRulePattern.user_id == current_user.id
+    ).all()
+    for ip in ignored_patterns:
+        existing_keywords.add(ip.keyword.lower())
+        existing_keywords_full.append(ip.keyword.lower())
     
     def overlaps_existing_rule(keyword: str) -> bool:
         """Check if keyword overlaps with any existing rule keyword."""

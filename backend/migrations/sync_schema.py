@@ -76,6 +76,10 @@ EXPECTED_COLUMNS = {
         ("mark_for_review", "BOOLEAN", "FALSE"),
         ("assign_to", "VARCHAR(100)", None),
     ],
+    "ignored_rule_patterns": [
+        ("keyword", "VARCHAR(255)", None),
+        ("created_at", "DATETIME", None),
+    ],
 }
 
 

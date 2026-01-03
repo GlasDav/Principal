@@ -419,4 +419,18 @@ class HouseholdInvite(Base):
     invited_by = relationship("User")
 
 
+class IgnoredRulePattern(Base):
+    """
+    Keywords that the user has explicitly dismissed from rule suggestions.
+    """
+    __tablename__ = "ignored_rule_patterns"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    keyword = Column(String, index=True)
+    created_at = Column(DateTime, default=func.now())
+    
+    user = relationship("User")
+
+
 

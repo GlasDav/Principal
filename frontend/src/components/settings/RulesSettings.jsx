@@ -17,6 +17,44 @@ const getRuleSuggestions = async () => {
     return response.json();
 };
 
+const dismissSuggestion = async (keyword) => {
+    const token = localStorage.getItem('token');
+    await fetch(`${API_URL}/settings/rules/suggestions/dismiss`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ keyword })
+    });
+};
+
+const dismissAllSuggestions = async (keywords) => {
+    const token = localStorage.getItem('token');
+    await fetch(`${API_URL}/settings/rules/suggestions/dismiss-all`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ keywords })
+    });
+};
+
+const bulkCreateRules = async (rules) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_URL}/settings/rules/bulk-create`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(rules)
+    });
+    if (!res.ok) throw new Error('Failed to create rules');
+    return res.json();
+};
+
 // Recursive category options renderer
 const renderCategoryOptions = (nodes, level = 0) => {
     if (!nodes) return null;
@@ -269,6 +307,54 @@ export default function RulesSettings() {
         }
     });
 
+    // Dismiss mutation
+    const dismissMutation = useMutation({
+        mutationFn: dismissSuggestion,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ruleSuggestions'] })
+    });
+
+    // Dismiss All mutation
+    const dismissAllMutation = useMutation({
+        mutationFn: dismissAllSuggestions,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ruleSuggestions'] })
+    });
+
+    // Bulk Create mutation
+    const bulkCreateMutation = useMutation({
+        mutationFn: bulkCreateRules,
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['rules'] });
+            queryClient.invalidateQueries({ queryKey: ['ruleSuggestions'] });
+            alert(`Successfully added ${data.created_count} rules.`);
+        }
+    });
+
+    // Handlers
+    const handleAddAll = () => {
+        const validSuggestions = suggestions.filter(s => s.suggested_bucket_id);
+        if (validSuggestions.length === 0) return;
+
+        if (!window.confirm(`Add ${validSuggestions.length} rules?`)) return;
+
+        const rulesPayload = validSuggestions.map(s => ({
+            keywords: s.keywords,
+            bucket_id: s.suggested_bucket_id,
+            priority: 0,
+            min_amount: null,
+            max_amount: null,
+            apply_tags: null,
+            mark_for_review: false,
+            assign_to: null
+        }));
+        bulkCreateMutation.mutate(rulesPayload);
+    };
+
+    const handleDismissAll = () => {
+        if (!window.confirm("Dismiss all suggestions? They won't appear again.")) return;
+        const keywords = suggestions.map(s => s.keywords);
+        dismissAllMutation.mutate(keywords);
+    };
+
     if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>;
 
     const suggestions = suggestionsData?.suggestions || [];
@@ -287,13 +373,31 @@ export default function RulesSettings() {
             {/* Suggested Rules Section - Below Defined Rules */}
             {suggestions.length > 0 && (
                 <div className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl border border-amber-200 dark:border-amber-700 p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                        <Lightbulb size={18} className="text-amber-600 dark:text-amber-400" />
-                        <h4 className="font-medium text-amber-800 dark:text-amber-300">Suggested Rules</h4>
-                        <span className="text-xs bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">{suggestions.length}</span>
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <Lightbulb size={18} className="text-amber-600 dark:text-amber-400" />
+                            <h4 className="font-medium text-amber-800 dark:text-amber-300">Suggested Rules</h4>
+                            <span className="text-xs bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">{suggestions.length}</span>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleDismissAll}
+                                disabled={dismissAllMutation.isPending}
+                                className="text-xs px-2 py-1 bg-white/50 dark:bg-black/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded transition"
+                            >
+                                Dismiss All
+                            </button>
+                            <button
+                                onClick={handleAddAll}
+                                disabled={bulkCreateMutation.isPending}
+                                className="text-xs px-2 py-1 bg-white/50 dark:bg-black/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-indigo-700 dark:text-indigo-300 hover:text-emerald-700 dark:hover:text-emerald-300 rounded transition font-medium"
+                            >
+                                Add All
+                            </button>
+                        </div>
                     </div>
                     <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
-                        Based on patterns in your transactions. Click to edit before creating.
+                        Based on patterns in your transactions. Click to edit, or Add All to fast-track.
                     </p>
                     <div className="space-y-2">
                         {suggestions.map((suggestion, idx) => (
@@ -317,6 +421,13 @@ export default function RulesSettings() {
                                 >
                                     <Edit2 size={14} />
                                     Edit & Add
+                                </button>
+                                <button
+                                    onClick={() => dismissMutation.mutate(suggestion.keywords)}
+                                    title="Dismiss suggestion"
+                                    className="ml-2 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-red-500 rounded transition"
+                                >
+                                    <X size={16} />
                                 </button>
                             </div>
                         ))}
