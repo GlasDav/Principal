@@ -47,12 +47,7 @@ export default function MultiSelectCategoryFilter({ categories = [], selectedIds
         // Flatten the root and its children
         // We wrap root in array because flattenAndSort expects an array
         const branchItems = flattenAndSort([root]);
-
-        // If the root category has children (length > 1), rename the root item (first item) 
-        // to "General" to avoid visual duplication with the Group Header which has the same name.
-        if (branchItems.length > 1 && branchItems[0].id === root.id) {
-            branchItems[0].name = "General";
-        }
+        // Do not rename here; we will handle visibility in render
 
         grouped[groupName] = branchItems;
     });
@@ -177,6 +172,10 @@ export default function MultiSelectCategoryFilter({ categories = [], selectedIds
 
                                 {/* Category Items */}
                                 {grouped[group].map(cat => {
+                                    // Hide the root category item if it matches the group name exactly (and is depth 0)
+                                    // This prevents visual duplication with the Group Header which already represents the root.
+                                    if (cat.name === group && cat.depth === 0) return null;
+
                                     const isSelected = selectedIds.includes(cat.id);
                                     return (
                                         <label
