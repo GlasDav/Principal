@@ -247,7 +247,8 @@ def run_rules(
     categorizer = Categorizer()
 
     # 1. Fetch all rules
-    rules = db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == current_user.id).order_by(models.CategorizationRule.priority.desc()).all()
+    # 1. Fetch all rules (Sort by Priority DESC, then Newest (ID DESC))
+    rules = db.query(models.CategorizationRule).filter(models.CategorizationRule.user_id == current_user.id).order_by(models.CategorizationRule.priority.desc(), models.CategorizationRule.id.desc()).all()
     
     from sqlalchemy import or_
     
