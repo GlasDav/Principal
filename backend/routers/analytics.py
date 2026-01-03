@@ -935,13 +935,39 @@ def get_sankey_data(
     non_disc_total = 0.0
     disc_total = 0.0
     
-    # Collect buckets by group for ordered processing
+    # Roll up child spending into parent categories for cleaner visualization
+    # This reduces nodes dramatically and fixes potential stack overflow
+    parent_spend = {}  # parent_id -> total_amount
+    
+    # Helper to find root parent bucket
+    def get_root_parent(bucket):
+        """Find the top-level parent bucket (or self if no parent)"""
+        if bucket.parent_id is None:
+            return bucket
+        parent = bucket_map.get(bucket.parent_id)
+        if parent:
+            return get_root_parent(parent)
+        return bucket
+    
+    # Aggregate spending into parent categories
+    for bid, amount in bucket_spend.items():
+        if bid not in bucket_map: 
+            continue
+        bucket = bucket_map[bid]
+        root = get_root_parent(bucket)
+        
+        if root.id not in parent_spend:
+            parent_spend[root.id] = 0.0
+        parent_spend[root.id] += amount
+    
+    # Collect parent buckets by group for ordered processing
     disc_buckets = []
     non_disc_buckets = []
     
-    for bid, amount in bucket_spend.items():
-        if bid not in bucket_map: continue
-        bucket = bucket_map[bid]
+    for parent_id, amount in parent_spend.items():
+        if parent_id not in bucket_map: 
+            continue
+        bucket = bucket_map[parent_id]
         
         if bucket.group == "Non-Discretionary":
             non_disc_buckets.append((bucket.name, amount))

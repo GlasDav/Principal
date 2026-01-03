@@ -1,8 +1,42 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Sankey, Tooltip, Layer, Rectangle } from 'recharts';
 
 const SankeyChart = ({ data }) => {
-    if (!data || !data.nodes || data.nodes.length === 0 || !data.links || data.links.length === 0) {
+    // Validate and sanitize data to prevent Recharts stack overflow
+    const sanitizedData = useMemo(() => {
+        if (!data || !data.nodes || !data.links) {
+            return null;
+        }
+
+        // Limit nodes and links to prevent stack overflow in Recharts layout algorithm
+        const MAX_NODES = 50;
+        const MAX_LINKS = 100;
+
+        let nodes = data.nodes.slice(0, MAX_NODES);
+        let links = data.links
+            .filter(link =>
+                link.source < nodes.length &&
+                link.target < nodes.length &&
+                link.source !== link.target && // Prevent self-referencing
+                link.value > 0 // Only positive values
+            )
+            .slice(0, MAX_LINKS);
+
+        // Ensure all link indices are valid
+        const validNodeIndices = new Set(nodes.map((_, i) => i));
+        links = links.filter(link =>
+            validNodeIndices.has(link.source) &&
+            validNodeIndices.has(link.target)
+        );
+
+        if (nodes.length === 0 || links.length === 0) {
+            return null;
+        }
+
+        return { nodes, links };
+    }, [data]);
+
+    if (!sanitizedData) {
         return (
             <div className="w-full h-[400px] bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 flex flex-col">
                 <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Cash Flow</h3>
@@ -84,9 +118,9 @@ const SankeyChart = ({ data }) => {
 
     // Calculate height based on number of destination nodes (categories)
     // Count unique target nodes (excluding the source nodes like Income, Savings, etc)
-    const categoryCount = data.nodes.length - 4; // Subtract source nodes (Income, Non-Disc, Disc, Savings)
+    const categoryCount = sanitizedData.nodes.length - 4; // Subtract source nodes (Income, Non-Disc, Disc, Savings)
     const chartHeight = Math.max(400, Math.min(800, categoryCount * 28 + 100));
-    const nodePadding = Math.max(8, Math.min(30, 400 / categoryCount));
+    const nodePadding = Math.max(8, Math.min(30, 400 / Math.max(categoryCount, 1)));
 
     return (
         <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 flex flex-col">
@@ -96,12 +130,13 @@ const SankeyChart = ({ data }) => {
                     <Sankey
                         width={1000}
                         height={chartHeight}
-                        data={data}
+                        data={sanitizedData}
                         node={<CustomNode />}
                         link={<CustomLink />}
                         nodePadding={nodePadding}
                         nodeWidth={8}
                         margin={{ left: 100, right: 180, top: 20, bottom: 20 }}
+                        iterations={32}
                     >
                         <Tooltip
                             contentStyle={{
@@ -124,3 +159,4 @@ const SankeyChart = ({ data }) => {
 };
 
 export default SankeyChart;
+
