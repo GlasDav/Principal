@@ -1470,10 +1470,20 @@ def get_budget_progress(
         # Roll up upcoming from parent + all children
         upcoming = sum(bucket_upcoming.get(bid, 0) for bid in all_bucket_ids)
         
-        # Roll up limit from parent + all children
-        limit = sum(l.amount for l in b.limits) if b.limits else 0
-        for child in children:
-            limit += sum(l.amount for l in child.limits) if child.limits else 0
+        # Calculate limit based on is_group_budget flag
+        # If is_group_budget=True: Budget is set at parent level only (children share this budget)
+        # If is_group_budget=False: Budget is sum of child limits (parent is just a container)
+        if b.is_group_budget or not children:
+            # Parent-level budget OR no children - use parent's limits only
+            limit = sum(l.amount for l in b.limits) if b.limits else 0
+        else:
+            # Children have their own budgets - sum only child limits
+            limit = 0
+            for child in children:
+                limit += sum(l.amount for l in child.limits) if child.limits else 0
+            # If children have no limits but parent does, fallback to parent
+            if limit == 0:
+                limit = sum(l.amount for l in b.limits) if b.limits else 0
         
         # Calculate percentage
         if limit > 0:
