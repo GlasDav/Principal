@@ -310,7 +310,7 @@ export default function Transactions() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-8 space-y-8" >
+        <div className="max-w-[1600px] mx-auto p-8 space-y-8" >
             <header className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Transactions</h1>
@@ -552,7 +552,7 @@ export default function Transactions() {
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="px-3 py-3 text-sm text-slate-700 dark:text-slate-300 group/cell max-w-[300px]" onClick={() => setEditingCell({ id: txn.id, field: 'description' })}>
+                                        <td className="px-3 py-3 text-sm text-slate-700 dark:text-slate-300 group/cell max-w-[400px]" onClick={() => setEditingCell({ id: txn.id, field: 'description' })}>
                                             {editingCell.id === txn.id && editingCell.field === 'description' ? (
                                                 <input
                                                     autoFocus
@@ -582,7 +582,7 @@ export default function Transactions() {
                                         </td>
                                         <td className="px-3 py-3">
                                             <select
-                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 dark:focus:bg-slate-800 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer max-w-[140px] truncate"
+                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 dark:focus:bg-slate-800 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer max-w-[250px] truncate"
                                                 value={txn.bucket_id || ""}
                                                 onChange={(e) => updateMutation.mutate({ id: txn.id, bucket_id: parseInt(e.target.value), is_verified: true })}
                                                 onClick={(e) => e.stopPropagation()}
@@ -593,7 +593,7 @@ export default function Transactions() {
                                         </td>
                                         <td className="px-3 py-3">
                                             <select
-                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer max-w-[100px] truncate"
+                                                className="bg-transparent hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-2 py-1 text-sm text-slate-900 dark:text-white border-none focus:ring-2 focus:ring-indigo-500 cursor-pointer max-w-[140px] truncate"
                                                 value={txn.spender || "Joint"}
                                                 onChange={(e) => updateMutation.mutate({ id: txn.id, spender: e.target.value })}
                                                 onClick={(e) => e.stopPropagation()}
