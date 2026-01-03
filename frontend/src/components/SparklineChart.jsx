@@ -14,9 +14,9 @@ export default function SparklineChart({ data = [], height = 40, className = '' 
         );
     }
 
-    // Find max for highlighting
+    // Find max for highlighting - use reduce instead of spread to avoid stack overflow with large arrays
     const amounts = data.map(d => d.amount || 0);
-    const maxAmount = Math.max(...amounts);
+    const maxAmount = amounts.length > 0 ? amounts.reduce((max, val) => Math.max(max, val), -Infinity) : 0;
 
     // Custom tooltip
     const CustomTooltip = ({ active, payload }) => {
