@@ -74,6 +74,7 @@ EXPECTED_COLUMNS = {
         ("max_amount", "FLOAT", None),
         ("apply_tags", "TEXT", None),
         ("mark_for_review", "BOOLEAN", "FALSE"),
+        ("assign_to", "VARCHAR(100)", None),
     ],
 }
 
