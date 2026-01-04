@@ -4,6 +4,45 @@
 
 ---
 
+## 🤖 Agent Onboarding (READ FIRST)
+
+> **Before making any changes**, review these critical patterns and files.
+
+### Critical Files to Check
+
+| File | Why It Matters |
+|------|----------------|
+| `backend/auto_migrate.py` | **Auto-migrations run on startup**. Add new columns here for automatic deployment. |
+| `backend/main.py` | Entry point. Calls `auto_migrate.run_migrations()` on startup. |
+| `backend/database.py` | DB connection. Uses `DATABASE_URL` env var (PostgreSQL in prod, SQLite in dev). |
+| `backend/models.py` | SQLAlchemy models. Schema changes here need corresponding migration. |
+| `backend/schemas.py` | Pydantic schemas. Must match models for API serialization. |
+| `.env` | Environment variables (gitignored). Contains `DATABASE_URL`, `SECRET_KEY`, etc. |
+
+### Deployment Pattern
+
+- **VPS**: Binary Lane (not Render)
+- **Database**: PostgreSQL on production, SQLite locally
+- **Deploy workflow**: `git pull` → restart backend → auto-migrations run automatically
+- **No manual Python commands needed** on VPS for standard migrations
+
+### Schema Change Checklist
+
+When adding a new column to any model:
+1. ✅ Add to `backend/models.py`
+2. ✅ Add to `backend/schemas.py` (if exposed via API)
+3. ✅ Add to `backend/auto_migrate.py` (for automatic deployment)
+4. ✅ Commit and push to GitHub
+5. ✅ On VPS: `git pull` and restart backend
+
+### Common Pitfalls
+
+- ⚠️ **Don't commit `.db` files** - They're gitignored but may be tracked from old commits
+- ⚠️ **SQLite vs PostgreSQL** - Local dev uses SQLite, production uses PostgreSQL
+- ⚠️ **Auto-migrate only handles ADD COLUMN** - Complex migrations need manual scripts
+
+---
+
 ## High-Level Summary
 
 **Principal Finance** is a comprehensive personal finance management application built for Australian users. It enables transaction tracking, budget management, net worth monitoring, investment portfolio tracking, and AI-powered financial insights. The platform supports multi-user household sharing with role-based access control, bank integration via Basiq.io, and a rich dashboard with customizable widgets.
@@ -23,7 +62,7 @@
 | **Routing** | react-router-dom v7 | Client-side navigation |
 | **Styling** | Tailwind CSS v4 | Utility-first CSS |
 | **Auth** | JWT + Refresh Tokens | Stateless authentication |
-| **Deployment** | Docker + Render | Containerized hosting |
+| **Deployment** | Docker + Binary Lane VPS | Containerized hosting |
 | **Error Monitoring** | Sentry | Production error tracking |
 
 ---
@@ -40,13 +79,14 @@
 | `backend/schemas.py` | Pydantic request/response schemas |
 | `frontend/` | React application - UI components and pages |
 | `frontend/src/pages/` | Page-level components (26 pages) |
-| `frontend/src/components/` | Reusable UI components (61 components) |
+| `frontend/src/components/` | Reusable UI components (62 components in 5 subdirs) |
+| `frontend/src/components/widgets/` | Dashboard widget components (14 widgets) |
+| `frontend/src/components/settings/` | Settings tab components (10 components) |
 | `frontend/src/context/` | React context providers (Auth, Theme, Toast, Notification) |
 | `frontend/src/services/` | API client (Axios wrapper) |
-| `frontend/src/hooks/` | Custom React hooks |
-| `frontend/src/widgets/` | Dashboard widget components |
+| `frontend/src/hooks/` | Custom React hooks (2 hooks) |
 | `scripts/` | Utility scripts for migrations, testing, deployment |
-| `tests/` | Backend test suite (pytest, 68+ tests) |
+| `tests/` | Backend test suite (pytest, 23 test files) |
 | `.github/` | CI/CD workflows |
 | `docs/` | Project documentation |
 
@@ -164,8 +204,16 @@ erDiagram
 
 ---
 
-## Recent Bug Fixes
-
+## Recent Changes & Fixes
+- **Transactions:**
+  - Added "Create & Add Another" button (Frontend).
+  - Added "Manual Transaction" entry modal.
+  - Fixed Inline Date Edit bug (Backend Schema update).
+  - Widened Transaction table to 95% viewport width.
+- **Subscriptions:**
+  - **Shared Subscriptions:** Added `parent_id` (Self-referential FK) to link reimbursements to expenses.
+  - Added "Net Cost" calculation for grouped subscriptions.
+  - Fixed 500 Error (Missing column migration).
 - **Dashboard Budget Fixes:**
   - Standardized month difference calculation to be robust against timezone shifts (fixing budget doubling).
   - Explicitly filtered out transfer/investment categories in Dashboard widgets.
@@ -192,7 +240,7 @@ erDiagram
 | `frontend/src/components/RulesSection.jsx` | ~900 | Drag-drop rule ordering, preview matching, complex form state, multi-condition rules. |
 | `backend/routers/auth.py` | ~1,100 | MFA flow, password reset, email verification, session management, Google OAuth. |
 | `frontend/src/pages/Subscriptions.jsx` | ~750 | Recurring detection, manual entries, bucket mapping, calendar visualization. |
-| `backend/models.py` | ~437 | All 27+ SQLAlchemy models. Central schema definition. |
+| `backend/models.py` | ~441 | All 27+ SQLAlchemy models. Central schema definition. |
 | `backend/schemas.py` | ~450 | All Pydantic validation schemas. Breaking changes affect API contracts. |
 
 ---
