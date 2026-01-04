@@ -673,7 +673,8 @@ def get_suggested_subscriptions(
                     "annual_cost": avg_amount * (365/nom_interval),
                     "next_due": next_due,
                     "confidence": confidence,
-                    "last_payment_date": last_date
+                    "last_payment_date": last_date,
+                    "bucket_id": items[-1].bucket_id  # Inherit category from most recent transaction
                 })
 
     # Pass 1: Expenses

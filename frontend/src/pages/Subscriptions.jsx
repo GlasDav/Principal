@@ -272,7 +272,8 @@ export default function Subscriptions() {
             next_due_date: new Date(sub.next_due).toISOString().split('T')[0],
             description_keyword: sub.description_keyword,
             is_active: true,
-            type: "Expense"
+            type: sub.type || "Expense",
+            bucket_id: sub.bucket_id || null  // Inherit category from transaction
         });
     };
 
@@ -309,6 +310,25 @@ export default function Subscriptions() {
             // For leaf categories (no children), render as plain option
             return <option key={parent.id} value={parent.id} className="dark:bg-slate-800 dark:text-white text-slate-900">{parent.name}</option>;
         });
+    };
+
+    // Helper to find bucket name in hierarchical tree structure
+    const findBucketName = (bucketId) => {
+        if (!bucketId || !buckets) return null;
+
+        for (const parent of buckets) {
+            if (parent.id === bucketId) return parent.name;
+            if (parent.children) {
+                const child = parent.children.find(c => c.id === bucketId);
+                if (child) return child.name;
+            }
+        }
+        return null;
+    };
+
+    // Helper for formatting currency with thousands separators
+    const formatCurrency = (amount, decimals = 2) => {
+        return amount.toLocaleString('en-AU', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     };
 
     const totalMonthly = active.reduce((sum, sub) => {
@@ -497,7 +517,7 @@ export default function Subscriptions() {
                         </div>
                         <div>
                             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Net Monthly Cost</p>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">${totalMonthly.toFixed(2)}</h3>
+                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">${formatCurrency(totalMonthly)}</h3>
                         </div>
                     </div>
                 </div>
@@ -508,7 +528,7 @@ export default function Subscriptions() {
                         </div>
                         <div>
                             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Net Annual Projection</p>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">${totalAnnual.toFixed(2)}</h3>
+                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">${formatCurrency(totalAnnual)}</h3>
                         </div>
                     </div>
                 </div>
@@ -565,7 +585,7 @@ export default function Subscriptions() {
                                                         </div>
                                                         {sub.bucket_id && (
                                                             <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                                                                {buckets.find(b => b.id === sub.bucket_id)?.name || "Unknown Category"}
+                                                                {findBucketName(sub.bucket_id) || "Unknown Category"}
                                                             </div>
                                                         )}
                                                     </div>
@@ -575,15 +595,15 @@ export default function Subscriptions() {
                                                         {sub.children && sub.children.length > 0 ? (
                                                             <>
                                                                 <div className="text-sm text-slate-400 line-through decoration-slate-400">
-                                                                    ${sub.amount.toFixed(2)}
+                                                                    ${formatCurrency(sub.amount)}
                                                                 </div>
                                                                 <div className="text-lg font-bold text-slate-900 dark:text-white">
-                                                                    ${sub.netAmount.toFixed(2)} <span className="text-xs font-normal text-slate-500">net</span>
+                                                                    ${formatCurrency(sub.netAmount)} <span className="text-xs font-normal text-slate-500">net</span>
                                                                 </div>
                                                             </>
                                                         ) : (
                                                             <div className={`text-lg font-bold ${sub.type === 'Income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
-                                                                {sub.type === 'Income' ? '+' : ''}${sub.amount.toFixed(2)}
+                                                                {sub.type === 'Income' ? '+' : ''}${formatCurrency(sub.amount)}
                                                             </div>
                                                         )}
                                                     </div>
@@ -746,7 +766,7 @@ export default function Subscriptions() {
                                                             </div>
                                                             <div className="flex items-center gap-4">
                                                                 <div className={`text-sm font-bold ${child.type === 'Income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600'}`}>
-                                                                    {child.type === 'Income' ? '+' : ''}${child.amount.toFixed(2)}
+                                                                    {child.type === 'Income' ? '+' : ''}${formatCurrency(child.amount)}
                                                                 </div>
                                                                 <div className="flex gap-1 opacity-0 group-hover/child:opacity-100 transition-opacity">
                                                                     <button
@@ -801,7 +821,7 @@ export default function Subscriptions() {
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                     <div className="text-right">
-                                                        <div className="text-lg font-bold text-slate-900 dark:text-white">${sub.amount.toFixed(2)}</div>
+                                                        <div className="text-lg font-bold text-slate-900 dark:text-white">${formatCurrency(sub.amount)}</div>
                                                         <div className="text-xs text-slate-400">{sub.confidence} confidence</div>
                                                     </div>
                                                     <button
