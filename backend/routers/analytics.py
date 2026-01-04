@@ -211,6 +211,8 @@ def get_dashboard_data(
             "icon": b.icon_name,
             "group": b.group,
             "is_rollover": b.is_rollover,
+            "is_transfer": b.is_transfer,  # Required for frontend filtering
+            "is_investment": b.is_investment,  # Required for frontend filtering
             "parent_id": b.parent_id,  # Include parent_id for hierarchy filtering
             "is_parent": is_parent,  # True if this bucket has child categories
             "limit": limit,
