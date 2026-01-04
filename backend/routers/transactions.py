@@ -20,6 +20,7 @@ def get_transactions(
     year: Optional[int] = None,
     search: Optional[str] = None,
     spender: Optional[str] = None,
+    assigned_to: Optional[str] = None, # "ANY" for all assigned, or specific name
     min_amount: Optional[float] = None,
     max_amount: Optional[float] = None,
     sort_by: Optional[str] = Query(None, regex="^(date|amount|description)$"),
@@ -44,6 +45,12 @@ def get_transactions(
     
     if spender:
         query = query.filter(models.Transaction.spender == spender)
+
+    if assigned_to:
+        if assigned_to == "ANY":
+            query = query.filter(models.Transaction.assigned_to.isnot(None), models.Transaction.assigned_to != '')
+        else:
+            query = query.filter(models.Transaction.assigned_to == assigned_to)
         
     if verified is not None:
         query = query.filter(models.Transaction.is_verified == verified)

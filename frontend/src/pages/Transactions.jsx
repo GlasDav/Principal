@@ -43,6 +43,7 @@ export default function Transactions() {
     // Filters
     const [categoryFilter, setCategoryFilter] = useState(bucketIdParam ? parseInt(bucketIdParam) : null);
     const [spenderFilter, setSpenderFilter] = useState(null);
+    const [assignedToFilter, setAssignedToFilter] = useState(null); // 'ANY' or specific name
     const [sortBy, setSortBy] = useState("date");
     const [sortDir, setSortDir] = useState("desc");
 
@@ -55,12 +56,13 @@ export default function Transactions() {
 
     // Fetch Transactions with filters
     const { data: transactionData, isLoading } = useQuery({
-        queryKey: ['transactions', debouncedSearch, categoryFilter, spenderFilter, monthParam, yearParam, sortBy, sortDir],
+        queryKey: ['transactions', debouncedSearch, categoryFilter, spenderFilter, assignedToFilter, monthParam, yearParam, sortBy, sortDir],
         queryFn: async () => {
             const params = { limit: 500 }; // Increase limit for better search coverage
             if (debouncedSearch) params.search = debouncedSearch;
             if (categoryFilter) params.bucket_id = categoryFilter;
             if (spenderFilter) params.spender = spenderFilter;
+            if (assignedToFilter) params.assigned_to = assignedToFilter;
             if (monthParam) params.month = monthParam;
             if (yearParam) params.year = yearParam;
             if (sortBy) params.sort_by = sortBy;
@@ -194,13 +196,14 @@ export default function Transactions() {
     };
 
     // Active filters count
-    const activeFiltersCount = [categoryFilter, spenderFilter, debouncedSearch].filter(Boolean).length;
+    const activeFiltersCount = [categoryFilter, spenderFilter, assignedToFilter, debouncedSearch].filter(Boolean).length;
 
     // Clear all filters
     const clearAllFilters = () => {
         setSearch("");
         setCategoryFilter(null);
         setSpenderFilter(null);
+        setAssignedToFilter(null);
         setSearchParams({});
     };
 
@@ -319,6 +322,14 @@ export default function Transactions() {
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
+                    {/* Import Button */}
+                    <Link to="/data-management">
+                        <button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition shadow-sm hover:shadow active:scale-95">
+                            <UploadCloud size={18} />
+                            <span>Import Data</span>
+                        </button>
+                    </Link>
+
                     {/* Delete All Button - only show when transactions exist */}
                     {transactions.length > 0 && selectedIds.size === 0 && (
                         <button
@@ -369,6 +380,17 @@ export default function Transactions() {
                             className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 w-64"
                         />
                     </div>
+                    <button
+                        onClick={() => setAssignedToFilter(assignedToFilter === 'ANY' ? null : 'ANY')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${assignedToFilter === 'ANY'
+                                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                            }`}
+                        title="Show transactions assigned for review"
+                    >
+                        <UserCheck size={18} />
+                        <span>Review Queue</span>
+                    </button>
                 </div>
             </header>
 
@@ -407,11 +429,7 @@ export default function Transactions() {
                         description="Import your bank statements to start tracking your spending. We support CSV files and PDF statements from most major banks."
                         actionText="Import Data"
                         actionLink="/data-management"
-                        secondaryAction={
-                            <Button variant="outline" onClick={() => alert("Tip: Use the + button in the bottom right to add transactions manually.")}>
-                                Manually Add
-                            </Button>
-                        }
+                        secondaryAction={null}
                     />
                 </div>
             ) : (
@@ -691,7 +709,7 @@ export default function Transactions() {
                                                 />
                                             ) : (
                                                 <span className={`${txn.amount < 0 ? 'text-slate-900 dark:text-white' : 'text-green-600'} hover:underline decoration-dashed decoration-slate-300 underline-offset-4`}>
-                                                    {txn.amount.toFixed(2)}
+                                                    ${Math.abs(txn.amount).toFixed(2)}
                                                 </span>
                                             )}
                                         </td>
