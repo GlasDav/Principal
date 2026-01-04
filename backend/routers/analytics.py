@@ -205,8 +205,9 @@ def get_dashboard_data(
         limit = base_limit * delta_months
         
         # Add Rollover if applicable
-        if b.id in rollover_map:
-             limit += rollover_map[b.id]
+        # User request: Remove rollover from budget total to keep it "clean"
+        # if b.id in rollover_map:
+        #      limit += rollover_map[b.id]
         
         if limit > 0:
             percent = (spent / limit) * 100
