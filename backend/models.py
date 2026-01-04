@@ -225,9 +225,11 @@ class Subscription(Base):
     is_active = Column(Boolean, default=True)
     description_keyword = Column(String, nullable=True) # Text to match in transactions
     bucket_id = Column(Integer, ForeignKey("budget_buckets.id"), nullable=True)
+    parent_id = Column(Integer, ForeignKey("subscriptions.id"), nullable=True)
     
     user = relationship("User") 
     bucket = relationship("BudgetBucket")
+    parent = relationship("Subscription", remote_side=[id], backref="children")
 class TaxSettings(Base):
     __tablename__ = "tax_settings"
     

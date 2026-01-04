@@ -184,6 +184,7 @@ class TransactionConfirm(BaseModel):
         return sanitize_text(v, max_length=500) if v else None
 
 class TransactionUpdate(BaseModel):
+    date: Optional[datetime] = None
     bucket_id: Optional[int] = None
     is_verified: Optional[bool] = None
     description: Optional[str] = None
@@ -337,6 +338,7 @@ class SubscriptionBase(BaseModel):
     is_active: bool = True
     description_keyword: Optional[str] = None
     bucket_id: Optional[int] = None
+    parent_id: Optional[int] = None
 
 class SubscriptionCreate(SubscriptionBase):
     pass
@@ -350,6 +352,7 @@ class SubscriptionUpdate(BaseModel):
     is_active: Optional[bool] = None
     description_keyword: Optional[str] = None
     bucket_id: Optional[int] = None
+    parent_id: Optional[int] = None
 
 class Subscription(SubscriptionBase):
     id: int

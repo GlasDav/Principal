@@ -142,8 +142,8 @@ export default function Subscriptions() {
     const [newFreq, setNewFreq] = useState("Monthly");
     const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
     const [newBucketId, setNewBucketId] = useState("");
-
     const [newType, setNewType] = useState("Expense"); // 'Expense' | 'Income'
+    const [newParentId, setNewParentId] = useState(""); // For linking shared subs
 
     // Data
     const { data: buckets = [] } = useQuery({ queryKey: ['buckets'], queryFn: api.getBuckets });
@@ -156,6 +156,43 @@ export default function Subscriptions() {
         queryKey: ['suggestedSubscriptions'],
         queryFn: api.getSuggestedSubscriptions
     });
+
+    // Grouping Logic for Shared Subscriptions
+    const groupedActive = React.useMemo(() => {
+        if (!active.length) return [];
+
+        const groups = {};
+        const orphans = [];
+        const children = [];
+
+        // 1. Identify Parents and Children
+        active.forEach(sub => {
+            if (sub.parent_id) {
+                children.push(sub);
+            } else {
+                groups[sub.id] = { ...sub, children: [], netAmount: sub.amount };
+            }
+        });
+
+        // 2. Attach Children
+        children.forEach(sub => {
+            if (groups[sub.parent_id]) {
+                groups[sub.parent_id].children.push(sub);
+                // Calculate Net Amount: Expense (+) - Income (+) = Net
+                // If child is Income (reimbursement), subtract it.
+                if (sub.type === 'Income') {
+                    groups[sub.parent_id].netAmount -= sub.amount;
+                } else {
+                    // If child is expense (add-on), add it
+                    groups[sub.parent_id].netAmount += sub.amount;
+                }
+            } else {
+                orphans.push(sub);
+            }
+        });
+
+        return [...Object.values(groups), ...orphans];
+    }, [active]);
 
     // Mutations
     const createMutation = useMutation({
@@ -191,6 +228,7 @@ export default function Subscriptions() {
         setNewDate(new Date().toISOString().split('T')[0]);
         setNewBucketId("");
         setNewType("Expense");
+        setNewParentId("");
     };
 
     const handleEdit = (sub) => {
@@ -198,9 +236,10 @@ export default function Subscriptions() {
         setNewName(sub.name);
         setNewAmount(parseFloat(sub.amount).toFixed(2));
         setNewFreq(sub.frequency);
-        setNewDate(new Date(sub.next_due_date).toISOString().split('T')[0]); // Ensure date format
+        setNewDate(new Date(sub.next_due_date).toISOString().split('T')[0]);
         setNewBucketId(sub.bucket_id || "");
         setNewType(sub.type || "Expense");
+        setNewParentId(sub.parent_id || "");
         setIsFormOpen(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -214,7 +253,8 @@ export default function Subscriptions() {
             next_due_date: newDate,
             is_active: true,
             bucket_id: newBucketId ? parseInt(newBucketId) : null,
-            type: newType
+            type: newType,
+            parent_id: newParentId ? parseInt(newParentId) : null
         };
 
         if (editingId) {
@@ -230,9 +270,9 @@ export default function Subscriptions() {
             amount: sub.amount,
             frequency: sub.frequency,
             next_due_date: new Date(sub.next_due).toISOString().split('T')[0],
-            description_keyword: sub.description_keyword, // Preserve original for future matching
+            description_keyword: sub.description_keyword,
             is_active: true,
-            type: "Expense" // Default to expense for suggestions
+            type: "Expense"
         });
     };
 
@@ -393,6 +433,25 @@ export default function Subscriptions() {
                             <Save size={20} />
                         </button>
                     </form>
+                    {newType === 'Income' && (
+                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                            <label className="block text-xs font-medium text-slate-500 mb-1">
+                                Link to Expense (Optional) - <span className="text-xs font-normal text-slate-400">Is this a reimbursement for another bill?</span>
+                            </label>
+                            <select
+                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2"
+                                value={newParentId}
+                                onChange={(e) => setNewParentId(e.target.value)}
+                            >
+                                <option value="">No Parent (Standalone Income)</option>
+                                {active.filter(s => s.type === 'Expense' && s.id !== editingId).map(s => (
+                                    <option key={s.id} value={s.id}>
+                                        {s.name} (${s.amount.toFixed(2)})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -442,57 +501,123 @@ export default function Subscriptions() {
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Active Subscriptions</h2>
                             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                                 <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                                    {active.length === 0 ? (
+                                    {groupedActive.length === 0 ? (
                                         <div className="p-8 text-center text-slate-500">
                                             No active subscriptions. Add one manually or approve a suggestion below.
                                         </div>
-                                    ) : active.map((sub) => (
-                                        <div key={sub.id} className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition group">
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg ${sub.type === 'Income' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30' : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30'}`}>
-                                                    {sub.name.charAt(0)}
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-bold text-slate-900 dark:text-white">{sub.name}</h3>
-                                                    <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
-                                                        <span className="flex items-center gap-1">
-                                                            <CheckCircle size={14} className={sub.type === 'Income' ? "text-emerald-500" : "text-indigo-500"} />
-                                                            {sub.frequency}
-                                                        </span>
-                                                        <span>•</span>
-                                                        <span>Next: {new Date(sub.next_due_date).toLocaleDateString('en-AU')}</span>
+                                    ) : groupedActive.map((sub) => (
+                                        <div key={sub.id} className="group border-b border-slate-100 dark:border-slate-700 last:border-0">
+                                            {/* Main Row */}
+                                            <div className="p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg ${sub.type === 'Income' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30' : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30'}`}>
+                                                        {sub.name.charAt(0)}
                                                     </div>
-                                                    {sub.bucket_id && (
-                                                        <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                                                            {buckets.find(b => b.id === sub.bucket_id)?.name || "Unknown Category"}
+                                                    <div>
+                                                        <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                                            {sub.name}
+                                                            {sub.children && sub.children.length > 0 && (
+                                                                <span className="text-xs font-normal px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 rounded-full">
+                                                                    Shared Group
+                                                                </span>
+                                                            )}
+                                                        </h3>
+                                                        <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
+                                                            <span className="flex items-center gap-1">
+                                                                <CheckCircle size={14} className={sub.type === 'Income' ? "text-emerald-500" : "text-indigo-500"} />
+                                                                {sub.frequency}
+                                                            </span>
+                                                            <span>•</span>
+                                                            <span>Next: {new Date(sub.next_due_date).toLocaleDateString('en-AU')}</span>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-6">
-                                                <div className="text-right">
-                                                    <div className={`text-lg font-bold ${sub.type === 'Income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
-                                                        {sub.type === 'Income' ? '+' : ''}${sub.amount.toFixed(2)}
+                                                        {sub.bucket_id && (
+                                                            <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                                                {buckets.find(b => b.id === sub.bucket_id)?.name || "Unknown Category"}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={() => handleEdit(sub)}
-                                                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
-                                                        title="Edit"
-                                                    >
-                                                        <Edit2 size={18} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => deleteMutation.mutate(sub.id)}
-                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
-                                                        disabled={deleteMutation.isPending}
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
+                                                <div className="flex items-center gap-6">
+                                                    <div className="text-right">
+                                                        {sub.children && sub.children.length > 0 ? (
+                                                            <>
+                                                                <div className="text-sm text-slate-400 line-through decoration-slate-400">
+                                                                    ${sub.amount.toFixed(2)}
+                                                                </div>
+                                                                <div className="text-lg font-bold text-slate-900 dark:text-white">
+                                                                    ${sub.netAmount.toFixed(2)} <span className="text-xs font-normal text-slate-500">net</span>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <div className={`text-lg font-bold ${sub.type === 'Income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
+                                                                {sub.type === 'Income' ? '+' : ''}${sub.amount.toFixed(2)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => handleEdit(sub)}
+                                                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
+                                                            title="Edit"
+                                                        >
+                                                            <Edit2 size={18} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteMutation.mutate(sub.id)}
+                                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                                                            disabled={deleteMutation.isPending}
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
+
+                                            {/* Children Rows */}
+                                            {sub.children && sub.children.length > 0 && (
+                                                <div className="bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700 pl-20 pr-6 py-3">
+                                                    {sub.children.map(child => (
+                                                        <div key={child.id} className="flex items-center justify-between py-2 group/child">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${child.type === 'Income' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50' : 'bg-slate-200 text-slate-600'}`}>
+                                                                    {child.name.charAt(0)}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-medium text-sm text-slate-700 dark:text-slate-300">
+                                                                        {child.name}
+                                                                        <span className="ml-2 text-xs text-slate-400 font-normal">
+                                                                            ({child.type === 'Income' ? 'Reimbursement' : 'Shared Cost'})
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="text-xs text-slate-400">
+                                                                        {child.frequency} • {new Date(child.next_due_date).toLocaleDateString()}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-4">
+                                                                <div className={`text-sm font-bold ${child.type === 'Income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600'}`}>
+                                                                    {child.type === 'Income' ? '+' : ''}${child.amount.toFixed(2)}
+                                                                </div>
+                                                                <div className="flex gap-1 opacity-0 group-hover/child:opacity-100 transition-opacity">
+                                                                    <button
+                                                                        onClick={() => handleEdit(child)}
+                                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 rounded transition"
+                                                                    >
+                                                                        <Edit2 size={14} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => deleteMutation.mutate(child.id)}
+                                                                        className="p-1.5 text-slate-400 hover:text-red-500 rounded transition"
+                                                                    >
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

@@ -138,6 +138,8 @@ def update_transaction(
     if not txn:
         raise HTTPException(status_code=404, detail="Transaction not found")
         
+    if update.date is not None:
+        txn.date = update.date
     if update.bucket_id is not None:
         txn.bucket_id = update.bucket_id
     if update.is_verified is not None:

@@ -116,8 +116,13 @@ export default function Transactions() {
 
             await api.put(`/transactions/${id}`, payload);
         },
-        onSuccess: () => {
+        onSuccess: (data, variables) => {
+            console.log('Update success:', variables);
             queryClient.invalidateQueries(['transactions']);
+        },
+        onError: (error) => {
+            console.error('Update failed:', error);
+            alert(`Update failed: ${error.message}`);
         }
     });
 

@@ -512,11 +512,29 @@ def create_subscription(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    db_sub = models.Subscription(**sub.dict(), user_id=current_user.id)
+    # Verify parent exists if provided
+    if sub.parent_id:
+        parent = db.query(models.Subscription).filter(models.Subscription.id == sub.parent_id).first()
+        if not parent:
+            raise HTTPException(status_code=400, detail="Parent subscription not found")
+
+    db_sub = models.Subscription(
+        user_id=current_user.id,
+        name=sub.name,
+        amount=sub.amount,
+        type=sub.type,
+        frequency=sub.frequency,
+        next_due_date=sub.next_due_date,
+        is_active=sub.is_active,
+        description_keyword=sub.description_keyword,
+        bucket_id=sub.bucket_id,
+        parent_id=sub.parent_id
+    )
     db.add(db_sub)
     db.commit()
     db.refresh(db_sub)
     return db_sub
+
 
 @router.put("/subscriptions/{sub_id}", response_model=schemas.Subscription)
 def update_subscription(
@@ -525,11 +543,25 @@ def update_subscription(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    db_sub = db.query(models.Subscription).filter(models.Subscription.id == sub_id, models.Subscription.user_id == current_user.id).first()
+    db_sub = db.query(models.Subscription).filter(
+        models.Subscription.id == sub_id,
+        models.Subscription.user_id == current_user.id
+    ).first()
+    
     if not db_sub:
         raise HTTPException(status_code=404, detail="Subscription not found")
         
-    for key, value in sub_update.dict(exclude_unset=True).items():
+    update_data = sub_update.dict(exclude_unset=True)
+    
+    # Verify parent validity
+    if "parent_id" in update_data and update_data["parent_id"] is not None:
+        if update_data["parent_id"] == sub_id:
+             raise HTTPException(status_code=400, detail="Subscription cannot be its own parent")
+        parent = db.query(models.Subscription).filter(models.Subscription.id == update_data["parent_id"]).first()
+        if not parent:
+             raise HTTPException(status_code=400, detail="Parent subscription not found")
+        
+    for key, value in update_data.items():
         setattr(db_sub, key, value)
         
     db.commit()
@@ -1269,11 +1301,11 @@ def get_cashflow_projection(
                 # Assume amount is expense (positive value). Subtract it.
                 # If negative, it adds (income). But typically subs are expenses.
                 # TODO: add type to Subscription for distinct income. For now, assume expense.
-                if sub.amount > 0:
-                    daily_flow -= sub.amount
+                if sub.type == "Income":
+                     daily_flow += sub.amount
                 else:
-                    daily_flow -= sub.amount # Add negative (income) logic if user enters negative numbers?
-                    
+                     daily_flow -= sub.amount # Default to Expense
+
         running_balance += daily_flow
         
         projection.append({

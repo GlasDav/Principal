@@ -33,6 +33,8 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
         }
     }, [isOpen]);
 
+    const [shouldClose, setShouldClose] = useState(true);
+
     const createMutation = useMutation({
         mutationFn: async (data) => {
             const absAmount = Math.abs(parseFloat(data.amount));
@@ -48,7 +50,21 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['transactions']);
-            onClose();
+            if (shouldClose) {
+                onClose();
+            } else {
+                // Reset form but keep Date and Spender for convenience
+                setFormData(prev => ({
+                    ...prev,
+                    description: '',
+                    amount: '',
+                    notes: '',
+                    // Keep date, bucket, spender, type, verified status
+                }));
+                // Focus description input if possible (ref would be better but this is quick)
+                const descInput = document.querySelector('input[placeholder="e.g. Woolworths Groceries"]');
+                if (descInput) descInput.focus();
+            }
         },
         onError: (err) => {
             console.error("Failed to create transaction:", err);
@@ -56,8 +72,10 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
         }
     });
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const handleSubmit = (e, closeOnSuccess = true) => {
+        if (e) e.preventDefault();
+        setShouldClose(closeOnSuccess);
+
         if (!formData.description || !formData.amount) {
             alert("Description and Amount are required.");
             return;
@@ -230,14 +248,24 @@ export default function CreateTransactionModal({ isOpen, onClose, members, bucke
                         >
                             Cancel
                         </button>
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            isLoading={createMutation.isPending}
-                            icon={CheckCircle}
-                        >
-                            Create Transaction
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                isLoading={createMutation.isPending}
+                                onClick={() => handleSubmit(null, false)}
+                            >
+                                Create & Add Another
+                            </Button>
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                isLoading={createMutation.isPending}
+                                icon={CheckCircle}
+                            >
+                                Create Transaction
+                            </Button>
+                        </div>
                     </div>
                 </form>
             </div>
