@@ -70,5 +70,24 @@ def run_migrations(engine: Engine):
                         except Exception as e:
                             logger.error(f"Failed to add column {col_name}: {e}")
 
+        # --- subscriptions migrations ---
+        if "subscriptions" in table_names:
+            existing_columns = [c["name"] for c in inspector.get_columns("subscriptions")]
+            
+            columns_to_add = [
+                ("bucket_id", "INTEGER"),
+                ("parent_id", "INTEGER"),
+            ]
+            
+            with engine.connect() as conn:
+                for col_name, col_def in columns_to_add:
+                    if col_name not in existing_columns:
+                        logger.info(f"Auto-Migration: Adding column '{col_name}' to 'subscriptions' table...")
+                        try:
+                             conn.execute(text(f"ALTER TABLE subscriptions ADD COLUMN {col_name} {col_def}"))
+                             conn.commit()
+                        except Exception as e:
+                            logger.error(f"Failed to add column {col_name}: {e}")
+
     except Exception as e:
         logger.error(f"Migration check failed: {e}")
