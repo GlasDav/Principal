@@ -240,13 +240,18 @@ def get_dashboard_data(
     ).all()
     
     subs_by_bucket = {}
-    for sub in active_subs:
-        # Check if due date is in range
-        # Use next_due_date. 
-        # If view is "This Month", and next_due_date is in it, it's upcoming.
-        if sub.next_due_date >= s_date.date() and sub.next_due_date <= e_date.date():
-            subs_by_bucket.setdefault(sub.bucket_id, 0.0)
-            subs_by_bucket[sub.bucket_id] += sub.amount
+    
+    # Only calculate upcoming if the view includes the future (or today)
+    # If looking at "Last Month" (end_date < today), upcoming is irrelevant.
+    today = datetime.now().date()
+    if e_date.date() >= today:
+        for sub in active_subs:
+            # Check if due date is in range
+            # Use next_due_date. 
+            # If view is "This Month", and next_due_date is in it, it's upcoming.
+            if sub.next_due_date >= s_date.date() and sub.next_due_date <= e_date.date():
+                subs_by_bucket.setdefault(sub.bucket_id, 0.0)
+                subs_by_bucket[sub.bucket_id] += sub.amount
             
     # Update final_buckets with upcoming data
     # We do this after the loop or inside if we moved the fetch up.
@@ -1368,6 +1373,12 @@ def get_budget_progress(
     # History start (N months back)
     history_start = (current_start - timedelta(days=months * 30)).replace(day=1)
     
+    # Calculate delta_months for scaling limits
+    # Robust calculation: Round days / 30 to get nearest month count
+    days_diff = (current_end - current_start).days + 1
+    delta_months = int(round(days_diff / 30.0))
+    delta_months = max(1, delta_months) # Ensure at least 1 month
+    
     # Fetch all buckets (tree structure flattened)
     buckets = db.query(models.BudgetBucket).filter(
         models.BudgetBucket.user_id == user.id,
@@ -1551,15 +1562,18 @@ def get_budget_progress(
         # If is_group_budget=False: Budget is sum of child limits (parent is just a container)
         if b.is_group_budget or getattr(b, 'is_shared', False) or not children:
             # Parent-level budget OR Shared budget OR no children - use parent's limits only
-            limit = sum(l.amount for l in b.limits) if b.limits else 0
+            base_limit = sum(l.amount for l in b.limits) if b.limits else 0
+            limit = base_limit * delta_months
         else:
             # Children have their own budgets - sum only child limits
             limit = 0
             for child in children:
-                limit += sum(l.amount for l in child.limits) if child.limits else 0
+                child_base = sum(l.amount for l in child.limits) if child.limits else 0
+                limit += (child_base * delta_months)
             # If children have no limits but parent does, fallback to parent
             if limit == 0:
-                limit = sum(l.amount for l in b.limits) if b.limits else 0
+                base_limit = sum(l.amount for l in b.limits) if b.limits else 0
+                limit = base_limit * delta_months
         
         # Calculate percentage
         if limit > 0:
@@ -1623,8 +1637,10 @@ def get_budget_progress(
             if member_name == "Joint":
                 continue
                 
-            # Get this member's aggregated limit
-            member_limit = combined_member_limits.get(member_name, 0)
+            # Get this member's aggregated limit (scaled)
+            member_base_limit = combined_member_limits.get(member_name, 0)
+            member_limit = member_base_limit * delta_months
+            
             if member_limit == 0:
                 # If no per-member limit, show as share of total limit
                 member_limit = limit / max(1, len(members)) if members else limit
@@ -1645,7 +1661,8 @@ def get_budget_progress(
         children_data = []
         for child in children:
             child_spent = bucket_spent.get(child.id, 0)
-            child_limit = sum(l.amount for l in child.limits) if child.limits else 0
+            child_base_limit = sum(l.amount for l in child.limits) if child.limits else 0
+            child_limit = child_base_limit * delta_months
             if child_spent > 0 or child_limit > 0:
                 children_data.append({
                     "id": child.id,
