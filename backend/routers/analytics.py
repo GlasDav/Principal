@@ -168,15 +168,15 @@ def get_dashboard_data(
     delta_months = int(round(days_diff / 30.0))
     delta_months = max(1, delta_months)
 
-    # Fetch all members to determine split for shared budgets
-    all_members = db.query(models.HouseholdMember).filter(models.HouseholdMember.user_id == user.id).all()
-    member_count = len(all_members) if all_members else 1
+
 
     # Resolve spender to member_id for limit filtering
     target_member_id = None
     if spender not in ["Combined", "Joint"]:
-        # Match by name from the fetched list to avoid extra query
-        member = next((m for m in all_members if m.name == spender), None)
+        member = db.query(models.HouseholdMember).filter(
+            models.HouseholdMember.user_id == user.id, 
+            models.HouseholdMember.name == spender
+        ).first()
         if member:
             target_member_id = member.id
 
@@ -189,11 +189,9 @@ def get_dashboard_data(
         if spender == "Combined":
             base_limit = sum(l.amount for l in b.limits)
         elif target_member_id is not None:
-            # Sum shared limits (split by member count) + this member's limits
-            # Shared limits (member_id is None) are divided by member_count to avoid double counting in sum
-            shared_portion = sum(l.amount for l in b.limits if l.member_id is None) / max(1, member_count)
-            personal_portion = sum(l.amount for l in b.limits if l.member_id == target_member_id)
-            base_limit = shared_portion + personal_portion
+            # Specific member: only their limits. 
+            # Per user request, we DO NOT split shared limits. Each user has their own defined budget.
+            base_limit = sum(l.amount for l in b.limits if l.member_id == target_member_id)
         else:
             # Unknown spender or "Joint" view (if exposed in future), fallback to shared limits only
             # If "Joint" is ever exposed, it should probably show full shared limits
@@ -1601,8 +1599,6 @@ def get_budget_progress(
                 else: # Specific member
                     if l.member_id == target_member_id:
                         total += l.amount
-                    elif l.member_id is None: # Shared limit - add split portion
-                        total += l.amount / member_count
             return total
 
         # Calculate limit based on is_group_budget flag
