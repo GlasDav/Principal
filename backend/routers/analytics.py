@@ -202,6 +202,9 @@ def get_dashboard_data(
         upcoming_recurring = 0.0
         # This is n+1 if we query inside loop. Let's pre-fetch subscriptions.
         
+        # Determine if this is a parent category (has children)
+        is_parent = len(children_map.get(b.id, [])) > 0
+        
         final_buckets.append({
             "id": b.id,
             "name": b.name,
@@ -209,6 +212,7 @@ def get_dashboard_data(
             "group": b.group,
             "is_rollover": b.is_rollover,
             "parent_id": b.parent_id,  # Include parent_id for hierarchy filtering
+            "is_parent": is_parent,  # True if this bucket has child categories
             "limit": limit,
             "spent": spent,
             "remaining": limit - spent,
