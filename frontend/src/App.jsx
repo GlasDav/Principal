@@ -144,6 +144,7 @@ function Layout() {
           <div className="mb-4">
             <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Money</div>
             <NavItem to="/transactions" icon={List}>Transactions</NavItem>
+            <NavItem to="/subscriptions" icon={CreditCard}>Subscriptions</NavItem>
             <NavItem to="/budget" icon={PiggyBank}>Budget</NavItem>
             <NavItem to="/investments" icon={Briefcase}>Investments</NavItem>
             <NavItem to="/net-worth" icon={LineChart}>Net Worth</NavItem>
@@ -243,7 +244,7 @@ function App() {
                     <Route path="/reports" element={<ReportsHub />} />
                     <Route path="/settings" element={<Settings />} />
                     {/* Legacy routes - redirect to consolidated pages */}
-                    <Route path="/subscriptions" element={<TransactionsHub />} />
+                    <Route path="/subscriptions" element={<Subscriptions />} />
                     <Route path="/review" element={<TransactionsHub />} />
                     <Route path="/calendar" element={<ReportsHub />} />
                     <Route path="/insights" element={<ReportsHub />} />

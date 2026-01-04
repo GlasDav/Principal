@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Calendar as CalendarIcon, TrendingUp, AlertCircle, CheckCircle, ChevronLeft, ChevronRight, Plus, Trash2, Save, Edit2, X } from 'lucide-react';
 import * as api from '../services/api';
+import { getBucketsTree } from '../services/api';
 
 const CalendarView = ({ subscriptions }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -146,7 +147,7 @@ export default function Subscriptions() {
     const [newParentId, setNewParentId] = useState(""); // For linking shared subs
 
     // Data
-    const { data: buckets = [] } = useQuery({ queryKey: ['buckets'], queryFn: api.getBuckets });
+    const { data: buckets = [] } = useQuery({ queryKey: ['bucketsTree'], queryFn: getBucketsTree });
     const { data: active = [], isLoading: loadingActive } = useQuery({
         queryKey: ['subscriptions'],
         queryFn: api.getSubscriptions
@@ -241,7 +242,6 @@ export default function Subscriptions() {
         setNewType(sub.type || "Expense");
         setNewParentId(sub.parent_id || "");
         setIsFormOpen(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleSubmit = (e) => {
@@ -273,6 +273,41 @@ export default function Subscriptions() {
             description_keyword: sub.description_keyword,
             is_active: true,
             type: "Expense"
+        });
+    };
+
+    // Helper to render hierarchical category options (matches Transactions page)
+    const renderCategoryOptions = (treeBuckets) => {
+        if (!treeBuckets || treeBuckets.length === 0) return null;
+
+        return treeBuckets.map(parent => {
+            // Skip the Income parent category itself but show its children
+            if (parent.name === 'Income' && parent.group === 'Income') {
+                if (parent.children && parent.children.length > 0) {
+                    return (
+                        <optgroup key={parent.id} label="Income" className="dark:bg-slate-800 dark:text-white text-slate-900">
+                            {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
+                                <option key={child.id} value={child.id} className="dark:bg-slate-800 dark:text-white text-slate-900">{child.name}</option>
+                            ))}
+                        </optgroup>
+                    );
+                }
+                return null;
+            }
+
+            // For parents with children, render as optgroup
+            if (parent.children && parent.children.length > 0) {
+                return (
+                    <optgroup key={parent.id} label={parent.name} className="dark:bg-slate-800 dark:text-white text-slate-900">
+                        {parent.children.sort((a, b) => a.name.localeCompare(b.name)).map(child => (
+                            <option key={child.id} value={child.id} className="dark:bg-slate-800 dark:text-white text-slate-900">{child.name}</option>
+                        ))}
+                    </optgroup>
+                );
+            }
+
+            // For leaf categories (no children), render as plain option
+            return <option key={parent.id} value={parent.id} className="dark:bg-slate-800 dark:text-white text-slate-900">{parent.name}</option>;
         });
     };
 
@@ -335,8 +370,8 @@ export default function Subscriptions() {
                 </div>
             </header>
 
-            {/* Add/Edit Form */}
-            {isFormOpen && (
+            {/* Add Form (only when adding new, not editing) */}
+            {isFormOpen && !editingId && (
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-indigo-100 dark:border-indigo-900 ring-4 ring-indigo-50 dark:ring-indigo-900/20">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -424,9 +459,7 @@ export default function Subscriptions() {
                                 onChange={(e) => setNewBucketId(e.target.value)}
                             >
                                 <option value="">Select Category...</option>
-                                {buckets.filter(b => !b.is_transfer && !b.is_investment).map(b => (
-                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                ))}
+                                {renderCategoryOptions(buckets)}
                             </select>
                         </div>
                         <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-lg">
@@ -573,6 +606,122 @@ export default function Subscriptions() {
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            {/* Inline Edit Form (appears below this row when editing) */}
+                                            {editingId === sub.id && (
+                                                <div className="bg-indigo-50/50 dark:bg-indigo-900/10 border-t border-indigo-100 dark:border-indigo-900/30 p-4">
+                                                    <form onSubmit={handleSubmit} className="space-y-4">
+                                                        <div className="flex justify-between items-center">
+                                                            <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Edit Subscription</h4>
+                                                            <div className="flex gap-2">
+                                                                <div className="flex p-0.5 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setNewType('Expense')}
+                                                                        className={`px-2 py-0.5 text-xs font-medium rounded transition ${newType === 'Expense'
+                                                                            ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
+                                                                            : 'text-slate-500 dark:text-slate-400'}`}
+                                                                    >
+                                                                        Expense
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setNewType('Income')}
+                                                                        className={`px-2 py-0.5 text-xs font-medium rounded transition ${newType === 'Income'
+                                                                            ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
+                                                                            : 'text-slate-500 dark:text-slate-400'}`}
+                                                                    >
+                                                                        Income
+                                                                    </button>
+                                                                </div>
+                                                                <button type="button" onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+                                                                    <X size={18} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Name</label>
+                                                                <input
+                                                                    type="text"
+                                                                    className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1.5 text-sm"
+                                                                    value={newName}
+                                                                    onChange={(e) => setNewName(e.target.value)}
+                                                                    required
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Amount</label>
+                                                                <div className="relative">
+                                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white pl-6 pr-2 py-1.5 text-sm"
+                                                                        value={newAmount}
+                                                                        onChange={(e) => setNewAmount(e.target.value)}
+                                                                        required
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Frequency</label>
+                                                                <select
+                                                                    className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1.5 text-sm"
+                                                                    value={newFreq}
+                                                                    onChange={(e) => setNewFreq(e.target.value)}
+                                                                >
+                                                                    <option value="Monthly">Monthly</option>
+                                                                    <option value="Weekly">Weekly</option>
+                                                                    <option value="Yearly">Yearly</option>
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Next Due</label>
+                                                                <input
+                                                                    type="date"
+                                                                    className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1.5 text-sm"
+                                                                    value={newDate}
+                                                                    onChange={(e) => setNewDate(e.target.value)}
+                                                                    required
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Category</label>
+                                                                <select
+                                                                    className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1.5 text-sm"
+                                                                    value={newBucketId}
+                                                                    onChange={(e) => setNewBucketId(e.target.value)}
+                                                                >
+                                                                    <option value="">Select...</option>
+                                                                    {renderCategoryOptions(buckets)}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        {newType === 'Income' && (
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-slate-500 mb-1">Link to Expense (Optional)</label>
+                                                                <select
+                                                                    className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1.5 text-sm"
+                                                                    value={newParentId}
+                                                                    onChange={(e) => setNewParentId(e.target.value)}
+                                                                >
+                                                                    <option value="">No Parent (Standalone Income)</option>
+                                                                    {active.filter(s => s.type === 'Expense' && s.id !== editingId).map(s => (
+                                                                        <option key={s.id} value={s.id}>{s.name} (${s.amount.toFixed(2)})</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                        )}
+                                                        <div className="flex justify-end">
+                                                            <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2">
+                                                                <Save size={16} />
+                                                                Save Changes
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            )}
 
                                             {/* Children Rows */}
                                             {sub.children && sub.children.length > 0 && (
