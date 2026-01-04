@@ -86,7 +86,10 @@ export default function Dashboard() {
         const start = new Date(now.getFullYear(), now.getMonth(), 1);
         const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-        if (type === "Last 3 Months") {
+        if (type === "Last Month") {
+            start.setMonth(now.getMonth() - 1);
+            end.setMonth(now.getMonth(), 0); // Last day of previous month
+        } else if (type === "Last 3 Months") {
             start.setMonth(now.getMonth() - 2);
         } else if (type === "Last 6 Months") {
             start.setMonth(now.getMonth() - 5);
@@ -231,6 +234,7 @@ export default function Dashboard() {
                         className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none cursor-pointer"
                     >
                         <option>This Month</option>
+                        <option>Last Month</option>
                         <option>Last 3 Months</option>
                         <option>Last 6 Months</option>
                         <option>Year to Date</option>
