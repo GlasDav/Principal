@@ -1146,6 +1146,7 @@ def get_sankey_data(
     # We need total_investments calculated BEFORE this block or access it.
     # Move Investment Calculation UP or do it here.
     
+    
     # Investment Logic - Query investment transactions separately
     investment_query = db.query(
         func.sum(models.Transaction.amount)
@@ -1162,18 +1163,26 @@ def get_sankey_data(
     
     investment_res = investment_query.first()
     total_investments = abs(investment_res[0] or 0.0)
+
+    # --- DEFICIT / SAVINGS LOGIC ---
+    # Balance Equation: Income + Deficit = Expenses + Investments + Savings
     
+    total_outflow = total_expenses + total_investments
     
-    # Combined Savings & Investments Logic
-    # 1. Net Savings (Cash) = Income - Expenses - Investments
-    net_savings = total_income - total_expenses - total_investments
+    # 1. Deficit Logic (Expenses > Income)
+    if total_outflow > total_income:
+        deficit = total_outflow - total_income
+        idx_deficit = get_node("Deficit (Savings Withdrawal)")
+        links.append({"source": idx_deficit, "target": idx_income, "value": deficit})
+        
+    # 2. Savings Logic (Income > Expenses)
+    net_savings = total_income - total_outflow
     
-    # 2. Total Investments calculated above
-    
-    combined_savings_total = net_savings + total_investments
-    
-    if combined_savings_total > 0:
+    if net_savings > 0 or total_investments > 0:
         # Parent Node: "Savings & Investments"
+        # Value is the sum of Cash Savings + Investments
+        combined_savings_total = max(0, net_savings) + total_investments
+        
         idx_combined = get_node("Savings & Investments")
         
         # Income -> "Savings & Investments"
