@@ -1397,11 +1397,26 @@ def get_budget_progress(
     child_buckets = [b for b in buckets if b.parent_id is not None]
     
     # Build parent -> children map for rollup
+    # EXTENSION: If a child has a different group than parent, AND parent is not is_group_budget,
+    # treat child as a top-level bucket (orphan) so it appears in the correct group (Needs/Wants)
     children_map = {}
+    orphaned_children = []
+    
     for child in child_buckets:
-        if child.parent_id not in children_map:
-            children_map[child.parent_id] = []
-        children_map[child.parent_id].append(child)
+        parent = bucket_map.get(child.parent_id)
+        if not parent: continue # Should not happen via FK
+        
+        # Check if child should be separated
+        # Condition: Different group AND Parent doesn't force a combined budget
+        if child.group != parent.group and not parent.is_group_budget:
+            orphaned_children.append(child)
+        else:
+            if child.parent_id not in children_map:
+                children_map[child.parent_id] = []
+            children_map[child.parent_id].append(child)
+            
+    # Add orphaned children to the main processing list (treated as parents/top-level)
+    parent_buckets.extend(orphaned_children)
     
     # Fetch household members for breakdown
     members = db.query(models.HouseholdMember).filter(
