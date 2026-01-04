@@ -27,6 +27,14 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
     const totalSpent = budgetCategories.reduce((sum, b) => sum + (b.spent || 0), 0);
     const totalUpcoming = budgetCategories.reduce((sum, b) => sum + (b.upcoming_recurring || 0), 0);
 
+    // DEBUG: Log to find where decimals are coming from in budget
+    console.log('BudgetSummaryWidget DEBUG:', {
+        totalBudget,
+        totalUpcoming,
+        categoriesWithDecimalLimits: budgetCategories.filter(b => b.limit % 1 !== 0).map(b => ({ name: b.name, limit: b.limit, upcoming: b.upcoming_recurring })),
+        allCategories: budgetCategories.map(b => ({ name: b.name, limit: b.limit, upcoming: b.upcoming_recurring }))
+    });
+
     // Percentages
     const percentSpent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
     const percentUpcoming = totalBudget > 0 ? (totalUpcoming / totalBudget) * 100 : 0;
