@@ -89,12 +89,12 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
                     setShowRollover(!showRollover);
                 }}
                 className={`absolute top-5 right-5 text-xs font-medium px-2 py-1 rounded-full transition-colors ${showRollover
-                        ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300'
-                        : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300'
+                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
                     }`}
-                title="Include accumulated savings (rollovers) in total budget"
+                title="Include accumulated unspent budget (rollovers) in total"
             >
-                {showRollover ? 'With Savings' : 'Monthly Only'}
+                {showRollover ? 'Include Rollovers' : 'Exclude Rollovers'}
             </button>
 
             <Link to="/budget" className="block">
