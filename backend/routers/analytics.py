@@ -1538,7 +1538,9 @@ def get_budget_progress(
     for bid, spndr, total in current_results:
         if bid is None:
             continue
-        amt = abs(total) if total else 0
+        # Fix: Use inverted sign (-total) so expenses (negative) become positive 'spent'
+        # and refunds (positive) become negative 'spent' (reducing the total).
+        amt = -total if total else 0
         bucket_spent[bid] = bucket_spent.get(bid, 0) + amt
         
         # Map raw spender to actual member name BEFORE aggregating
