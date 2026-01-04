@@ -317,7 +317,7 @@ export default function Transactions() {
     };
 
     return (
-        <div className="max-w-[1600px] mx-auto p-8 space-y-8" >
+        <div className="w-full max-w-[95%] mx-auto p-8 space-y-8" >
             <header className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Transactions</h1>
