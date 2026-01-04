@@ -43,7 +43,6 @@ export default function Transactions() {
     // Filters
     const [categoryFilter, setCategoryFilter] = useState(bucketIdParam ? parseInt(bucketIdParam) : null);
     const [spenderFilter, setSpenderFilter] = useState(null);
-    const [assignedToFilter, setAssignedToFilter] = useState(null); // 'ANY' or specific name
     const [sortBy, setSortBy] = useState("date");
     const [sortDir, setSortDir] = useState("desc");
 
@@ -56,13 +55,12 @@ export default function Transactions() {
 
     // Fetch Transactions with filters
     const { data: transactionData, isLoading } = useQuery({
-        queryKey: ['transactions', debouncedSearch, categoryFilter, spenderFilter, assignedToFilter, monthParam, yearParam, sortBy, sortDir],
+        queryKey: ['transactions', debouncedSearch, categoryFilter, spenderFilter, monthParam, yearParam, sortBy, sortDir],
         queryFn: async () => {
             const params = { limit: 500 }; // Increase limit for better search coverage
             if (debouncedSearch) params.search = debouncedSearch;
             if (categoryFilter) params.bucket_id = categoryFilter;
             if (spenderFilter) params.spender = spenderFilter;
-            if (assignedToFilter) params.assigned_to = assignedToFilter;
             if (monthParam) params.month = monthParam;
             if (yearParam) params.year = yearParam;
             if (sortBy) params.sort_by = sortBy;
@@ -196,14 +194,13 @@ export default function Transactions() {
     };
 
     // Active filters count
-    const activeFiltersCount = [categoryFilter, spenderFilter, assignedToFilter, debouncedSearch].filter(Boolean).length;
+    const activeFiltersCount = [categoryFilter, spenderFilter, debouncedSearch].filter(Boolean).length;
 
     // Clear all filters
     const clearAllFilters = () => {
         setSearch("");
         setCategoryFilter(null);
         setSpenderFilter(null);
-        setAssignedToFilter(null);
         setSearchParams({});
     };
 
@@ -212,7 +209,7 @@ export default function Transactions() {
             className={`px-3 py-3 font-semibold text-sm text-slate-600 dark:text-slate-400 cursor-pointer hover:text-indigo-600 transition select-none ${className}`}
             onClick={() => handleSort(column)}
         >
-            <div className="flex items-center gap-1">
+            <div className={`flex items-center gap-1 ${className.includes('text-right') ? 'justify-end' : ''}`}>
                 {children}
                 {sortBy === column && (
                     sortDir === "asc" ? <ArrowUp size={14} className="text-indigo-500" /> : <ArrowDown size={14} className="text-indigo-500" />
@@ -380,17 +377,6 @@ export default function Transactions() {
                             className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 w-64"
                         />
                     </div>
-                    <button
-                        onClick={() => setAssignedToFilter(assignedToFilter === 'ANY' ? null : 'ANY')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${assignedToFilter === 'ANY'
-                                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
-                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-                            }`}
-                        title="Show transactions assigned for review"
-                    >
-                        <UserCheck size={18} />
-                        <span>Review Queue</span>
-                    </button>
                 </div>
             </header>
 

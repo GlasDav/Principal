@@ -47,12 +47,17 @@ export default function Review() {
 
     const transactions = reviewData?.items || [];
 
-    // Group transactions by assigned_to field (member_id or legacy 'A'/'B')
+    // Group transactions by assigned_to field (matches member.name)
     const getTransactionsForMember = (memberId, memberIndex) => {
+        const member = members.find(m => m.id === memberId);
+        const memberName = member ? member.name : '';
+
         return transactions.filter(t => {
-            // Support both member_id (new) and legacy 'A'/'B' assignment
+            // Match exactly by name (current behavior of Transactions.jsx)
+            if (t.assigned_to === memberName) return true;
+            // Fallback: match by ID string
             if (t.assigned_to === String(memberId)) return true;
-            // Legacy support: 'A' = first member, 'B' = second member
+            // Legacy: 'A' = first member, 'B' = second member
             if (memberIndex === 0 && t.assigned_to === 'A') return true;
             if (memberIndex === 1 && t.assigned_to === 'B') return true;
             return false;
