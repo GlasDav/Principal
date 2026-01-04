@@ -88,7 +88,8 @@ export default function SplitTransactionModal({ isOpen, onClose, transaction, on
             const splitsWithNumbers = splits.map(s => ({
                 ...s,
                 amount: parseAmount(s.amount) * sign,
-                bucket_id: s.bucket_id || null  // Convert empty string/0 to null
+                bucket_id: s.bucket_id || null,  // Convert empty string/0 to null
+                date: transaction.date // Inherit date from parent
             }));
 
             await api.splitTransaction(transaction.id, splitsWithNumbers);

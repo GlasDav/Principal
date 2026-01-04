@@ -1519,8 +1519,8 @@ def get_budget_progress(
         models.Transaction.user_id == user.id,
         models.Transaction.bucket_id.in_(bucket_ids),
         models.Transaction.date >= current_start,
-        models.Transaction.date <= current_end,
-        models.Transaction.amount < 0  # Expenses only
+        models.Transaction.date <= current_end
+        # models.Transaction.amount < 0  # REMOVED: Include refunds (positive) to offset spending
     )
     
     if spender != "Combined":
