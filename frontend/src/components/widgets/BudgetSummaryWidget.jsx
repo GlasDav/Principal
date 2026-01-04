@@ -10,8 +10,19 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
     // Defensive: ensure buckets is always an array to prevent .filter() crashes
     const buckets = Array.isArray(bucketsProp) ? bucketsProp : [];
 
+    // Identify parent category IDs (buckets that have children using them as parent_id)
+    // We need to get parent_id from each bucket to identify which ones are parents
+    const parentIds = new Set(buckets.filter(b => b.parent_id).map(b => b.parent_id));
+
     // Calculate budget health metrics
-    const budgetCategories = buckets.filter(b => !b.is_transfer && !b.is_investment && b.limit > 0 && b.group !== 'Income');
+    // Exclude: transfers, investments, income, AND parent categories (to avoid double-counting)
+    const budgetCategories = buckets.filter(b =>
+        !b.is_transfer &&
+        !b.is_investment &&
+        b.limit > 0 &&
+        b.group !== 'Income' &&
+        !parentIds.has(b.id)  // Exclude parent categories
+    );
     const overBudget = budgetCategories.filter(b => b.percent > 100);
     const nearLimit = budgetCategories.filter(b => b.percent > 80 && b.percent <= 100);
     const healthy = budgetCategories.filter(b => b.percent <= 80);

@@ -187,6 +187,7 @@ def get_dashboard_data(
             "icon": b.icon_name,
             "group": b.group,
             "is_rollover": b.is_rollover,
+            "parent_id": b.parent_id,  # Include parent_id for hierarchy filtering
             "limit": limit,
             "spent": spent,
             "remaining": limit - spent,
