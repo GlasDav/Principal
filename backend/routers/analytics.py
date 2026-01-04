@@ -204,21 +204,21 @@ def get_dashboard_data(
         
         limit = base_limit * delta_months
         
-        # Add Rollover if applicable
-        # User request: Remove rollover from budget total to keep it "clean"
-        # if b.id in rollover_map:
-        #      limit += rollover_map[b.id]
+        # Calculate Rollover Value (separate from limit)
+        rollover_val = 0.0
+        if b.id in rollover_map:
+             rollover_val = rollover_map[b.id]
         
+        # Calculate Percent
+        # Based on strict monthly limit (frontend can recalculate if including rollover)
         if limit > 0:
             percent = (spent / limit) * 100
         else:
             percent = 0 if spent == 0 else 100
             
-        # Calculate Upcoming Recurring
-        # Simple logical check: active subscriptions for this bucket due in this date range
+        # Upcoming Recurring placeholder (filled later)
         upcoming_recurring = 0.0
-        # This is n+1 if we query inside loop. Let's pre-fetch subscriptions.
-        
+            
         # Determine if this is a parent category (has children)
         is_parent = len(children_map.get(b.id, [])) > 0
         
@@ -233,6 +233,7 @@ def get_dashboard_data(
             "parent_id": b.parent_id,  # Include parent_id for hierarchy filtering
             "is_parent": is_parent,  # True if this bucket has child categories
             "limit": limit,
+            "rollover_amount": rollover_val, # Send separately so frontend can toggle
             "spent": spent,
             "remaining": limit - spent,
             "percent": percent,

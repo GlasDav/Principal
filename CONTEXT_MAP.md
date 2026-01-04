@@ -164,6 +164,20 @@ erDiagram
 
 ---
 
+## Recent Bug Fixes
+
+- **Dashboard Budget Fixes:**
+  - Standardized month difference calculation to be robust against timezone shifts (fixing budget doubling).
+  - Explicitly filtered out transfer/investment categories in Dashboard widgets.
+  - Removed Rollover accumulation from Budget Summary total for cleaner "Monthly Budget" view.
+  - Fixed recurring expense decimals appearing in budget totals.
+- **Data Integrity:**
+  - Added `created_at` timestamp to User model (fixing "Member Since Unknown").
+  - Fixed PostgreSQL compatibility for `created_at` migration.
+  - Added `bucket_id` linking for `Subscription` model.
+
+---
+
 ## Crucial Files (High Complexity)
 
 > ⚠️ **Extra caution required** when editing these files.

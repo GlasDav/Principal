@@ -10,6 +10,9 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
     // Defensive: ensure buckets is always an array to prevent .filter() crashes
     const buckets = Array.isArray(bucketsProp) ? bucketsProp : [];
 
+    // State for toggling rollover inclusion
+    const [showRollover, setShowRollover] = React.useState(false);
+
     // Calculate budget health metrics
     // Exclude: transfers, investments, income, AND parent categories (to avoid double-counting)
     const budgetCategories = buckets.filter(b =>
@@ -23,17 +26,15 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
     const nearLimit = budgetCategories.filter(b => b.percent > 80 && b.percent <= 100);
     const healthy = budgetCategories.filter(b => b.percent <= 80);
 
-    const totalBudget = budgetCategories.reduce((sum, b) => sum + (b.limit || 0), 0);
+    // Calculate Totals based on toggle
+    const totalLimitStrict = budgetCategories.reduce((sum, b) => sum + (b.limit || 0), 0);
+    const totalRollover = budgetCategories.reduce((sum, b) => sum + (b.rollover_amount || 0), 0);
+
+    // Effective budget = Limit + (Rollover if toggled)
+    const totalBudget = showRollover ? (totalLimitStrict + totalRollover) : totalLimitStrict;
+
     const totalSpent = budgetCategories.reduce((sum, b) => sum + (b.spent || 0), 0);
     const totalUpcoming = budgetCategories.reduce((sum, b) => sum + (b.upcoming_recurring || 0), 0);
-
-    // DEBUG: Log to find where decimals are coming from in budget
-    console.log('BudgetSummaryWidget DEBUG:', {
-        totalBudget,
-        totalUpcoming,
-        categoriesWithDecimalLimits: budgetCategories.filter(b => b.limit % 1 !== 0).map(b => ({ name: b.name, limit: b.limit, upcoming: b.upcoming_recurring })),
-        allCategories: budgetCategories.map(b => ({ name: b.name, limit: b.limit, upcoming: b.upcoming_recurring }))
-    });
 
     // Percentages
     const percentSpent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
@@ -52,9 +53,6 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
         statusColor = 'amber';
         statusText = 'Approaching Limits';
         StatusIcon = AlertCircle;
-    } else if (totalUpcoming > 0) {
-        // Maybe change status text if a lot is upcoming?
-        // Keep it simple for now. 
     }
 
     const colorClasses = {
@@ -66,82 +64,97 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
     const colors = colorClasses[statusColor];
 
     return (
-        <Link
-            to="/budget"
-            className="block bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow group"
-        >
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-xl ${colors.bg}`}>
-                        <PiggyBank className={colors.text} size={20} />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-slate-800 dark:text-white">Budget</h3>
-                        <div className="flex items-center gap-1.5">
-                            <StatusIcon size={14} className={colors.text} />
-                            <span className={`text-sm font-medium ${colors.text}`}>{statusText}</span>
+        <div className="block bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow group relative">
+            <Link to="/budget" className="block">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2.5 rounded-xl ${colors.bg}`}>
+                            <PiggyBank className={colors.text} size={20} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800 dark:text-white">Budget</h3>
+                            <div className="flex items-center gap-1.5">
+                                <StatusIcon size={14} className={colors.text} />
+                                <span className={`text-sm font-medium ${colors.text}`}>{statusText}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <ChevronRight size={18} className="text-slate-400 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
-            </div>
+            </Link>
 
-            {/* Progress bar */}
-            <div className="relative h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-3 flex">
-                {/* Spent */}
-                <div
-                    className={`h-full rounded-l-full transition-all duration-500 ${colors.bar}`}
-                    style={{ width: `${Math.min(percentSpent, 100)}%` }}
-                />
-                {/* Upcoming (Hashed/Patterned) */}
-                {percentUpcoming > 0 && (
+            {/* Toggle Button Positioned Absolute Top Right */}
+            <button
+                onClick={(e) => {
+                    e.preventDefault();
+                    setShowRollover(!showRollover);
+                }}
+                className={`absolute top-5 right-5 text-xs font-medium px-2 py-1 rounded-full transition-colors ${showRollover
+                        ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300'
+                        : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                    }`}
+                title="Include accumulated savings (rollovers) in total budget"
+            >
+                {showRollover ? 'With Savings' : 'Monthly Only'}
+            </button>
+
+            <Link to="/budget" className="block">
+                {/* Progress bar */}
+                <div className="relative h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-3 flex">
+                    {/* Spent */}
                     <div
-                        className={`h-full transition-all duration-500 ${colors.upcoming} relative`}
-                        style={{
-                            width: `${Math.min(percentUpcoming, 100 - Math.min(percentSpent, 100))}%`,
-                            backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)',
-                            backgroundSize: '1rem 1rem'
-                        }}
-                        title={`Upcoming: ${formatCurrency(totalUpcoming)}`}
+                        className={`h-full rounded-l-full transition-all duration-500 ${colors.bar}`}
+                        style={{ width: `${Math.min(percentSpent, 100)}%` }}
                     />
-                )}
-            </div>
-
-            <div className="flex justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400 flex gap-2">
-                    <span>{formatCurrency(totalSpent)} spent</span>
-                    {totalUpcoming > 0 && (
-                        <span className="text-slate-400 dark:text-slate-500">
-                            + {formatCurrency(totalUpcoming)} pending
-                        </span>
-                    )}
-                </span>
-                <span className="text-slate-400 dark:text-slate-500">
-                    {formatCurrency(totalBudget)} budgeted
-                </span>
-            </div>
-
-            {/* Quick stats */}
-            {budgetCategories.length > 0 && (
-                <div className="flex gap-4 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
-                    <div className="flex items-center gap-1.5 text-xs">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-slate-500">{healthy.length} healthy</span>
-                    </div>
-                    {nearLimit.length > 0 && (
-                        <div className="flex items-center gap-1.5 text-xs">
-                            <div className="w-2 h-2 rounded-full bg-amber-500" />
-                            <span className="text-slate-500">{nearLimit.length} near limit</span>
-                        </div>
-                    )}
-                    {overBudget.length > 0 && (
-                        <div className="flex items-center gap-1.5 text-xs">
-                            <div className="w-2 h-2 rounded-full bg-red-500" />
-                            <span className="text-slate-500">{overBudget.length} over</span>
-                        </div>
+                    {/* Upcoming (Hashed/Patterned) */}
+                    {percentUpcoming > 0 && (
+                        <div
+                            className={`h-full transition-all duration-500 ${colors.upcoming} relative`}
+                            style={{
+                                width: `${Math.min(percentUpcoming, 100 - Math.min(percentSpent, 100))}%`,
+                                backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)',
+                                backgroundSize: '1rem 1rem'
+                            }}
+                            title={`Upcoming: ${formatCurrency(totalUpcoming)}`}
+                        />
                     )}
                 </div>
-            )}
-        </Link>
+
+                <div className="flex justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400 flex gap-2">
+                        <span>{formatCurrency(totalSpent)} spent</span>
+                        {totalUpcoming > 0 && (
+                            <span className="text-slate-400 dark:text-slate-500 hidden sm:inline">
+                                + {formatCurrency(totalUpcoming)} pending
+                            </span>
+                        )}
+                    </span>
+                    <span className="text-slate-400 dark:text-slate-500 text-right">
+                        {formatCurrency(totalBudget)} {showRollover ? 'available' : 'budgeted'}
+                    </span>
+                </div>
+
+                {/* Quick stats */}
+                {budgetCategories.length > 0 && (
+                    <div className="flex gap-4 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                        <div className="flex items-center gap-1.5 text-xs">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <span className="text-slate-500">{healthy.length} healthy</span>
+                        </div>
+                        {nearLimit.length > 0 && (
+                            <div className="flex items-center gap-1.5 text-xs">
+                                <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                <span className="text-slate-500">{nearLimit.length} near limit</span>
+                            </div>
+                        )}
+                        {overBudget.length > 0 && (
+                            <div className="flex items-center gap-1.5 text-xs">
+                                <div className="w-2 h-2 rounded-full bg-red-500" />
+                                <span className="text-slate-500">{overBudget.length} over</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </Link>
+        </div>
     );
 }
