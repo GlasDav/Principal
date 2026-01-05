@@ -96,6 +96,8 @@ CATEGORIES = [
     {"name": "Personal Care", "icon": "Sparkles", "group": "Discretionary", "is_shared": False, "limit": 150},
     {"name": "Education", "icon": "GraduationCap", "group": "Discretionary", "is_shared": False, "limit": 100},
     {"name": "Pets", "icon": "Cat", "group": "Discretionary", "is_shared": True, "limit": 200},
+    # Special Categories
+    {"name": "Reimbursable", "icon": "ReceiptText", "group": "Non-Discretionary", "is_shared": False, "limit": 0},
     # Transfers
     {"name": "Transfers", "icon": "ArrowRightLeft", "group": "Transfers", "is_shared": True, "is_transfer": True},
     {"name": "Investments", "icon": "TrendingUp", "group": "Transfers", "is_shared": True, "is_investment": True},
@@ -145,12 +147,12 @@ MERCHANTS = {
 
 # Accounts
 ACCOUNTS = [
-    {"name": "Everyday Account", "type": "everyday", "category": "bank", "balance": 5500},
-    {"name": "Savings Account", "type": "savings", "category": "bank", "balance": 45000},
-    {"name": "Joint Account", "type": "everyday", "category": "bank", "balance": 8200},
-    {"name": "Investment Portfolio", "type": "brokerage", "category": "investment", "balance": 85000},
-    {"name": "Superannuation", "type": "super", "category": "super", "balance": 120000},
-    {"name": "Home Loan", "type": "mortgage", "category": "liability", "balance": -450000},
+    {"name": "Everyday Account", "type": "Asset", "category": "Cash", "balance": 5500},
+    {"name": "Savings Account", "type": "Asset", "category": "Savings", "balance": 45000},
+    {"name": "Joint Account", "type": "Asset", "category": "Cash", "balance": 8200},
+    {"name": "Investment Portfolio", "type": "Asset", "category": "Investment", "balance": 85000},
+    {"name": "Superannuation", "type": "Asset", "category": "Superannuation", "balance": 120000},
+    {"name": "Home Loan", "type": "Liability", "category": "Mortgage", "balance": 450000},
 ]
 
 # Investment holdings
