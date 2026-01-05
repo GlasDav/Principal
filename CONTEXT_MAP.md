@@ -1,6 +1,8 @@
 # Principal Finance - System Architecture Map
 
 > **Long-Term Context Memory** for AI-assisted development. Last updated: January 2026.
+> 
+> 🗺️ **[Feature Roadmap](ROADMAP.md)** available.
 
 ---
 
@@ -205,6 +207,12 @@ erDiagram
 ---
 
 ## Recent Changes & Fixes
+- **Demo Account:**
+  - Added `seed_demo_user.py` script for seeding demo data.
+  - "Try Demo" button on login page (`demo@principal.finance` / `demo123`).
+  - Generates 12+ months of realistic transactions, categories, accounts, investments.
+- **Bug Fixes:**
+  - Fixed Budget Categories page showing flat list on initial load (React Query cache key conflict).
 - **Transactions:**
   - Added "Create & Add Another" button (Frontend).
   - Added "Manual Transaction" entry modal.
@@ -215,14 +223,16 @@ erDiagram
   - Added "Net Cost" calculation for grouped subscriptions.
   - Fixed 500 Error (Missing column migration).
 - **Dashboard Budget Fixes:**
-  - Standardized month difference calculation to be robust against timezone shifts (fixing budget doubling).
-  - Explicitly filtered out transfer/investment categories in Dashboard widgets.
-  - Removed Rollover accumulation from Budget Summary total for cleaner "Monthly Budget" view.
-  - Fixed recurring expense decimals appearing in budget totals.
+  - Standardized month difference calculation.
+  - **Sankey Diagram:** Added "Deficit" node logic to balance diagram when Expenses > Income (visual fix).
+  - **Budget Cards:** Fixed Subcategory categorization. "Wants" subcategories (e.g. Dining Out) now separated from "Needs" parents (e.g. Food).
 - **Data Integrity:**
-  - Added `created_at` timestamp to User model (fixing "Member Since Unknown").
-  - Fixed PostgreSQL compatibility for `created_at` migration.
+  - Added vote `created_at` timestamp to User model.
   - Added `bucket_id` linking for `Subscription` model.
+  - **Split Transactions:**
+    - Refined UI: Positive inputs only, auto-balance for 2 splits.
+    - Fixed logic: Logic now modifies parent transaction (Split 1) + creates new sibling (Split 2).
+    - Fixed Budget Refunds: Removed validation filter to allow positive "refund" transactions in budget analysis.
 
 ---
 
@@ -313,6 +323,10 @@ npm run test:coverage    # With coverage
 
 # Docker (full stack)
 docker-compose up
+
+# Seed Demo Data (VPS deployment)
+docker cp /opt/principal/scripts/seed_demo_user.py $(docker compose ps -q backend):/app/seed_demo_user.py
+docker compose exec backend python /app/seed_demo_user.py
 ```
 
 ---
@@ -354,6 +368,7 @@ docker-compose up
 4. **Drag-Drop** - Uses `@dnd-kit` for widget reordering and rule prioritization
 5. **Toast Notifications** - Custom `ToastContext` replaces browser alerts
 6. **Command Palette** - `Cmd/Ctrl+K` for quick navigation
+7. **Demo Account** - `demo@principal.finance` / `demo123` with realistic sample data
 
 ---
 
