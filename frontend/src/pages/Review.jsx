@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { getBuckets, getSettings, getMembers } from '../services/api';
+import api, { getBucketsTree, getSettings, getMembers } from '../services/api';
 import { CheckCircle, XCircle, Clock, Users, ArrowRight } from 'lucide-react';
 import { sortBucketsByGroup } from '../utils/bucketUtils';
 
@@ -13,11 +13,26 @@ export default function Review() {
         queryFn: getSettings
     });
 
-    // Fetch buckets for category display
-    const { data: buckets = [] } = useQuery({
+    // Fetch buckets for category display (tree structure)
+    const { data: bucketsTree = [] } = useQuery({
         queryKey: ['buckets'],
-        queryFn: getBuckets
+        queryFn: getBucketsTree
     });
+
+    // Flatten tree for lookups (memoized)
+    const buckets = useMemo(() => {
+        const flatten = (nodes) => {
+            let result = [];
+            nodes.forEach(node => {
+                result.push(node);
+                if (node.children && node.children.length > 0) {
+                    result = result.concat(flatten(node.children));
+                }
+            });
+            return result;
+        };
+        return flatten(bucketsTree);
+    }, [bucketsTree]);
 
     // Fetch pending review transactions
     const { data: reviewData, isLoading: loadingReview } = useQuery({
