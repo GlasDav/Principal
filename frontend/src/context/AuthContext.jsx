@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 
 const AuthContext = createContext(null);
@@ -8,6 +9,7 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem("token"));
     const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken"));
     const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
 
     // Set api default header whenever token changes
     useEffect(() => {
@@ -81,6 +83,8 @@ export const AuthProvider = ({ children }) => {
         setToken(null);
         setRefreshToken(null);
         setUser(null);
+        // Clear all cached data to prevent stale data for next user
+        queryClient.removeQueries();
     };
 
     return (
