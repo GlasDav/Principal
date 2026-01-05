@@ -70,6 +70,7 @@ def create_default_user_setup(user: models.User, db: Session):
                 {"name": "Gas & Electricity", "icon": "Zap"},
                 {"name": "Water", "icon": "Droplet"},
                 {"name": "Internet", "icon": "Wifi"},
+                {"name": "Mobile Phone", "icon": "Smartphone"},
                 {"name": "Mortgage/Rent", "icon": "Home"},
                 {"name": "Strata Levies", "icon": "Building"},
                 {"name": "Council Rates", "icon": "Landmark"},
@@ -220,6 +221,14 @@ def create_default_user_setup(user: models.User, db: Session):
     db.add(models.BudgetBucket(
         user_id=user.id, name="One Off", icon_name="Zap",
         group="Non-Discretionary", is_one_off=True, display_order=display_order
+    ))
+    display_order += 1
+    total_buckets += 1
+    
+    # Reimbursable bucket (for expenses that will be reimbursed - work expenses, shared costs)
+    db.add(models.BudgetBucket(
+        user_id=user.id, name="Reimbursable", icon_name="ReceiptText",
+        group="Non-Discretionary", display_order=display_order
     ))
     total_buckets += 1
     

@@ -32,31 +32,31 @@ export default function QuickAddFAB() {
 
                 <button
                     onClick={() => handleClick('/data-management')}
-                    className="flex items-center gap-3 bg-white dark:bg-slate-800 pr-4 pl-3 py-2 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group"
+                    className="flex items-center justify-end gap-3 bg-white dark:bg-slate-800 pr-3 pl-4 py-2.5 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group min-w-[160px]"
                 >
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Import Data</span>
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
-                        <UploadCloud size={16} />
+                    <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
+                        <UploadCloud size={18} />
                     </div>
                 </button>
 
                 <button
                     onClick={() => handleClick('/net-worth')}
-                    className="flex items-center gap-3 bg-white dark:bg-slate-800 pr-4 pl-3 py-2 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group"
+                    className="flex items-center justify-end gap-3 bg-white dark:bg-slate-800 pr-3 pl-4 py-2.5 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group min-w-[160px]"
                 >
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Add Asset</span>
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
-                        <LineChart size={16} />
+                    <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform shrink-0">
+                        <LineChart size={18} />
                     </div>
                 </button>
 
                 <button
                     onClick={() => handleClick('/budget')}
-                    className="flex items-center gap-3 bg-white dark:bg-slate-800 pr-4 pl-3 py-2 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group"
+                    className="flex items-center justify-end gap-3 bg-white dark:bg-slate-800 pr-3 pl-4 py-2.5 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group min-w-[160px]"
                 >
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-200">New Budget</span>
-                    <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform">
-                        <PiggyBank size={16} />
+                    <div className="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform shrink-0">
+                        <PiggyBank size={18} />
                     </div>
                 </button>
 

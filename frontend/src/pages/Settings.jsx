@@ -13,7 +13,6 @@ import AccountsSettings from '../components/settings/AccountsSettings';
 import CategoriesSettings from '../components/settings/CategoriesSettings';
 import RulesSettings from '../components/settings/RulesSettings';
 import DataSettings from '../components/settings/DataSettings';
-import ApiKeysSettings from '../components/settings/ApiKeysSettings';
 
 /**
  * Settings Page with Fixed Sidebar Navigation
@@ -30,7 +29,6 @@ export default function Settings() {
         { id: 'accounts', label: 'Accounts', icon: Landmark, component: AccountsSettings },
         { id: 'categories', label: 'Categories', icon: Tag, component: CategoriesSettings },
         { id: 'rules', label: 'Rules', icon: BookPlus, component: RulesSettings },
-        { id: 'api-keys', label: 'API Keys', icon: Key, component: ApiKeysSettings },
         { id: 'data', label: 'Data', icon: Save, component: DataSettings },
     ];
 

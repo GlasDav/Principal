@@ -14,6 +14,7 @@ const getCategoryIcon = (category, type) => {
     const c = (category || '').toLowerCase();
     if (c.includes('property') || c.includes('real estate') || c.includes('mortgage')) return Home;
     if (c.includes('investment')) return TrendingUp;
+    if (c.includes('super')) return Landmark;  // Superannuation
     if (c.includes('loan')) return Landmark;
     if (c.includes('credit card')) return CreditCard;
     if (c.includes('savings')) return PiggyBank;
@@ -510,6 +511,7 @@ export default function NetWorth() {
                                                 <option value="Cash">Cash</option>
                                                 <option value="Savings">Savings</option>
                                                 <option value="Investment">Investment (Stocks)</option>
+                                                <option value="Superannuation">Superannuation</option>
                                                 <option value="Property">Property</option>
                                             </>
                                         ) : (
