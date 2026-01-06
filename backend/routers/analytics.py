@@ -1010,11 +1010,10 @@ def get_sankey_data(
         expense_query = expense_query.filter(models.Transaction.spender == spender)
 
     # Exclude Transfer and Investment buckets from expense view
+    # NOTE: Income group filtering is done in Python below to match is_income_bucket logic
     expense_query = expense_query.filter(
         ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True),
-        ~models.Transaction.bucket.has(models.BudgetBucket.is_investment == True),
-        # Also exclude Income group buckets from expense calculation
-        ~models.Transaction.bucket.has(models.BudgetBucket.group == "Income")
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_investment == True)
     )
 
     if exclude_one_offs:
@@ -1024,14 +1023,32 @@ def get_sankey_data(
         
     expense_results = expense_query.group_by(models.Transaction.bucket_id).all()
     
-    # Map bucket_id -> NET spent (only include buckets with net negative balance)
-    # Positive amounts mean more refunds than expenses - these won't show in Sankey
-    bucket_spend = {bid: abs(amt) for bid, amt in expense_results if bid is not None and amt is not None and amt < 0}
-    unallocated_spend = sum(abs(amt) for bid, amt in expense_results if bid is None and amt is not None and amt < 0)
-    
-    # 3. Get Bucket Details for Names/Groups
+    # 3. Get Bucket Details for Names/Groups FIRST (needed for is_income_bucket)
     buckets = db.query(models.BudgetBucket).filter(models.BudgetBucket.user_id == user.id).all()
     bucket_map = {b.id: b for b in buckets}
+    
+    # Helper to check if a bucket belongs to Income group (check self AND parent)
+    def is_income_bucket(bucket):
+        if bucket.group == "Income":
+            return True
+        # Check parent bucket's group (for inherited categories)
+        if bucket.parent_id and bucket.parent_id in bucket_map:
+            parent = bucket_map[bucket.parent_id]
+            if parent.group == "Income":
+                return True
+        return False
+    
+    # Map bucket_id -> NET spent (only include expense buckets with net negative balance)
+    # Filter out Income-group buckets using consistent is_income_bucket logic
+    bucket_spend = {}
+    for bid, amt in expense_results:
+        if bid is None or amt is None or amt >= 0:
+            continue
+        if bid in bucket_map and is_income_bucket(bucket_map[bid]):
+            continue  # Skip Income-group buckets
+        bucket_spend[bid] = abs(amt)
+    
+    unallocated_spend = sum(abs(amt) for bid, amt in expense_results if bid is None and amt is not None and amt < 0)
     
     # 4. Construct Nodes & Links
     nodes = []
@@ -1072,16 +1089,7 @@ def get_sankey_data(
         
     income_results = income_by_bucket_query.group_by(models.Transaction.bucket_id).all()
     
-    # Helper to check if a bucket belongs to Income group (check self AND parent)
-    def is_income_bucket(bucket):
-        if bucket.group == "Income":
-            return True
-        # Check parent bucket's group (for inherited categories)
-        if bucket.parent_id and bucket.parent_id in bucket_map:
-            parent = bucket_map[bucket.parent_id]
-            if parent.group == "Income":
-                return True
-        return False
+    # NOTE: is_income_bucket is already defined above (reused for consistency)
     
     # Track income by category
     income_by_bucket = {}
