@@ -1,119 +1,53 @@
-# Session Handover - January 3, 2026
+# Session Handover - January 5, 2026
 
 ## What We Accomplished This Session
 
-### 🎯 Focus: Smart Rules Fixes & AI Categorization
+### 🎯 Focus: Net Worth Refinements & Bug Fixes
 
-Fixed critical Smart Rules bugs and added owner assignment feature.
+Merged the Investment portfolio into the Net Worth page, fixed critical UI issues, and resolved a data persistence bug.
 
 ---
 
 ## Completed Work
 
-### 1. AI Categorization Fix ✅
-- **Problem**: AI categorization dropped from 95% to ~10%
-- **Root Cause**: `GEMINI_API_KEY` not configured in docker-compose.yml
-- **Fix**: Added `GEMINI_API_KEY=${GEMINI_API_KEY:-}` to environment
-- **Action Required**: Set API key on VPS via `.env` file
-
-### 2. Smart Rules - Click to Edit Error ✅
-- **Problem**: "Something went wrong" when clicking a rule in Settings
-- **Root Cause**: `RuleItem` component used `treeBuckets` but prop not passed
-- **Fix**: Added `treeBuckets` prop to `RuleItem` and its JSX usage
-
-### 3. Smart Rules - Run Rules Returns 0 ✅
-- **Problem**: "Run Rules Now" always returned 0 transactions
-- **Root Cause**: Logic only counted when category **changed**, not NULL→category
-- **Fix**: Changed condition to `if rule and (txn.bucket_id is None or rule.bucket_id != txn.bucket_id)`
-
-### 4. Smart Rules - Owner Assignment ✅
-- **Problem**: Modal had no way to assign transactions to family members
+### 1. Merged Investments Tab ✅
+- **Problem**: Investments page was separate from Net Worth, creating fragmented navigation.
 - **Solution**: 
-  - Added `assign_to` field to `CategorizationRule` model
-  - Added `assign_to` to `RuleBase` schema
-  - Updated create/update/run endpoints to handle `assign_to`
-  - Added member dropdown to CreateRuleModal
-  - Passed `members` prop from Transactions.jsx
+  - Created `InvestmentsTab.jsx` component.
+  - Integrated tab navigation into `NetWorth.jsx`.
+  - Removed standalone `Investments` page and route.
+  - Added redirect from `/investments` to `/net-worth`.
+
+### 2. Dashboard Sankey Diagram Fix ✅
+- **Problem**: Sankey widget used a fixed height with scrollbar, cutting off data.
+- **Solution**: Removed scroll container and implemented dynamic height calculation based on category count.
+
+### 3. Stale Data Fix (Logout) ✅
+- **Problem**: Logging out and into a new account showed the previous user's data until refresh.
+- **Root Cause**: TanStack Query cache was not cleared on logout.
+- **Fix**: Updated `AuthContext.jsx` to call `queryClient.removeQueries()` on logout.
 
 ---
 
 ## Files Modified
 
-### Backend
 | File | Changes |
 |------|---------|
-| `docker-compose.yml` | Added GEMINI_API_KEY environment variable |
-| `models.py` | Added `assign_to` column to CategorizationRule |
-| `schemas.py` | Added `assign_to` field to RuleBase |
-| `routers/rules.py` | Fixed run_rules logic, added assign_to to CRUD |
-
-### Frontend
-| File | Changes |
-|------|---------|
-| `RulesSection.jsx` | Passed treeBuckets prop to RuleItem |
-| `CreateRuleModal.jsx` | Added members prop, assignTo state, dropdown UI |
-| `Transactions.jsx` | Passed members prop to CreateRuleModal |
+| `NetWorth.jsx` | Added tab navigation (`Overview` / `Investments`) |
+| `InvestmentsTab.jsx` | New component (extracted from old page) |
+| `App.jsx` | Removed Investments route, added redirect |
+| `SankeyChart.jsx` | Removed scroll, added dynamic height |
+| `AuthContext.jsx` | Added `queryClient.removeQueries()` to logout |
+| `ROADMAP.md` | Added Net Worth items & Dashboard bug |
 
 ---
 
-## Git Commits (This Session)
-
-1. `09b8f4c` - docs: Update HANDOVER.md and feature_documentation.md
-2. `9ac3f25` - Fix: Add GEMINI_API_KEY to docker-compose environment
-3. `5b7c7c8` - Fix Smart Rules: treeBuckets prop, run_rules NULL logic, assign_to field, member dropdown
-
-**All pushed to `main` branch** ✅
-
----
-
-## Deployment
-
-### Deploy to VPS:
-```bash
-# SSH into server
-ssh root@43.224.182.196
-
-# Create .env with API key (get key from Google Cloud Console)
-echo 'GEMINI_API_KEY=your-gemini-api-key-here' >> /opt/principal/.env
-
-# Deploy
-cd /opt/principal && git pull origin main && docker compose down && docker compose up -d --build
-```
-
----
-
-## Database Note
-
-The new `assign_to` column in `categorization_rules` table will be auto-created by SQLAlchemy on first run. If you encounter issues, the column is nullable so no migration script is strictly required.
-
----
-
-## Quick Start (Next Session)
-
-```bash
-# Start development servers
-cd frontend && npm run dev
-
-# Backend (new terminal)
-cd backend
-venv\Scripts\activate  # Windows
-python -m uvicorn backend.main:app --reload
-```
-
-**Access**:
-- Frontend: http://localhost:5173
-- Backend: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-- Production VPS: 43.224.182.196
+## Known Issues (Added to Roadmap)
+- ⚠️ **Recent Transactions Widget**: Currently not displaying transactions on dashboard.
+- **Asset Allocation**: Needs UI fixes and split between ETFs/Stocks.
 
 ---
 
 ## Summary
 
-Focused session on fixing core Smart Rules functionality:
-- **AI Categorization**: Added missing API key to docker-compose
-- **Rule Click Error**: Fixed missing treeBuckets prop
-- **Run Rules Zero Count**: Fixed NULL→category logic
-- **Owner Assignment**: New feature to assign matched transactions to family members
-
-All changes pushed to GitHub and ready for deployment. 🚀
+Successful session merging the Net Worth experience and fixing persistent bugs. The dashboard is now cleaner and data security on logout is ensured. Next steps involve refining the Asset Allocation charts and investigating the Recent Transactions widget bug.

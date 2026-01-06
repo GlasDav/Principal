@@ -16,7 +16,8 @@ const GoalModal = ({ isOpen, onClose, goal, accounts, onSave }) => {
     });
 
     // Filter accounts: Only Assets
-    const availableAccounts = accounts.filter(a => a.type === 'Asset');
+    const safeAccounts = Array.isArray(accounts) ? accounts : [];
+    const availableAccounts = safeAccounts.filter(a => a.type === 'Asset');
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -146,16 +147,19 @@ export default function Goals() {
     const [editingGoal, setEditingGoal] = useState(null);
 
     // Fetch Goals
-    const { data: goals = [], isLoading: goalsLoading } = useQuery({
+    const { data: goalsRaw = [], isLoading: goalsLoading } = useQuery({
         queryKey: ['goals'],
         queryFn: getGoals
     });
 
     // Fetch Accounts for linking dropdown
-    const { data: accounts = [] } = useQuery({
+    const { data: accountsRaw = [] } = useQuery({
         queryKey: ['accounts'],
         queryFn: async () => (await api.get('/net-worth/accounts')).data
     });
+
+    const goals = Array.isArray(goalsRaw) ? goalsRaw : [];
+    const accounts = Array.isArray(accountsRaw) ? accountsRaw : [];
 
     // Mutations
     const createMutation = useMutation({

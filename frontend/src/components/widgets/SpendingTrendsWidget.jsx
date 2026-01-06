@@ -29,11 +29,42 @@ export default function SpendingTrendsWidget({
                     <option value="Total">Total Budget</option>
                     <option value="Non-Discretionary">Non-Discretionary (Needs)</option>
                     <option value="Discretionary">Discretionary (Wants)</option>
-                    <optgroup label="Buckets">
-                        {buckets.map(b => (
-                            <option key={b.id} value={`bucket:${b.id}`}>{b.name}</option>
-                        ))}
-                    </optgroup>
+
+                    {buckets.filter(b => b.group === 'Non-Discretionary').length > 0 && (
+                        <optgroup label="Non-Discretionary">
+                            {buckets
+                                .filter(b => b.group === 'Non-Discretionary')
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map(b => (
+                                    <option key={b.id} value={`bucket:${b.id}`}>{b.name}</option>
+                                ))
+                            }
+                        </optgroup>
+                    )}
+
+                    {buckets.filter(b => b.group === 'Discretionary').length > 0 && (
+                        <optgroup label="Discretionary">
+                            {buckets
+                                .filter(b => b.group === 'Discretionary')
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map(b => (
+                                    <option key={b.id} value={`bucket:${b.id}`}>{b.name}</option>
+                                ))
+                            }
+                        </optgroup>
+                    )}
+
+                    {buckets.filter(b => b.group !== 'Non-Discretionary' && b.group !== 'Discretionary').length > 0 && (
+                        <optgroup label="Other">
+                            {buckets
+                                .filter(b => b.group !== 'Non-Discretionary' && b.group !== 'Discretionary')
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map(b => (
+                                    <option key={b.id} value={`bucket:${b.id}`}>{b.name}</option>
+                                ))
+                            }
+                        </optgroup>
+                    )}
                 </select>
             </div>
 

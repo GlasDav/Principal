@@ -996,11 +996,17 @@ def get_sankey_data(
         models.Transaction.date >= s_date,
         models.Transaction.date <= e_date,
         models.Transaction.amount > 0,  # Only income
-        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True)
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True),
+        ~models.Transaction.bucket.has(models.BudgetBucket.is_investment == True)
     )
     
     if spender != "Combined":
         income_by_bucket_query = income_by_bucket_query.filter(models.Transaction.spender == spender)
+
+    if exclude_one_offs:
+        income_by_bucket_query = income_by_bucket_query.filter(
+            ~models.Transaction.bucket.has(models.BudgetBucket.is_one_off == True)
+        )
         
     income_results = income_by_bucket_query.group_by(models.Transaction.bucket_id).all()
     
@@ -1416,8 +1422,8 @@ def get_budget_progress(
             current_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
         period_label = current_start.strftime('%B %Y')
     
-    # History start (N months back)
-    history_start = (current_start - timedelta(days=months * 30)).replace(day=1)
+    # History start (N months back) - Subtract 1 because we will add current month manually
+    history_start = (current_start - timedelta(days=(months - 1) * 30)).replace(day=1)
     
     # Calculate delta_months for scaling limits
     # Robust calculation: Round days / 30 to get nearest month count
@@ -1560,8 +1566,8 @@ def get_budget_progress(
         models.Transaction.user_id == user.id,
         models.Transaction.bucket_id.in_(bucket_ids),
         models.Transaction.date >= history_start,
-        models.Transaction.date < current_start,  # Exclude current month
-        models.Transaction.amount < 0
+        models.Transaction.date < current_start  # Exclude current month
+        # models.Transaction.amount < 0  # REMOVED: Match current month logic (Net Spending)
     )
     
     if spender != "Combined":
@@ -1579,7 +1585,7 @@ def get_budget_progress(
         if bid not in bucket_history:
             bucket_history[bid] = {}
         key = f"{int(yr)}-{int(mo):02d}"
-        bucket_history[bid][key] = abs(total) if total else 0
+        bucket_history[bid][key] = -total if total else 0
     
     # Generate month labels for sparkline
     month_labels = []
@@ -1695,6 +1701,14 @@ def get_budget_progress(
             })
             if amt > 0:
                 hist_amounts.append(amt)
+
+        # Add current month to history (for sparkline)
+        history.append({
+            "month": current_start.strftime("%b"),
+            "amount": round(spent, 2)
+        })
+        if spent > 0:
+            hist_amounts.append(spent)
         
         # Calculate trend vs average (or vs last month)
         trend = 0

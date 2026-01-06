@@ -1,51 +1,45 @@
+# Features to add to roadmap
 Transactions
-    - Allow user to leave a note on a transaction - action button (pending Basiq integration)
-    - Total at the bottom of the table when filtered
+    
+    
+Subscriptions
+		
 
 Integrations
-    - Basiq integration
-    - Amazon extension
+ 
 
 Commercialisation
-    - Tiered subscription system
-    - Referral links
-    - Demo account with demo data
+    - Free trial 
 
 Budget
-    - Add 'Reimbursable' and 'Mobile Phone' default categories
-    - A spreadsheet-like tab that allows user to see their category spend by month in a tabular format, with the ability to click on a column to show performance vs budget for that period
+    - Change budget score methodology - not intuitive
 
 Net Worth
-    - Default superannuation account
+    - HECS debt account/calculator
+
 
 General UI/UX
-    - Ability to hide dashboard widgets (can unhide in the settings)
-    - Scrap API Settings
-    - Quick add button - align emojis
-    - Investments to be a tab within Net Worth rather than its own page
+    - 
 
 Account & Settings
-    - Invite family member - sends them an email to create their own login for the same account
-    - Security - set up MFA
-    - Security - email account verification
+    - Robust notification customisation
 
 Reports
-    - Income by type
-    - Ability to run filtered reports (filtered by tags, dates, categories, accounts etc)
-    - Total expenses by month, with ability to click on each month to see the breakdown of expenses
-    - More sophisitcated/proffessional reports that users could share with banks/accountants etc.
-    - Cashflow forecast - it's quite poor at the moment. Need to improve it.
+    - 
+    - 
 
 Goals
-    - Ability to set expenditure/category budget goals (e.g. under budget on clothing 3 months in a row)
+    - 
 
 Tutorial
-    - Ability to skip/exit Tutorial
-    - Guide user to set up categories before importing transactions
-    - Guide user to set up some smart rules before importing transactions
-    - More robust tutorial covering all/most features
-    - Add Help/FAQ section
+    - 
+    
+App
+    - Plan IOS and android app
 
-Split Transactions
-    - Doesn't work
-    - Should auto-balance on changing a number
+# Bugs to fix
+    - Goals page - 'Something went wrong' error on first load. Fine after refresh. 
+    - Dashboard sankey diagram - seeing a mismatch between sum of income streams and 'Income' node.
+    - Category dropdown in 'Spending Trends' widget - sort and group
+    - Budget page - 6 month history should include current month being looked at
+    - Budget page - something going wrong with the history chart when changing from this month to last month. Numbers all wrong.		

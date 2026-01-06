@@ -12,6 +12,7 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Transaction Notes:** Add ability to annotate transactions with custom notes (pending Basiq integration).
 - [ ] **Basiq Integration:** Full bank feed integration for automatic transaction import.
 - [ ] **Amazon Extension:** Browser extension or integration to categorize Amazon purchases automatically.
+- [ ] **Bug:** Recent transactions widget on dashboard isn't showing any transactions.
 
 ## 📊 Reports & Analytics
 
@@ -29,6 +30,7 @@ This document outlines the planned features, improvements, and future direction 
     - Analytics columns (average spend, variance from budget, etc.)
     - Click on a column to show performance vs budget for that period
 - [x] **New Default Categories:** Add 'Reimbursable' and 'Mobile Phone' to default category list.
+- [ ] **Budget Score:** Revise methodology to be more intuitive.
 - [ ] **Category Goals:** specific expenditure goals (e.g., "Under budget on clothing for 3 months").
 - [ ] **Goal Tracking:** Visual progress for specific saving/spending goals.
 
@@ -39,6 +41,7 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Asset Split (Overview):** Distinguish between ETFs and stocks in Asset Allocation chart.
 - [ ] **Chart UI:** Fix Asset Allocation chart UI in overview page.
 - [ ] **Asset Split (Investments):** Distinguish between stocks and ETFs in Investments tab.
+- [ ] **HECS Debt:** Add HECS debt account type/calculator.
 - [ ] **Trade Logic:** Rename 'Add Investment' to 'Add Trade', add trade date, and implement Buy/Sell logic.
 - [ ] **Terminology:** Change 'Monthly check in' to 'Record Values'.
 
@@ -47,6 +50,7 @@ This document outlines the planned features, improvements, and future direction 
 - [ ] **Family Invites:** Email invitation flow for new household members (create own login for same account).
 - [ ] **Security (MFA):** Multi-Factor Authentication setup.
 - [ ] **Email Verification:** Verify user email addresses for security.
+- [ ] **Notifications:** Robust notification customization.
 - [x] **Scrap API Settings:** Simplify or remove exposed API configuration where possible.
 
 ## 🎨 UI/UX Improvements
@@ -62,4 +66,17 @@ This document outlines the planned features, improvements, and future direction 
 ## 🚀 Commercialization
 
 - [ ] **Tiered Subscriptions:** Implement Free/Pro/Family tiers.
+- [ ] **Free Trial:** Implement free trial logic.
 - [ ] **Referral System:** User referral links and tracking.
+
+## 📱 Mobile App
+
+- [ ] **Plan iOS and Android App:** Research and plan capabilities for native apps.
+
+## 🐛 Known Issues
+
+- [ ] **Goals Page:** 'Something went wrong' error on first load. Fine after refresh.
+- [ ] **Dashboard Sankey:** Income mismatch between sum of streams and 'Income' node.
+- [ ] **Spending Trends:** Category dropdown needs sorting and grouping.
+- [ ] **Budget History:** 6 month history should include current month.
+- [ ] **Budget Chart:** History chart numbers incorrect when switching months.

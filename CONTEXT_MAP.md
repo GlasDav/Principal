@@ -233,6 +233,16 @@ erDiagram
     - Refined UI: Positive inputs only, auto-balance for 2 splits.
     - Fixed logic: Logic now modifies parent transaction (Split 1) + creates new sibling (Split 2).
     - Fixed Budget Refunds: Removed validation filter to allow positive "refund" transactions in budget analysis.
+  - **Net Worth Refinements:**
+    - **Investments Tab:** Merged standalone Investments page into Net Worth as a tab.
+    - **Sankey Diagram:** Removed scroll container; widget now auto-expands height based on content.
+  - **Auth/System:**
+  - **Auth/System:**
+    - **Logout Fix:** Cleared TanStack Query cache on logout to prevent stale data persisting between sessions.
+
+## Known Issues
+- **Recent Transactions Widget:** Currently not displaying transactions on dashboard (Investigating).
+- **Asset Allocation:** Needs UI fixes and split between ETFs/Stocks.
 
 ---
 
