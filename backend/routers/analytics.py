@@ -1360,7 +1360,22 @@ def get_sankey_data(
             "value": link["value"]
         })
 
-    return {"nodes": new_nodes, "links": new_links}
+    income_link_sum = sum(link["value"] for link in new_links 
+                          if new_nodes[link["target"]].get("name") == "Income")
+    
+    return {
+        "nodes": new_nodes, 
+        "links": new_links,
+        "debug": {
+            "displayed_income": displayed_income,
+            "income_by_bucket_sum": sum(income_by_bucket.values()),
+            "other_income_total": other_income_total,
+            "income_link_sum": income_link_sum,
+            "income_buckets": list(income_by_bucket.keys()),
+            "disc_total": disc_total,
+            "non_disc_total": non_disc_total
+        }
+    }
 
 
 # --- Projections ---
