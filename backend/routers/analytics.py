@@ -1034,11 +1034,13 @@ def get_sankey_data(
             other_income_total += amount
         elif bid in bucket_map:
             bucket = bucket_map[bid]
-            # Only show buckets from Income group on income side
+            # Show buckets from Income group as named income streams
             if is_income_bucket(bucket):
                 income_by_bucket[bucket.name] = income_by_bucket.get(bucket.name, 0) + amount
-            # Refunds to expense buckets are now netted in expense calculation
-            # so we don't add them to Other Income
+            else:
+                # Refunds to expense buckets go to "Other Income" 
+                # This ensures Sankey income matches dashboard Total Income
+                other_income_total += amount
     
     # Create income bucket nodes flowing INTO "Income"
     for bucket_name, amount in income_by_bucket.items():
@@ -1561,6 +1563,9 @@ def get_budget_progress(
         bucket_by_member[bid][mapped_name] = bucket_by_member[bid].get(mapped_name, 0) + amt
     
     # ===== HISTORY (last N months) =====
+    # If delta_months > 1, include current period in history query instead of appending as single bar
+    history_end = current_end if delta_months > 1 else current_start - timedelta(days=1)
+    
     history_query = db.query(
         models.Transaction.bucket_id,
         extract('year', models.Transaction.date).label('year'),
@@ -1570,7 +1575,7 @@ def get_budget_progress(
         models.Transaction.user_id == user.id,
         models.Transaction.bucket_id.in_(bucket_ids),
         models.Transaction.date >= history_start,
-        models.Transaction.date < current_start  # Exclude current month
+        models.Transaction.date <= history_end
         # models.Transaction.amount < 0  # REMOVED: Match current month logic (Net Spending)
     )
     
@@ -1592,9 +1597,11 @@ def get_budget_progress(
         bucket_history[bid][key] = -total if total else 0
     
     # Generate month labels for sparkline
+    # If delta_months > 1, include months up to current_end; otherwise up to current_start
     month_labels = []
     current = history_start
-    while current < current_start:
+    label_end = current_end if delta_months > 1 else current_start
+    while current <= label_end:
         month_labels.append({
             "key": current.strftime("%Y-%m"),
             "label": current.strftime("%b")
@@ -1706,13 +1713,15 @@ def get_budget_progress(
             if amt > 0:
                 hist_amounts.append(amt)
 
-        # Add current month to history (for sparkline)
-        history.append({
-            "month": current_start.strftime("%b"),
-            "amount": round(spent, 2)
-        })
-        if spent > 0:
-            hist_amounts.append(spent)
+        # Add current month to history (for sparkline) - only for single month periods
+        # For multi-month periods, the months are already included in month_labels
+        if delta_months == 1:
+            history.append({
+                "month": current_start.strftime("%b"),
+                "amount": round(spent, 2)
+            })
+            if spent > 0:
+                hist_amounts.append(spent)
         
         # Calculate trend vs average (or vs last month)
         trend = 0
