@@ -1051,6 +1051,10 @@ def get_sankey_data(
         idx_other_income = get_node("Other Income")
         links.append({"source": idx_other_income, "target": idx_income, "value": other_income_total})
     
+    # Calculate displayed income (sum of all income streams shown in Sankey)
+    # This ensures the Income node value matches the sum of its inflows
+    displayed_income = sum(income_by_bucket.values()) + other_income_total
+
     # --- EXPENSE GROUPS (Income -> Groups) ---
     # Create Discretionary FIRST so it appears higher in the diagram
     idx_disc = get_node("Discretionary")         # Formerly Wants
@@ -1176,13 +1180,13 @@ def get_sankey_data(
     total_outflow = total_expenses + total_investments
     
     # 1. Deficit Logic (Expenses > Income)
-    if total_outflow > total_income:
-        deficit = total_outflow - total_income
+    if total_outflow > displayed_income:
+        deficit = total_outflow - displayed_income
         idx_deficit = get_node("Deficit (Savings Withdrawal)")
         links.append({"source": idx_deficit, "target": idx_income, "value": deficit})
         
     # 2. Savings Logic (Income > Expenses)
-    net_savings = total_income - total_outflow
+    net_savings = displayed_income - total_outflow
     
     if net_savings > 0 or total_investments > 0:
         # Parent Node: "Savings & Investments"
@@ -1646,8 +1650,8 @@ def get_budget_progress(
                 elif target_member_id is None: # Joint - include only shared (None)
                     if l.member_id is None:
                         total += l.amount
-                else: # Specific member
-                    if l.member_id == target_member_id:
+                else: # Specific member - include their personal limit AND shared limits
+                    if l.member_id == target_member_id or l.member_id is None:
                         total += l.amount
             return total
 

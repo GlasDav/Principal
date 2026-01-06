@@ -1,71 +1,75 @@
 import React from 'react';
 import { LineChart } from 'lucide-react';
 import { ComposedChart, Bar, Line, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
+import MultiSelectCategoryFilter from '../MultiSelectCategoryFilter';
 
 /**
- * SpendingTrendsWidget - Historical spending chart with category filter
+ * SpendingTrendsWidget - Historical spending chart with multi-select category filter
+ * Now uses the same grouping/sorting as the Reports page filter
  */
 export default function SpendingTrendsWidget({
     trendHistory,
     trendOption,
     onTrendOptionChange,
-    buckets: bucketsProp = []
+    categories: categoriesProp = [],
+    selectedBuckets = [],
+    onSelectedBucketsChange
 }) {
-    // Defensive: ensure buckets is always an array to prevent .map() crashes
-    const buckets = Array.isArray(bucketsProp) ? bucketsProp : [];
+    // Defensive: ensure categories is always an array to prevent .map() crashes
+    const categories = Array.isArray(categoriesProp) ? categoriesProp : [];
+
+    // Handle preset selection (Total, Non-Discretionary, Discretionary)
+    const handlePresetChange = (e) => {
+        const value = e.target.value;
+        onTrendOptionChange(value);
+        // Clear bucket selection when changing presets
+        if (value !== 'bucket') {
+            onSelectedBucketsChange([]);
+        }
+    };
+
+    // Determine if we're in category filter mode
+    const isFilterMode = trendOption === 'bucket' || selectedBuckets.length > 0;
 
     return (
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-            <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
                     <LineChart size={20} className="text-indigo-500" />
                     Spending Trends
                 </h2>
-                <select
-                    className="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none cursor-pointer min-w-[200px]"
-                    value={trendOption}
-                    onChange={(e) => onTrendOptionChange(e.target.value)}
-                >
-                    <option value="Total">Total Budget</option>
-                    <option value="Non-Discretionary">Non-Discretionary (Needs)</option>
-                    <option value="Discretionary">Discretionary (Wants)</option>
 
-                    {buckets.filter(b => b.group === 'Non-Discretionary').length > 0 && (
-                        <optgroup label="Non-Discretionary">
-                            {buckets
-                                .filter(b => b.group === 'Non-Discretionary')
-                                .sort((a, b) => a.name.localeCompare(b.name))
-                                .map(b => (
-                                    <option key={b.id} value={`bucket:${b.id}`}>{b.name}</option>
-                                ))
-                            }
-                        </optgroup>
-                    )}
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Preset Dropdown */}
+                    <select
+                        className="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none cursor-pointer"
+                        value={isFilterMode ? 'bucket' : trendOption}
+                        onChange={handlePresetChange}
+                    >
+                        <option value="Total">Total Budget</option>
+                        <option value="Non-Discretionary">Non-Discretionary (Needs)</option>
+                        <option value="Discretionary">Discretionary (Wants)</option>
+                        <option value="bucket">Filter by Categories...</option>
+                    </select>
 
-                    {buckets.filter(b => b.group === 'Discretionary').length > 0 && (
-                        <optgroup label="Discretionary">
-                            {buckets
-                                .filter(b => b.group === 'Discretionary')
-                                .sort((a, b) => a.name.localeCompare(b.name))
-                                .map(b => (
-                                    <option key={b.id} value={`bucket:${b.id}`}>{b.name}</option>
-                                ))
-                            }
-                        </optgroup>
+                    {/* Multi-Select Category Filter (appears when 'Filter by Categories' is selected) */}
+                    {isFilterMode && (
+                        <div className="w-64">
+                            <MultiSelectCategoryFilter
+                                categories={categories}
+                                selectedIds={selectedBuckets}
+                                onChange={(ids) => {
+                                    onSelectedBucketsChange(ids);
+                                    // Ensure trendOption is set to 'bucket' when categories are selected
+                                    if (ids.length > 0 && trendOption !== 'bucket') {
+                                        onTrendOptionChange('bucket');
+                                    }
+                                }}
+                                placeholder="Select categories..."
+                            />
+                        </div>
                     )}
-
-                    {buckets.filter(b => b.group !== 'Non-Discretionary' && b.group !== 'Discretionary').length > 0 && (
-                        <optgroup label="Other">
-                            {buckets
-                                .filter(b => b.group !== 'Non-Discretionary' && b.group !== 'Discretionary')
-                                .sort((a, b) => a.name.localeCompare(b.name))
-                                .map(b => (
-                                    <option key={b.id} value={`bucket:${b.id}`}>{b.name}</option>
-                                ))
-                            }
-                        </optgroup>
-                    )}
-                </select>
+                </div>
             </div>
 
             <div className="h-80">

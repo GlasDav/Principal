@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import api, { getMembers, getUpcomingBills } from '../services/api';
+import api, { getMembers, getUpcomingBills, getBucketsTree } from '../services/api';
 
 // Widget imports
 import { toLocalISOString } from '../utils/dateUtils';
@@ -32,6 +32,7 @@ export default function Dashboard() {
     const [customStart, setCustomStart] = useState(toLocalISOString(new Date()));
     const [customEnd, setCustomEnd] = useState(toLocalISOString(new Date()));
     const [trendOption, setTrendOption] = useState("Total");
+    const [selectedBuckets, setSelectedBuckets] = useState([]);
     const [excludeOneOffs, setExcludeOneOffs] = useState(false);
 
     // Widget Order State
@@ -137,17 +138,27 @@ export default function Dashboard() {
     const netWorthHistory = Array.isArray(netWorthHistoryRaw) ? netWorthHistoryRaw : [];
 
     const { data: trendHistoryRaw = [] } = useQuery({
-        queryKey: ['trendHistory', start, end, trendOption],
+        queryKey: ['trendHistory', start, end, trendOption, selectedBuckets],
         queryFn: async () => {
             const params = { start_date: start, end_date: end };
             if (trendOption === "Non-Discretionary") params.group = "Non-Discretionary";
             else if (trendOption === "Discretionary") params.group = "Discretionary";
-            else if (trendOption.startsWith("bucket:")) params.bucket_id = trendOption.split(":")[1];
+            else if (trendOption === "bucket" && selectedBuckets.length > 0) {
+                params.bucket_ids = selectedBuckets.join(',');
+            }
             return (await api.get('/analytics/history', { params })).data;
         }
     });
     // Defensive: ensure trendHistory is always an array
     const trendHistory = Array.isArray(trendHistoryRaw) ? trendHistoryRaw : [];
+
+    // Fetch buckets tree for SpendingTrendsWidget category filter
+    const { data: bucketsTreeRaw = [] } = useQuery({
+        queryKey: ['bucketsTree'],
+        queryFn: getBucketsTree,
+        staleTime: 30 * 60 * 1000
+    });
+    const bucketsTree = Array.isArray(bucketsTreeRaw) ? bucketsTreeRaw : [];
 
     const { data: sankeyData } = useQuery({
         queryKey: ['sankey', start, end, spenderMode, excludeOneOffs],
@@ -209,7 +220,7 @@ export default function Dashboard() {
             case 'cash-flow':
                 return <CashFlowWidget data={sankeyData} excludeOneOffs={excludeOneOffs} onToggleExcludeOneOffs={setExcludeOneOffs} />;
             case 'spending-trends':
-                return <SpendingTrendsWidget trendHistory={trendHistory} trendOption={trendOption} onTrendOptionChange={setTrendOption} buckets={buckets} />;
+                return <SpendingTrendsWidget trendHistory={trendHistory} trendOption={trendOption} onTrendOptionChange={setTrendOption} categories={bucketsTree} selectedBuckets={selectedBuckets} onSelectedBucketsChange={setSelectedBuckets} />;
             case 'budget-progress':
                 return <BudgetSummaryWidget buckets={buckets} formatCurrency={formatCurrency} />;
             default:
