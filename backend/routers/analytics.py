@@ -1107,7 +1107,12 @@ def get_sankey_data(
             bucket = bucket_map[bid]
             # Only include Income-group buckets with net positive amounts
             if is_income_bucket(bucket) and net_amount > 0:
-                income_by_bucket[bucket.name] = income_by_bucket.get(bucket.name, 0) + net_amount
+                # IMPORTANT: Avoid collision with central "Income" node
+                # If bucket is named "Income", merge into "Other Income" instead
+                if bucket.name == "Income":
+                    other_income_total += net_amount
+                else:
+                    income_by_bucket[bucket.name] = income_by_bucket.get(bucket.name, 0) + net_amount
     
     # Create income bucket nodes flowing INTO "Income"
     for bucket_name, amount in income_by_bucket.items():
@@ -1360,22 +1365,7 @@ def get_sankey_data(
             "value": link["value"]
         })
 
-    income_link_sum = sum(link["value"] for link in new_links 
-                          if new_nodes[link["target"]].get("name") == "Income")
-    
-    return {
-        "nodes": new_nodes, 
-        "links": new_links,
-        "debug": {
-            "displayed_income": displayed_income,
-            "income_by_bucket_sum": sum(income_by_bucket.values()),
-            "other_income_total": other_income_total,
-            "income_link_sum": income_link_sum,
-            "income_buckets": list(income_by_bucket.keys()),
-            "disc_total": disc_total,
-            "non_disc_total": non_disc_total
-        }
-    }
+    return {"nodes": new_nodes, "links": new_links}
 
 
 # --- Projections ---
