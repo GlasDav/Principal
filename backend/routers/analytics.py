@@ -1066,15 +1066,15 @@ def get_sankey_data(
     idx_income = get_node("Income")
     
     # --- INCOME BREAKDOWN BY BUCKET ---
-    # Query income by bucket to show each income stream
+    # Query NET amounts by bucket for income streams (matching dashboard logic)
+    # This uses net amounts (income - any expenses in bucket) rather than just positive transactions
     income_by_bucket_query = db.query(
         models.Transaction.bucket_id,
-        func.sum(models.Transaction.amount)
+        func.sum(models.Transaction.amount)  # NET amount (can be positive or negative)
     ).filter(
         models.Transaction.user_id == user.id,
         models.Transaction.date >= s_date,
         models.Transaction.date <= e_date,
-        models.Transaction.amount > 0,  # Only income
         ~models.Transaction.bucket.has(models.BudgetBucket.is_transfer == True),
         ~models.Transaction.bucket.has(models.BudgetBucket.is_investment == True)
     )
@@ -1091,23 +1091,23 @@ def get_sankey_data(
     
     # NOTE: is_income_bucket is already defined above (reused for consistency)
     
-    # Track income by category
+    # Track income by category - using NET amounts for consistency with dashboard
     income_by_bucket = {}
     other_income_total = 0.0
     
-    for bid, amount in income_results:
-        if amount is None or amount <= 0:
+    for bid, net_amount in income_results:
+        if net_amount is None:
             continue
             
         if bid is None:
-            # Uncategorized income
-            other_income_total += amount
+            # Uncategorized - only count if net positive
+            if net_amount > 0:
+                other_income_total += net_amount
         elif bid in bucket_map:
             bucket = bucket_map[bid]
-            # Only include Income-group buckets in income streams
-            # Refunds to expense buckets are NOT income - they just reduce expenses
-            if is_income_bucket(bucket):
-                income_by_bucket[bucket.name] = income_by_bucket.get(bucket.name, 0) + amount
+            # Only include Income-group buckets with net positive amounts
+            if is_income_bucket(bucket) and net_amount > 0:
+                income_by_bucket[bucket.name] = income_by_bucket.get(bucket.name, 0) + net_amount
     
     # Create income bucket nodes flowing INTO "Income"
     for bucket_name, amount in income_by_bucket.items():
@@ -1121,7 +1121,7 @@ def get_sankey_data(
         links.append({"source": idx_other_income, "target": idx_income, "value": other_income_total})
     
     # Calculate displayed income (sum of all income streams shown in Sankey)
-    # This ensures the Income node value matches the sum of its inflows
+    # This now matches the dashboard's total_income calculation
     displayed_income = sum(income_by_bucket.values()) + other_income_total
 
     # --- EXPENSE GROUPS (Income -> Groups) ---
