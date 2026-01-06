@@ -226,9 +226,15 @@ erDiagram
   - Standardized month difference calculation.
   - **Sankey Diagram:** Added "Deficit" node logic to balance diagram when Expenses > Income (visual fix).
   - **Budget Cards:** Fixed Subcategory categorization. "Wants" subcategories (e.g. Dining Out) now separated from "Needs" parents (e.g. Food).
-- **Data Integrity:**
   - Added vote `created_at` timestamp to User model.
   - Added `bucket_id` linking for `Subscription` model.
+  - **Budget History:**
+    - Modified backend to always return 12 months (or selected period range) of history.
+    - Added blue highlight for selected period in Sparkline charts.
+  - **Sankey Diagram:**
+    - **Reconciliation:** Added explicit "Reconciling Item" node to handle Income vs Outflow differences.
+    - **Income Fix:** Fixed mismatch by using net amounts (consistent with Dashboard) and merged buckets named "Income" into "Other Income" to prevent self-loops.
+    - **Subcategories:** Subcategory spending now flows to its own group (Non-Disc/Disc), not the parent's group.
   - **Split Transactions:**
     - Refined UI: Positive inputs only, auto-balance for 2 splits.
     - Fixed logic: Logic now modifies parent transaction (Split 1) + creates new sibling (Split 2).

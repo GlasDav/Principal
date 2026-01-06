@@ -76,7 +76,7 @@ This document outlines the planned features, improvements, and future direction 
 ## 🐛 Known Issues
 
 - [ ] **Goals Page:** 'Something went wrong' error on first load. Fine after refresh.
-- [ ] **Dashboard Sankey:** Income mismatch between sum of streams and 'Income' node.
-- [ ] **Spending Trends:** Category dropdown needs sorting and grouping.
-- [ ] **Budget History:** 6 month history should include current month.
-- [ ] **Budget Chart:** History chart numbers incorrect when switching months.
+- [x] **Dashboard Sankey:** Income mismatch between sum of streams and 'Income' node.
+- [x] **Spending Trends:** Category dropdown needs sorting and grouping.
+- [x] **Budget History:** 6 month history should include current month.
+- [x] **Budget Chart:** History chart numbers incorrect when switching months.
