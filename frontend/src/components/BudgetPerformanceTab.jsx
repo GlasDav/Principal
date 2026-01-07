@@ -196,43 +196,34 @@ export default function BudgetPerformanceTab({ userSettings }) {
         });
     };
 
-    if (isLoading) {
-        return (
-            <div className="p-8 flex justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-            </div>
-        );
-    }
-
-    const { months = [], categories = [] } = performance || {};
+    // Extract data from performance (with safe defaults)
+    const months = performance?.months || [];
+    const categories = performance?.categories || [];
     const currentMonthIdx = selectedMonthIndex ?? (months.length - 1);
 
     // Process categories: separate children that belong to different groups
+    // NOTE: This useMemo MUST be before any early returns to satisfy React hooks rules
     const processedCategories = useMemo(() => {
         const needsParents = [];
         const wantsParents = [];
-        const needsOrphans = []; // Children from Discretionary parents that are Non-Discretionary
-        const wantsOrphans = []; // Children from Non-Discretionary parents that are Discretionary
+        const needsOrphans = [];
+        const wantsOrphans = [];
 
         for (const cat of categories) {
             const parentGroup = cat.group;
 
-            // Filter children by their own group
             const sameGroupChildren = cat.children?.filter(c => !c.group || c.group === parentGroup) || [];
             const diffGroupChildren = cat.children?.filter(c => c.group && c.group !== parentGroup) || [];
 
-            // Create parent with only same-group children
             const processedParent = { ...cat, children: sameGroupChildren };
 
             if (parentGroup === 'Non-Discretionary') {
                 needsParents.push(processedParent);
-                // Add different-group children to wants as orphans
                 diffGroupChildren.forEach(child => {
                     wantsOrphans.push({ ...child, isOrphan: true, parentName: cat.name });
                 });
             } else {
                 wantsParents.push(processedParent);
-                // Add different-group children to needs as orphans
                 diffGroupChildren.forEach(child => {
                     needsOrphans.push({ ...child, isOrphan: true, parentName: cat.name });
                 });
@@ -244,6 +235,15 @@ export default function BudgetPerformanceTab({ userSettings }) {
             wants: [...wantsParents, ...wantsOrphans.map(o => ({ ...o, children: [] }))]
         };
     }, [categories]);
+
+    // Loading check AFTER all hooks
+    if (isLoading) {
+        return (
+            <div className="p-8 flex justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">
