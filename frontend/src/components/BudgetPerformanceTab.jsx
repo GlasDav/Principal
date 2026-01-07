@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight, Filter, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { API_BASE_URL } from '../config';
@@ -178,7 +178,7 @@ export default function BudgetPerformanceTab({ userSettings }) {
         queryFn: fetchMembers
     });
 
-    useMemo(() => {
+    useEffect(() => {
         if (performance && selectedMonthIndex === null) {
             setSelectedMonthIndex(performance.current_month_index || performance.months.length - 1);
         }
