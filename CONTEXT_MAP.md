@@ -243,8 +243,13 @@ erDiagram
     - **Investments Tab:** Merged standalone Investments page into Net Worth as a tab.
     - **Sankey Diagram:** Removed scroll container; widget now auto-expands height based on content.
   - **Auth/System:**
-  - **Auth/System:**
     - **Logout Fix:** Cleared TanStack Query cache on logout to prevent stale data persisting between sessions.
+- **Budget Performance Tab:**
+  - New spreadsheet-style view showing 12 months of category spend data.
+  - **Backend:** Added `/analytics/performance` endpoint returning spend history, average, and variance columns.
+  - **Frontend:** New `BudgetPerformanceTab.jsx` component with freeze panes (sticky Category column), collapsible parent/child rows, and clickable month columns to update variance display.
+  - Child categories now correctly display in their own Needs/Wants section, not their parent's group.
+  - Member filter toggle (Total Household, Joint, individual members).
 
 ## Known Issues
 - **Recent Transactions Widget:** Currently not displaying transactions on dashboard (Investigating).
