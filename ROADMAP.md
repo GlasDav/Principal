@@ -23,7 +23,7 @@ This document outlines the planned features, improvements, and future direction 
 
 ## 💰 Budget & Goals
 
-- [ ] **Performance Tab:** Spreadsheet-like view showing category spend by month.
+- [x] **Performance Tab:** Spreadsheet-like view showing category spend by month.
     - Each month as its own column
     - Each row as a budget category with spend for that month
     - Expandable/collapsible subcategories

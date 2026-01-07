@@ -147,3 +147,23 @@ class TestGroupSpending:
         assert "groups" in data
         assert "total_expenses" in data
 
+
+class TestPerformanceData:
+    """Tests for performance tab endpoint."""
+    
+    def test_get_performance_data(self, client, auth_headers):
+        """Performance endpoint returns 12 months of data."""
+        response = client.get("/analytics/performance", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert "months" in data
+        assert "categories" in data
+        assert len(data["months"]) == 12
+    
+    def test_performance_with_spender_filter(self, client, auth_headers):
+        """Performance endpoint accepts spender filter."""
+        response = client.get("/analytics/performance?spender=Joint", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert "categories" in data
+

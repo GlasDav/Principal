@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, Tag, Zap } from 'lucide-react';
+import { BarChart3, Tag, Zap, Table2 } from 'lucide-react';
 import * as api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import BucketTableSection from '../components/BucketTableSection';
 import RulesSection from '../components/RulesSection';
 import BudgetProgressTab from '../components/BudgetProgressTab';
+import BudgetPerformanceTab from '../components/BudgetPerformanceTab';
 import { useBucketOperations } from '../hooks/useBucketOperations';
 
 export default function Budget() {
@@ -66,6 +67,7 @@ export default function Budget() {
 
     const tabs = [
         { id: 'progress', label: 'Progress', icon: BarChart3 },
+        { id: 'performance', label: 'Performance', icon: Table2 },
         { id: 'categories', label: 'Categories', icon: Tag },
         { id: 'rules', label: 'Rules', icon: Zap },
     ];
@@ -102,6 +104,10 @@ export default function Budget() {
             {/* Tab Content */}
             {activeTab === 'progress' && (
                 <BudgetProgressTab userSettings={userSettings} />
+            )}
+
+            {activeTab === 'performance' && (
+                <BudgetPerformanceTab userSettings={userSettings} />
             )}
 
             {activeTab === 'categories' && (

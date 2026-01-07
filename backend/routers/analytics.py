@@ -2288,7 +2288,228 @@ def get_cash_flow_forecast(
     }
 
 
+
 # --- AI Chat ---
+
+# --- Performance Tab (Spreadsheet View) ---
+
+@router.get("/performance")
+def get_performance_data(
+    spender: str = Query(default="Combined", description="Filter by spender: Combined, Joint, or member name"),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Get 12 months of spending data per category in spreadsheet format.
+    Returns monthly spend columns plus analytics (average, variance vs budget, variance vs average).
+    """
+    user = current_user
+    today = date.today()
+    
+    # Calculate 12-month window (current month + 11 previous months)
+    # Start from the 1st of 12 months ago
+    if today.month <= 11:
+        history_start = today.replace(year=today.year - 1, month=today.month + 1, day=1)
+    else:
+        history_start = today.replace(month=1, day=1)
+    
+    # End at last day of current month
+    if today.month == 12:
+        history_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        history_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+    
+    # Fetch all non-hidden, non-transfer buckets
+    buckets = db.query(models.BudgetBucket).filter(
+        models.BudgetBucket.user_id == user.id,
+        models.BudgetBucket.is_transfer == False,
+        models.BudgetBucket.is_hidden == False
+    ).all()
+    
+    if not buckets:
+        return {"months": [], "categories": []}
+    
+    bucket_ids = [b.id for b in buckets]
+    bucket_map = {b.id: b for b in buckets}
+    
+    # Separate parent and child buckets
+    parent_buckets = [b for b in buckets if b.parent_id is None]
+    child_buckets = [b for b in buckets if b.parent_id is not None]
+    
+    # Build parent -> children map
+    children_map = {}
+    for child in child_buckets:
+        if child.parent_id not in children_map:
+            children_map[child.parent_id] = []
+        children_map[child.parent_id].append(child)
+    
+    # Fetch members for spender filter
+    members = db.query(models.HouseholdMember).filter(
+        models.HouseholdMember.user_id == user.id
+    ).order_by(models.HouseholdMember.id).all()
+    
+    # Build spender mapping (legacy names to current)
+    spender_to_member = {"Joint": "Joint"}
+    legacy_names = ["User A", "User B"]
+    for i, legacy_name in enumerate(legacy_names):
+        if i < len(members):
+            spender_to_member[legacy_name] = members[i].name
+    for m in members:
+        spender_to_member[m.name] = m.name
+    
+    # Fetch spend data grouped by bucket, year, month
+    history_query = db.query(
+        models.Transaction.bucket_id,
+        extract('year', models.Transaction.date).label('year'),
+        extract('month', models.Transaction.date).label('month'),
+        func.sum(models.Transaction.amount)
+    ).filter(
+        models.Transaction.user_id == user.id,
+        models.Transaction.bucket_id.in_(bucket_ids),
+        models.Transaction.date >= history_start,
+        models.Transaction.date <= history_end
+    )
+    
+    if spender != "Combined":
+        history_query = history_query.filter(models.Transaction.spender == spender)
+    
+    history_results = history_query.group_by(
+        models.Transaction.bucket_id, 'year', 'month'
+    ).all()
+    
+    # Build history map: bucket_id -> {"YYYY-MM": amount}
+    bucket_history = {}
+    for bid, yr, mo, total in history_results:
+        if bid is None:
+            continue
+        if bid not in bucket_history:
+            bucket_history[bid] = {}
+        key = f"{int(yr)}-{int(mo):02d}"
+        # Invert sign: expenses are negative in DB, we want positive values
+        bucket_history[bid][key] = -total if total else 0
+    
+    # Generate 12 month labels
+    month_labels = []
+    current = history_start
+    while current <= history_end:
+        month_key = current.strftime("%Y-%m")
+        month_labels.append({
+            "key": month_key,
+            "label": current.strftime("%b"),
+            "full_label": current.strftime("%b %Y")
+        })
+        if current.month == 12:
+            current = current.replace(year=current.year + 1, month=1)
+        else:
+            current = current.replace(month=current.month + 1)
+    
+    # Fetch budget limits for all buckets
+    all_limits = db.query(models.BudgetLimit).filter(
+        models.BudgetLimit.bucket_id.in_(bucket_ids)
+    ).all()
+    
+    # Map bucket_id -> total limit (sum of all member limits)
+    bucket_limits = {}
+    for limit in all_limits:
+        if limit.bucket_id not in bucket_limits:
+            bucket_limits[limit.bucket_id] = 0
+        bucket_limits[limit.bucket_id] += limit.amount
+    
+    # Helper to get limit for a bucket (with spender filtering)
+    def get_bucket_limit(bucket_id):
+        # For simplicity, return total limit (sum of all members)
+        # More granular filtering could be added if needed
+        return bucket_limits.get(bucket_id, 0)
+    
+    # Build category data
+    categories = []
+    
+    for parent in parent_buckets:
+        # Skip income categories
+        if parent.group == "Income":
+            continue
+        
+        children = children_map.get(parent.id, [])
+        child_ids = [c.id for c in children]
+        all_bucket_ids = [parent.id] + child_ids
+        
+        # Aggregate spend by month for parent + children
+        spend_by_month = []
+        for ml in month_labels:
+            amount = sum(bucket_history.get(bid, {}).get(ml["key"], 0) for bid in all_bucket_ids)
+            spend_by_month.append(round(amount, 2))
+        
+        # Calculate average (exclude zero months for more accurate average)
+        non_zero_months = [s for s in spend_by_month if s > 0]
+        average = round(sum(non_zero_months) / len(non_zero_months), 2) if non_zero_months else 0
+        
+        # Get budget limit (sum parent + children limits, or just parent if is_group_budget)
+        if parent.is_group_budget or not children:
+            budget_limit = get_bucket_limit(parent.id)
+        else:
+            budget_limit = sum(get_bucket_limit(c.id) for c in children)
+            if budget_limit == 0:
+                budget_limit = get_bucket_limit(parent.id)
+        
+        # Current month spend (last element)
+        current_spend = spend_by_month[-1] if spend_by_month else 0
+        
+        # Variance vs budget (negative = under budget, positive = over budget)
+        variance_vs_budget = round(current_spend - budget_limit, 2) if budget_limit > 0 else 0
+        
+        # Variance vs average
+        variance_vs_average = round(current_spend - average, 2) if average > 0 else 0
+        
+        # Build children data
+        children_data = []
+        for child in children:
+            child_spend_by_month = []
+            for ml in month_labels:
+                amount = bucket_history.get(child.id, {}).get(ml["key"], 0)
+                child_spend_by_month.append(round(amount, 2))
+            
+            child_non_zero = [s for s in child_spend_by_month if s > 0]
+            child_average = round(sum(child_non_zero) / len(child_non_zero), 2) if child_non_zero else 0
+            child_limit = get_bucket_limit(child.id)
+            child_current = child_spend_by_month[-1] if child_spend_by_month else 0
+            
+            children_data.append({
+                "id": child.id,
+                "name": child.name,
+                "icon": child.icon_name,
+                "budget_limit": round(child_limit, 2),
+                "spend_by_month": child_spend_by_month,
+                "average": child_average,
+                "variance_vs_budget": round(child_current - child_limit, 2) if child_limit > 0 else 0,
+                "variance_vs_average": round(child_current - child_average, 2) if child_average > 0 else 0
+            })
+        
+        categories.append({
+            "id": parent.id,
+            "name": parent.name,
+            "icon": parent.icon_name,
+            "group": parent.group,
+            "parent_id": None,
+            "budget_limit": round(budget_limit, 2),
+            "spend_by_month": spend_by_month,
+            "average": average,
+            "variance_vs_budget": variance_vs_budget,
+            "variance_vs_average": variance_vs_average,
+            "children": children_data
+        })
+    
+    # Sort by group (Non-Discretionary first) then by name
+    categories.sort(key=lambda x: (0 if x["group"] == "Non-Discretionary" else 1, x["name"]))
+    
+    return {
+        "months": [ml["label"] for ml in month_labels],
+        "month_keys": [ml["key"] for ml in month_labels],
+        "current_month_index": len(month_labels) - 1,
+        "categories": categories
+    }
+
+
+
 
 @router.post("/chat", response_model=schemas.ChatResponse)
 def chat_with_ai(
