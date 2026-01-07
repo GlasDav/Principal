@@ -2477,6 +2477,7 @@ def get_performance_data(
                 "id": child.id,
                 "name": child.name,
                 "icon": child.icon_name,
+                "group": child.group,  # Include child's own group for proper categorization
                 "budget_limit": round(child_limit, 2),
                 "spend_by_month": child_spend_by_month,
                 "average": child_average,
