@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Target as TargetIcon, Plus as PlusIcon, Pencil as PencilIcon, CheckCircle as CheckCircleIcon, TrendingUp, Building, Wallet, Trash2 as TrashIcon, Calendar, Flame as FlameIcon, LineChart as LineChartIcon } from 'lucide-react';
+import { Target as TargetIcon, Plus as PlusIcon, Pencil as PencilIcon, CheckCircle as CheckCircleIcon, TrendingUp as TrendingUpIcon, Building as BuildingIcon, Wallet as WalletIcon, Trash2 as TrashIcon, Calendar as CalendarIcon, Flame as FlameIcon, LineChart as LineChartIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import api, { getGoals, createGoal, updateGoal, deleteGoal } from '../services/api';
 import { Dialog } from '@headlessui/react';
@@ -249,7 +249,7 @@ const GoalDetailsModal = ({ isOpen, onClose, goal }) => {
                                             {projection.date.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })}
                                         </div>
                                         <div className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                                            <TrendingUp size={12} />
+                                            <TrendingUpIcon size={12} />
                                             Saving ~${(projection.dailyRate * 30).toFixed(0)}/mo
                                         </div>
                                     </div>
