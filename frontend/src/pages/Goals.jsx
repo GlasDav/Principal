@@ -337,6 +337,24 @@ export default function Goals() {
     const [isModalOpen, setModalOpen] = useState(false);
     const [editingGoal, setEditingGoal] = useState(null);
     const [selectedGoal, setSelectedGoal] = useState(null); // For Detail View
+    const [isCategoryModalOpen, setCategoryModalOpen] = useState(false);
+
+    // Fetch Category Goals
+    const { data: categoryGoals = [] } = useQuery({
+        queryKey: ['category_goals'],
+        queryFn: async () => {
+            const res = await api.get('/goals/category');
+            return res.data;
+        }
+    });
+
+    const createCategoryGoalMutation = useMutation({
+        mutationFn: (newGoal) => api.post('/goals/category', newGoal),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['category_goals']);
+            setCategoryModalOpen(false);
+        }
+    });
 
     // Fetch Goals
     const { data: goalsRaw = [], isLoading: goalsLoading } = useQuery({
