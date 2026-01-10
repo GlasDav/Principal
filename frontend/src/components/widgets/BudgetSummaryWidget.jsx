@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { PiggyBank, AlertCircle, CheckCircle, ChevronRight, Info } from 'lucide-react';
-import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from 'recharts';
+// Recharts removed per user request
 
 /**
  * BudgetSummaryWidget - Compact budget health indicator for Dashboard
@@ -67,60 +67,21 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], score =
     return (
         <div className="block bg-card dark:bg-card-dark p-5 rounded-2xl shadow-sm border border-border dark:border-border-dark hover:shadow-md transition-shadow group relative">
             {/* Gauge Section */}
+            {/* Header Section */}
             <Link to="/budget" className="block">
-                <div className="flex items-center justify-between mb-2">
-                    {/* Left Side: Icon/Text + Gauge */}
-                    <div className="flex items-center gap-4">
-                        {/* Icon + Text */}
-                        <div className="flex items-center gap-3">
-                            <div className={`p-2.5 rounded-xl ${colors.bg}`}>
-                                <PiggyBank className={colors.text} size={20} />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-text-primary dark:text-text-primary-dark">Budget Score</h3>
-                                <div className="text-xs text-text-muted dark:text-text-muted-dark">Financial Health</div>
-                            </div>
+                <div className="flex items-center justify-between mb-4">
+                    {/* Icon + Text */}
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2.5 rounded-xl ${colors.bg}`}>
+                            <PiggyBank className={colors.text} size={20} />
                         </div>
-
-                        {/* Gauge (Resized & Tooltip Add) */}
-                        <div
-                            className="relative w-16 h-16 -my-2 cursor-help"
-                            title="Budget Score (0-100): Weighted score based on spending velocity, category adherence, and planning."
-                        >
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RadialBarChart
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius="60%"
-                                    outerRadius="80%"
-                                    barSize={8}
-                                    data={[{ name: 'score', value: score, fill: score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444' }]}
-                                    startAngle={180}
-                                    endAngle={0}
-                                >
-                                    <PolarAngleAxis
-                                        type="number"
-                                        domain={[0, 100]}
-                                        angleAxisId={0}
-                                        tick={false}
-                                    />
-                                    <RadialBar
-                                        background
-                                        clockWise
-                                        dataKey="value"
-                                        cornerRadius={10}
-                                    />
-                                </RadialBarChart>
-                            </ResponsiveContainer>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
-                                <span className={`text-lg font-bold ${score >= 80 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
-                                    {score}
-                                </span>
-                            </div>
+                        <div>
+                            <h3 className="font-bold text-text-primary dark:text-text-primary-dark">Budget Overview</h3>
+                            <div className="text-xs text-text-muted dark:text-text-muted-dark">Financial Health</div>
                         </div>
                     </div>
 
-                    {/* Right Side: Toggle Button */}
+                    {/* Rollover Toggle Button */}
                     <button
                         onClick={(e) => {
                             e.preventDefault();
