@@ -78,6 +78,23 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], score =
                             <div className="text-xs text-text-muted dark:text-text-muted-dark">Financial Health</div>
                         </div>
                     </div>
+
+                    {/* Toggle Button - Unified Style */}
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setShowRollover(!showRollover);
+                        }}
+                        className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors z-10 mr-4 ${showRollover
+                                ? 'bg-primary/10 text-primary border-primary/20 dark:bg-primary/20 dark:text-primary-light dark:border-primary/30'
+                                : 'bg-surface text-text-muted border-border hover:bg-slate-100 dark:bg-card-dark dark:text-text-muted-dark dark:border-border-dark dark:hover:bg-slate-800'
+                            }`}
+                        title="Include accumulated unspent budget (rollovers) in total"
+                    >
+                        {showRollover ? 'Rollovers: ON' : 'Rollovers: OFF'}
+                    </button>
+
                     {/* Score Gauge */}
                     <div className="relative w-24 h-24 -my-4">
                         <ResponsiveContainer width="100%" height="100%">
@@ -114,20 +131,7 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], score =
                 </div>
             </Link>
 
-            {/* Toggle Button Positioned Absolute Top Right */}
-            <button
-                onClick={(e) => {
-                    e.preventDefault();
-                    setShowRollover(!showRollover);
-                }}
-                className={`absolute top-5 right-5 text-xs font-medium px-2 py-1 rounded-full transition-colors ${showRollover
-                    ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light'
-                    : 'bg-surface text-text-muted dark:bg-card-dark dark:text-text-muted-dark hover:bg-surface/80 dark:hover:bg-card-dark/80'
-                    }`}
-                title="Include accumulated unspent budget (rollovers) in total"
-            >
-                {showRollover ? 'Include Rollovers' : 'Exclude Rollovers'}
-            </button>
+
 
             <Link to="/budget" className="block">
                 {/* Progress bar */}

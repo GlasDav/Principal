@@ -74,11 +74,12 @@ const getNodeColor = (name, group) => {
     return '#6366F1';
 };
 
-const SankeyChart = ({ data }) => {
+const SankeyChart = ({ data, excludeOneOffs, onToggleExcludeOneOffs }) => {
     const [selectedNode, setSelectedNode] = useState(null);
 
     // Validate and sanitize data to prevent Recharts stack overflow
     const sanitizedData = useMemo(() => {
+        // ... (rest of logic same)
         if (!data || !data.nodes || !data.links) {
             return null;
         }
@@ -124,14 +125,17 @@ const SankeyChart = ({ data }) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
     };
 
-    // Handle node click
+    // ... (rest of helper functions same)
+
+    // Node Click Handlers ... 
     const handleNodeClick = (node) => {
         if (node.children && node.children.length > 0) {
             setSelectedNode(node);
         }
     };
 
-    // Custom Node with colors and click interaction
+    // ... (CustomNode, CustomLink definitions same)
+
     const CustomNode = ({ x, y, width, height, index, payload, containerWidth }) => {
         const isLeft = x < containerWidth / 2;
         const textAnchor = isLeft ? 'end' : 'start';
@@ -231,7 +235,23 @@ const SankeyChart = ({ data }) => {
 
     return (
         <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 flex flex-col relative">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 shrink-0">Cash Flow</h3>
+            <div className="flex items-center justify-between mb-4 shrink-0">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Cash Flow</h3>
+
+                {/* Toggle Button */}
+                {onToggleExcludeOneOffs && (
+                    <button
+                        onClick={() => onToggleExcludeOneOffs(!excludeOneOffs)}
+                        className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${excludeOneOffs
+                                ? 'bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800'
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 dark:hover:bg-slate-700'
+                            }`}
+                        title="Toggle strict cash flow view (hide one-off expenses/income)"
+                    >
+                        {excludeOneOffs ? 'Exclude One-Offs: ON' : 'Exclude One-Offs: OFF'}
+                    </button>
+                )}
+            </div>
             <div className="w-full transition-all duration-300">
                 <div style={{ height: `${chartHeight}px`, minHeight: '400px' }}>
                     <Sankey
