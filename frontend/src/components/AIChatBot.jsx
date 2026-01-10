@@ -30,7 +30,7 @@ function formatMessage(text) {
                     <ul key={`list-${lineIdx}`} className="ml-3 my-1.5 space-y-1">
                         {currentList.map((item, i) => (
                             <li key={i} className="flex items-start gap-2">
-                                <span className="text-indigo-400 mt-0.5 text-xs">●</span>
+                                <span className="text-primary mt-0.5 text-xs">●</span>
                                 <span className="flex-1">{item}</span>
                             </li>
                         ))}
@@ -57,7 +57,7 @@ function formatMessage(text) {
             <ul key="list-final" className="ml-3 my-1.5 space-y-1">
                 {currentList.map((item, i) => (
                     <li key={i} className="flex items-start gap-2">
-                        <span className="text-indigo-400 mt-0.5 text-xs">●</span>
+                        <span className="text-primary mt-0.5 text-xs">●</span>
                         <span className="flex-1">{item}</span>
                     </li>
                 ))}
@@ -175,8 +175,8 @@ export default function AIChatBot() {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-lg transition-all duration-300 ${isOpen
-                    ? 'bg-slate-700 hover:bg-slate-600'
-                    : 'bg-indigo-600 hover:bg-indigo-700 animate-pulse hover:animate-none'
+                    ? 'bg-button-dark hover:bg-button-dark-hover'
+                    : 'bg-primary hover:bg-primary-hover animate-pulse hover:animate-none'
                     }`}
             >
                 {isOpen ? (
@@ -188,15 +188,15 @@ export default function AIChatBot() {
 
             {/* Chat Window */}
             {isOpen && (
-                <div className="fixed bottom-24 right-6 z-50 w-96 max-h-[600px] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden">
+                <div className="fixed bottom-24 right-6 z-50 w-96 max-h-[600px] bg-card dark:bg-card-dark rounded-2xl shadow-2xl border border-border dark:border-border-dark flex flex-col overflow-hidden">
                     {/* Header */}
-                    <div className="p-4 bg-indigo-600 text-white flex items-center gap-3">
-                        <div className="p-2 bg-indigo-500 rounded-full">
+                    <div className="p-4 bg-primary text-white flex items-center gap-3">
+                        <div className="p-2 bg-primary-hover rounded-full">
                             <Bot className="w-5 h-5" />
                         </div>
                         <div>
                             <h3 className="font-semibold">AI Assistant</h3>
-                            <p className="text-xs text-indigo-200">Ask me about your finances</p>
+                            <p className="text-xs text-primary-light/80">Ask me about your finances</p>
                         </div>
                     </div>
 
@@ -205,8 +205,8 @@ export default function AIChatBot() {
                         {messages.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] ${msg.role === 'user'
-                                    ? 'bg-indigo-600 text-white rounded-2xl rounded-br-md'
-                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-2xl rounded-bl-md'
+                                    ? 'bg-primary text-white rounded-2xl rounded-br-md'
+                                    : 'bg-surface dark:bg-card-dark text-text-primary dark:text-text-primary-dark rounded-2xl rounded-bl-md'
                                     } p-3`}>
                                     {/* Message Content */}
                                     <div className="text-sm">{formatMessage(msg.content)}</div>
@@ -249,8 +249,8 @@ export default function AIChatBot() {
                         {/* Loading indicator */}
                         {chatMutation.isPending && (
                             <div className="flex justify-start">
-                                <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl rounded-bl-md p-3">
-                                    <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
+                                <div className="bg-surface dark:bg-card-dark rounded-2xl rounded-bl-md p-3">
+                                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
                                 </div>
                             </div>
                         )}
@@ -258,7 +258,7 @@ export default function AIChatBot() {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                    <div className="p-4 border-t border-border dark:border-border-dark bg-surface/50 dark:bg-card-dark/50">
                         {/* Context Suggestions Chips */}
                         {contextSuggestions.length > 0 && (
                             <div className="flex gap-2 mb-3 overflow-x-auto pb-2 scrollbar-thin">
@@ -266,7 +266,7 @@ export default function AIChatBot() {
                                     <button
                                         key={i}
                                         onClick={() => handleSend(s)}
-                                        className="whitespace-nowrap px-3 py-1 bg-white dark:bg-slate-700 border border-indigo-100 dark:border-slate-600 text-indigo-600 dark:text-indigo-300 text-xs rounded-full shadow-sm hover:bg-indigo-50 dark:hover:bg-slate-600 transition-colors"
+                                        className="whitespace-nowrap px-3 py-1 bg-card dark:bg-card-dark border border-primary/20 dark:border-border-dark text-primary dark:text-primary-light text-xs rounded-full shadow-sm hover:bg-primary/10 dark:hover:bg-card-dark transition-colors"
                                     >
                                         {s}
                                     </button>
@@ -281,13 +281,13 @@ export default function AIChatBot() {
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyPress={handleKeyPress}
                                 placeholder="Ask about your finances..."
-                                className="flex-1 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                                className="flex-1 px-4 py-2 bg-card dark:bg-card-dark border border-border dark:border-border-dark rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:text-text-primary-dark"
                                 disabled={chatMutation.isPending}
                             />
                             <button
                                 onClick={() => handleSend()}
                                 disabled={!input.trim() || chatMutation.isPending}
-                                className="p-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                                className="p-2 bg-primary text-white rounded-full hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                             >
                                 <Send className="w-5 h-5" />
                             </button>

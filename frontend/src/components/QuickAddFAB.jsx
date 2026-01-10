@@ -32,9 +32,9 @@ export default function QuickAddFAB() {
 
                 <button
                     onClick={() => handleClick('/data-management')}
-                    className="flex items-center justify-end gap-3 bg-white dark:bg-slate-800 pr-3 pl-4 py-2.5 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group min-w-[160px]"
+                    className="flex items-center justify-end gap-3 bg-card dark:bg-card-dark pr-3 pl-4 py-2.5 rounded-xl shadow-lg border border-border dark:border-border-dark hover:bg-surface dark:hover:bg-card-dark transition-colors group min-w-[160px]"
                 >
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Import Data</span>
+                    <span className="text-sm font-medium text-text-primary dark:text-text-primary-dark">Import Data</span>
                     <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
                         <UploadCloud size={18} />
                     </div>
@@ -65,7 +65,7 @@ export default function QuickAddFAB() {
             {/* Main FAB */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 pointer-events-auto ${isOpen ? 'bg-slate-800 dark:bg-white text-white dark:text-slate-900 rotate-45' : 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rotate-0 hover:scale-110'}`}
+                className={`w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 pointer-events-auto ${isOpen ? 'bg-button-dark dark:bg-card text-white dark:text-text-primary rotate-45' : 'bg-gradient-to-r from-primary to-primary-hover text-white rotate-0 hover:scale-110'}`}
             >
                 <Plus size={28} strokeWidth={2.5} />
             </button>

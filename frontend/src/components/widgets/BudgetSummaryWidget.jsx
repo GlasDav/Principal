@@ -64,7 +64,7 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
     const colors = colorClasses[statusColor];
 
     return (
-        <div className="block bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow group relative">
+        <div className="block bg-card dark:bg-card-dark p-5 rounded-2xl shadow-sm border border-border dark:border-border-dark hover:shadow-md transition-shadow group relative">
             <Link to="/budget" className="block">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -72,7 +72,7 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
                             <PiggyBank className={colors.text} size={20} />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-800 dark:text-white">Budget</h3>
+                            <h3 className="font-bold text-text-primary dark:text-text-primary-dark">Budget</h3>
                             <div className="flex items-center gap-1.5">
                                 <StatusIcon size={14} className={colors.text} />
                                 <span className={`text-sm font-medium ${colors.text}`}>{statusText}</span>
@@ -89,8 +89,8 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
                     setShowRollover(!showRollover);
                 }}
                 className={`absolute top-5 right-5 text-xs font-medium px-2 py-1 rounded-full transition-colors ${showRollover
-                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300'
-                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                    ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light'
+                    : 'bg-surface text-text-muted dark:bg-card-dark dark:text-text-muted-dark hover:bg-surface/80 dark:hover:bg-card-dark/80'
                     }`}
                 title="Include accumulated unspent budget (rollovers) in total"
             >
@@ -99,7 +99,7 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
 
             <Link to="/budget" className="block">
                 {/* Progress bar */}
-                <div className="relative h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-3 flex">
+                <div className="relative h-2.5 bg-surface dark:bg-card-dark rounded-full overflow-hidden mb-3 flex">
                     {/* Spent */}
                     <div
                         className={`h-full rounded-l-full transition-all duration-500 ${colors.bar}`}
@@ -120,10 +120,10 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
                 </div>
 
                 <div className="flex justify-between text-sm">
-                    <span className="text-slate-500 dark:text-slate-400 flex gap-2">
+                    <span className="text-text-muted dark:text-text-muted-dark flex gap-2">
                         <span>{formatCurrency(totalSpent)} spent</span>
                         {totalUpcoming > 0 && (
-                            <span className="text-slate-400 dark:text-slate-500 hidden sm:inline">
+                            <span className="text-text-muted dark:text-text-muted-dark opacity-75 hidden sm:inline">
                                 + {formatCurrency(totalUpcoming)} pending
                             </span>
                         )}
