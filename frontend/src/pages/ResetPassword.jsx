@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Lock, TrendingUp, CheckCircle } from 'lucide-react';
-import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function ResetPassword() {
-    const [searchParams] = useSearchParams();
-    const token = searchParams.get('token');
     const navigate = useNavigate();
 
     const [password, setPassword] = useState("");
@@ -13,6 +11,7 @@ export default function ResetPassword() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
+    const { updatePassword } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -30,48 +29,20 @@ export default function ResetPassword() {
 
         setIsLoading(true);
         try {
-            await api.post('/auth/reset-password', {
-                token,
-                new_password: password
-            });
+            await updatePassword(password);
             setSuccess(true);
             // Redirect to login after 3 seconds
             setTimeout(() => navigate('/login'), 3000);
         } catch (err) {
-            const detail = err.response?.data?.detail;
-            if (Array.isArray(detail)) {
-                const messages = detail.map(d => d.msg.replace('Value error, ', '')).join('. ');
-                setError(messages);
-            } else if (typeof detail === 'string') {
-                setError(detail);
-            } else {
-                setError("Failed to reset password. The link may have expired.");
-            }
+            console.error("Password reset error:", err);
+            setError(err.message || "Failed to reset password. The session may have expired.");
         } finally {
             setIsLoading(false);
         }
     };
 
-    if (!token) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 flex items-center justify-center p-4">
-                <div className="bg-white/10 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/20 w-full max-w-md text-center">
-                    <div className="text-red-400 mb-4">
-                        <h2 className="text-xl font-bold">Invalid Reset Link</h2>
-                        <p className="text-sm text-slate-400 mt-2">
-                            This password reset link is invalid or has expired.
-                        </p>
-                    </div>
-                    <Link
-                        to="/forgot-password"
-                        className="text-violet-400 hover:text-violet-300 text-sm"
-                    >
-                        Request a new reset link →
-                    </Link>
-                </div>
-            </div>
-        );
-    }
+    // Note: Supabase automatically recovers the session from the URL fragment
+    // We assume the AuthProvider has initialized the session by the time user interacts.
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 flex items-center justify-center p-4 relative overflow-hidden">

@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, TrendingUp, ArrowLeft } from 'lucide-react';
-import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState("");
+    const { resetPassword } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
         setIsLoading(true);
         try {
-            await api.post('/auth/forgot-password', { email });
+            await resetPassword(email);
             setSubmitted(true);
         } catch (err) {
             const detail = err.response?.data?.detail;

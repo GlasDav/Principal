@@ -88,34 +88,43 @@ async def migrate_users():
                     # User will need to reset password
                 }
                 
-                try:
-                    response = await client.post(
-                        f"{supabase_url}/auth/v1/admin/users",
-                        headers=headers,
-                        json=payload
-                    )
-                    
-                    if response.status_code == 200:
-                        data = response.json()
-                        new_uuid = data['id']
-                        print(f"✅ Created: {user.email} (Old ID: {user.id} -> New ID: {new_uuid})")
-                        
-                        # Add to mapping
-                        id_mapping[user.id] = new_uuid
-                        
-                    elif response.status_code == 422 and "already registered" in response.text:
-                         print(f"⚠️  Already registered: {user.email}")
-                         # We need to fetch the user to get their ID if they exist
-                         # This requires a separate GET request if we want to support re-running
-                         # For now, we assume clean slate or user handles it. 
-                         # Ideally:
-                         # fetch_resp = await client.get(f"{supabase_url}/auth/v1/admin/users", params={"email": user.email})
-                         # ... handle fetching ID
-                    else:
-                        print(f"❌ Failed to create {user.email}: {response.text}")
-                        
                 except Exception as e:
-                     print(f"❌ Error processing {user.email}: {str(e)}")
+                    print(f"❌ Error processing {user.email}: {str(e)}")
+                    continue
+
+                if response.status_code == 200:
+                    data = response.json()
+                    new_uuid = data['id']
+                    print(f"✅ Created: {user.email} (Old ID: {user.id} -> New ID: {new_uuid})")
+                    id_mapping[user.id] = new_uuid
+
+                elif (response.status_code == 422 and "email_exists" in response.text) or \
+                     (response.status_code == 400 and "User already registered" in response.text):
+                     print(f"⚠️  Already registered: {user.email}. Fetching ID...")
+                     
+                     # Fetch existing user to get ID
+                     # We'll list users and filter (fine for small batch, ideally use search param if available)
+                     try:
+                         list_resp = await client.get(
+                             f"{supabase_url}/auth/v1/admin/users",
+                             headers=headers
+                         )
+                         if list_resp.status_code == 200:
+                             all_users = list_resp.json().get("users", [])
+                             found = next((u for u in all_users if u["email"] == user.email), None)
+                             if found:
+                                 new_uuid = found['id']
+                                 print(f"   Mapping found: {new_uuid}")
+                                 id_mapping[user.id] = new_uuid
+                             else:
+                                 print(f"   Could not find user in list despite error.")
+                         else:
+                             print(f"   Failed to list users: {list_resp.text}")
+                     except Exception as fetch_err:
+                         print(f"   Error fetching existing user: {fetch_err}")
+
+                else:
+                    print(f"❌ Failed to create {user.email}: {response.text}")
         
         # Save mapping to file
         import json

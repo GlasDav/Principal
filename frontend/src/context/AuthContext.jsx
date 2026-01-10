@@ -89,13 +89,29 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
+    const resetPassword = async (email) => {
+        const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        return data;
+    };
+
+    const updatePassword = async (newPassword) => {
+        const { data, error } = await supabase.auth.updateUser({
+            password: newPassword
+        });
+        if (error) throw error;
+        return data;
+    };
+
     const logout = async () => {
         await supabase.auth.signOut();
         // State updates handled by onAuthStateChange
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, register, googleLogin, loading }}>
+        <AuthContext.Provider value={{ user, token, login, logout, register, googleLogin, resetPassword, updatePassword, loading }}>
             {children}
         </AuthContext.Provider>
     );
