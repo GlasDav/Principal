@@ -11,7 +11,7 @@ router = APIRouter(
     tags=["transactions"],
 )
 
-@router.get("/", response_model=dict)
+@router.get("/")
 def get_transactions(
     skip: int = 0,
     limit: int = 100,
