@@ -248,7 +248,7 @@ export default function Dashboard() {
             case 'spending-trends':
                 return <SpendingTrendsWidget trendHistory={trendHistory} trendOption={trendOption} onTrendOptionChange={setTrendOption} categories={bucketsTree} selectedBuckets={selectedBuckets} onSelectedBucketsChange={setSelectedBuckets} />;
             case 'budget-progress':
-                return <BudgetSummaryWidget buckets={buckets} formatCurrency={formatCurrency} />;
+                return <BudgetSummaryWidget buckets={buckets} score={dashboardData.score} formatCurrency={formatCurrency} />;
             default:
                 return null;
         }

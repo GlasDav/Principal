@@ -1953,15 +1953,76 @@ def get_budget_progress(
     # Sort: over budget first, then by percent descending
     categories.sort(key=lambda x: (-1 if x["status"] == "over" else 0, -x["percent"]))
     
-    # Calculate overall score (0-100)
-    total_cats = on_track + over_budget
-    if total_cats > 0:
-        base_score = int((on_track / total_cats) * 100)
-    else:
-        base_score = 100
+    # Calculate overall score (0-100) using Smart Score Logic
+    # 1. Spending Velocity (0-40 pts): Are we spending faster than time passes?
+    # 2. Adherence (0-55 pts): Weighted penalty for overspending categories
+    # 3. Planning (0-5 pts): Bonus for having few uncategorized txns
+
+    today = date.today()
+    days_in_month = int((history_end_last - current_start).days) + 1
+    day_of_month = int((today - current_start).days) + 1
     
-    # Bonus for savings and penalize for overspending
-    score = min(100, max(0, base_score))
+    # Cap day progress at 1.0 (100%)
+    if today > current_end:
+        time_progress = 1.0
+        is_past_month = True
+    elif today < current_start:
+        time_progress = 0.0
+        is_past_month = False
+    else:
+        time_progress = min(1.0, max(0.0, day_of_month / days_in_month))
+        is_past_month = False
+
+    # Total Budget Limits (Aggregate of all categories)
+    total_budget_limit = sum(c["limit"] for c in categories)
+    total_spent_amount = sum(c["spent"] for c in categories)
+    
+    # 1. Velocity Score (Max 40)
+    # If limit is 0, we can't calculate velocity properly (avoid div/0)
+    velocity_score = 40
+    if total_budget_limit > 0:
+        budget_used_pct = total_spent_amount / total_budget_limit
+        # Allowed deviation: It's okay to be slightly ahead of linear time (e.g. rent paid on 1st)
+        # But if we are way ahead, penalize.
+        
+        # If past month, we just want to be under 100%
+        target_pct = 1.0 if is_past_month else time_progress
+        
+        excess_spend_pct = max(0, budget_used_pct - target_pct)
+        
+        # Penalty: Lose 2 points for every 1% excess
+        # Example: 10% excess = 20 points lost.
+        velocity_penalty = excess_spend_pct * 200 
+        velocity_score = max(0, 40 - velocity_penalty)
+    
+    # 2. Adherence Score (Max 55)
+    # Penalize for every category that is over budget, weighted by its size relative to total budget
+    adherence_penalty = 0
+    for c in categories:
+        if c["status"] == "over" and c["limit"] > 0:
+            # How much over?
+            over_amt = c["spent"] - c["limit"]
+            # Weight: (Over Amount / Overall Budget) * Multiplier
+            # Taking $100 over on a $5000 budget is small (2%). Taking $100 over on $200 budget is huge (50%).
+            # We care about impact on TOTAL financial health.
+            if total_budget_limit > 0:
+                impact_pct = over_amt / total_budget_limit
+                # Penalty: Lose 100 points for every 10% of total budget blown
+                penalty = impact_pct * 1000 
+                adherence_penalty += penalty
+    
+    adherence_score = max(0, 55 - adherence_penalty)
+    
+    # 3. Planning Score (Max 5)
+    # Penalize if "Uncategorized" exists and has spend > 0
+    planning_score = 5
+    uncategorized = next((c for c in categories if c["name"] == "Uncategorized"), None)
+    if uncategorized and uncategorized["spent"] > 0:
+        planning_score = 0
+        
+    # Final Score
+    raw_score = velocity_score + adherence_score + planning_score
+    score = int(min(100, max(0, raw_score)))
     
     return {
         "period": {

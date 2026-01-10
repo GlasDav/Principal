@@ -30,7 +30,7 @@ This document outlines the planned features, improvements, and future direction 
     - Analytics columns (average spend, variance from budget, etc.)
     - Click on a column to show performance vs budget for that period
 - [x] **New Default Categories:** Add 'Reimbursable' and 'Mobile Phone' to default category list.
-- [ ] **Budget Score:** Revise methodology to be more intuitive.
+- [x] **Budget Score:** Revised methodology to be more intuitive (Velocity + Weighted Adherence).
 - [x] **Category Goals:** specific expenditure goals (e.g., "Under budget on clothing for 3 months").
 - [x] **Goal Tracking:** Visual progress for specific saving/spending goals.
 

@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { PiggyBank, AlertCircle, CheckCircle, ChevronRight } from 'lucide-react';
+import { PiggyBank, AlertCircle, CheckCircle, ChevronRight, Info } from 'lucide-react';
+import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 
 /**
  * BudgetSummaryWidget - Compact budget health indicator for Dashboard
  * Shows overall status and links to full Budget page
  */
-export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatCurrency }) {
+export default function BudgetSummaryWidget({ buckets: bucketsProp = [], score = 100, formatCurrency }) {
     // Defensive: ensure buckets is always an array to prevent .filter() crashes
     const buckets = Array.isArray(bucketsProp) ? bucketsProp : [];
 
@@ -65,18 +66,49 @@ export default function BudgetSummaryWidget({ buckets: bucketsProp = [], formatC
 
     return (
         <div className="block bg-card dark:bg-card-dark p-5 rounded-2xl shadow-sm border border-border dark:border-border-dark hover:shadow-md transition-shadow group relative">
+            {/* Gauge Section */}
             <Link to="/budget" className="block">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                         <div className={`p-2.5 rounded-xl ${colors.bg}`}>
                             <PiggyBank className={colors.text} size={20} />
                         </div>
                         <div>
-                            <h3 className="font-bold text-text-primary dark:text-text-primary-dark">Budget</h3>
-                            <div className="flex items-center gap-1.5">
-                                <StatusIcon size={14} className={colors.text} />
-                                <span className={`text-sm font-medium ${colors.text}`}>{statusText}</span>
-                            </div>
+                            <h3 className="font-bold text-text-primary dark:text-text-primary-dark">Budget Score</h3>
+                            <div className="text-xs text-text-muted dark:text-text-muted-dark">Financial Health</div>
+                        </div>
+                    </div>
+                    {/* Score Gauge */}
+                    <div className="relative w-24 h-24 -my-4">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <RadialBarChart
+                                cx="50%"
+                                cy="50%"
+                                innerRadius="60%"
+                                outerRadius="80%"
+                                barSize={10}
+                                data={[{ name: 'score', value: score, fill: score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444' }]}
+                                startAngle={180}
+                                endAngle={0}
+                            >
+                                <PolarAngleAxis
+                                    type="number"
+                                    domain={[0, 100]}
+                                    angleAxisId={0}
+                                    tick={false}
+                                />
+                                <RadialBar
+                                    background
+                                    clockWise
+                                    dataKey="value"
+                                    cornerRadius={10}
+                                />
+                            </RadialBarChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pt-4">
+                            <span className={`text-xl font-bold ${score >= 80 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
+                                {score}
+                            </span>
                         </div>
                     </div>
                 </div>
