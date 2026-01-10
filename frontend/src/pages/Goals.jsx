@@ -284,48 +284,50 @@ const GoalDetailsModal = ({ isOpen, onClose, goal }) => {
                             </div>
 
                             {/* 2. Chart */}
-                            <div className="h-80 w-full">
+                            <div className="w-full">
                                 <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Progress History</h4>
-                                {isLoading ? (
-                                    <div className="h-full flex items-center justify-center text-slate-400">Loading history...</div>
-                                ) : history.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={history}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                                            <XAxis
-                                                dataKey="date"
-                                                tickFormatter={(val) => new Date(val).toLocaleDateString('en-AU', { month: 'short', day: 'numeric' })}
-                                                stroke="#94a3b8"
-                                                fontSize={12}
-                                                tickMargin={10}
-                                            />
-                                            <YAxis
-                                                tickFormatter={(val) => `$${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`}
-                                                stroke="#94a3b8"
-                                                fontSize={12}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }}
-                                                itemStyle={{ color: '#fff' }}
-                                                formatter={(val) => [`$${val.toLocaleString()}`, 'Balance']}
-                                                labelFormatter={(l) => new Date(l).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                            />
-                                            <ReferenceLine y={goal.target_amount} label="Target" stroke="#10b981" strokeDasharray="3 3" />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="amount"
-                                                stroke="#6366f1"
-                                                strokeWidth={3}
-                                                dot={false}
-                                                activeDot={{ r: 6 }}
-                                            />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <div className="h-full flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
-                                        No history data available yet
-                                    </div>
-                                )}
+                                <div className="h-80 w-full">
+                                    {isLoading ? (
+                                        <div className="h-full flex items-center justify-center text-slate-400">Loading history...</div>
+                                    ) : history.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={history}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                                                <XAxis
+                                                    dataKey="date"
+                                                    tickFormatter={(val) => new Date(val).toLocaleDateString('en-AU', { month: 'short', day: 'numeric' })}
+                                                    stroke="#94a3b8"
+                                                    fontSize={12}
+                                                    tickMargin={10}
+                                                />
+                                                <YAxis
+                                                    tickFormatter={(val) => `$${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`}
+                                                    stroke="#94a3b8"
+                                                    fontSize={12}
+                                                />
+                                                <Tooltip
+                                                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }}
+                                                    itemStyle={{ color: '#fff' }}
+                                                    formatter={(val) => [`$${val.toLocaleString()}`, 'Balance']}
+                                                    labelFormatter={(l) => new Date(l).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                />
+                                                <ReferenceLine y={goal.target_amount} label="Target" stroke="#10b981" strokeDasharray="3 3" />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="amount"
+                                                    stroke="#6366f1"
+                                                    strokeWidth={3}
+                                                    dot={false}
+                                                    activeDot={{ r: 6 }}
+                                                />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+                                            No history data available yet
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </Dialog.Panel>
