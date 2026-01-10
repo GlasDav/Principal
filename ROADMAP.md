@@ -56,11 +56,7 @@ This document outlines the planned features, improvements, and future direction 
 
 ## 🎨 UI/UX Improvements
 
-- [ ] **Design Token Migration:** Migrate all components from hardcoded Tailwind colors to new design tokens.
-    - Replace `bg-indigo-600` with `bg-primary`.
-    - Replace `bg-slate-50` with `var(--color-surface)`.
-    - Replace `text-slate-900` with `text-text-primary`.
-    - See `frontend/BRAND GUIDELINES.md` for full mapping.
+- [x] **Design Token Migration:** Migrate all components from hardcoded Tailwind colors to new design tokens.
 - [ ] **Dashboard Customization:** Ability to hide/unhide specific dashboard widgets.
 - [x] **Quick Add Button:** Align emojis and improve visual layout.
 - [ ] **Tutorial System:**
@@ -86,4 +82,4 @@ This document outlines the planned features, improvements, and future direction 
 - [x] **Spending Trends:** Category dropdown needs sorting and grouping.
 - [x] **Budget History:** 6 month history should include current month.
 - [x] **Budget Chart:** History chart numbers incorrect when switching months.
-- [ ] **Goal Modal:** Content spills out of modal container (fix attempted but failed).
+- [x] **Goal Modal:** Content spills out of modal container (fix attempted but failed).

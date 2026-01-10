@@ -62,7 +62,7 @@ When adding a new column to any model:
 | **ORM** | SQLAlchemy 2.0 | Database abstraction |
 | **State Management** | TanStack Query v5 | Server-state caching |
 | **Routing** | react-router-dom v7 | Client-side navigation |
-| **Styling** | Tailwind CSS v4 | Utility-first CSS |
+| **Styling** | Tailwind CSS v4 | Utility-first CSS + Design Tokens (`@theme`) |
 | **Auth** | Supabase Auth (JWT) | Managed Authentication |
 | **Deployment** | Docker + Binary Lane VPS | Containerized hosting |
 | **Error Monitoring** | Sentry | Production error tracking |
@@ -423,6 +423,16 @@ docker compose exec backend python /app/seed_demo_user.py
 ## 📋 Recent Changes & Fixes
 
 \u003e Last updated: 2026-01-10
+
+### **Design Token System (Jan 2026)**
+- Migrated entire frontend to use semantic design tokens defined in `index.css` via Tailwind v4 `@theme`.
+- **Key Tokens:**
+  - `bg-surface` / `bg-card` (Backgrounds)
+  - `text-text-primary` / `text-text-secondary` (Typography)
+  - `bg-primary` (Brand Action Color)
+  - `border-border` (Universal border color)
+- **Dark Mode:** All tokens support dark mode natively via `dark:` variants or CSS rules.
+- **Pattern:** Using semantic names (e.g., `text-accent-error`) instead of hardcoded hex/utility colors (e.g., `text-red-500`).
 
 ### **Supabase JWT Authentication Migration**
 - Migrated from legacy JWT auth to Supabase Auth with ES256 token signing

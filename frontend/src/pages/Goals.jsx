@@ -216,7 +216,7 @@ const GoalDetailsModal = ({ isOpen, onClose, goal }) => {
             <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
             <div className="fixed inset-0 z-50 overflow-y-auto">
                 <div className="flex min-h-full items-center justify-center p-4 py-8">
-                    <Dialog.Panel className="w-full max-w-5xl bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700">
+                    <Dialog.Panel className="w-full max-w-5xl bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
                         {/* Header */}
                         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-start">
                             <div>
