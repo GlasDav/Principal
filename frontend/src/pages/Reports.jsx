@@ -198,6 +198,8 @@ export default function Reports() {
 
     if (loadingSummary) return <div className="p-8 text-center text-slate-500">Loading Reports...</div>;
 
+    const { totals, buckets } = dashboardData || { totals: { income: 0, expenses: 0, net_savings: 0 }, buckets: [] };
+
     // Prepare Pie Chart Data (Expenses by Group)
     const groupData = buckets.reduce((acc, bucket) => {
         const group = bucket.group || "Uncategorized";
