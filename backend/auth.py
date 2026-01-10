@@ -258,6 +258,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         # Inspect Header to determine Algorithm
         header = jwt.get_unverified_header(token)
         alg = header.get("alg")
+        kid = header.get("kid")
+        
+        logger.info(f"JWT token algorithm: {alg}, kid: {kid}")
         
         payload = None
         
@@ -265,6 +268,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         # Only fall back to JWKS if HS256 fails and token uses RS256/ES256
         
         if SUPABASE_JWT_SECRET:
+            logger.info(f"Attempting HS256 verification (secret length: {len(SUPABASE_JWT_SECRET)})")
             try:
                 payload = jwt.decode(
                     token, 
@@ -272,11 +276,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
                     algorithms=["HS256"], 
                     audience="authenticated"
                 )
-                logger.debug("JWT verified successfully with HS256")
+                logger.info("JWT verified successfully with HS256")
             except JWTError as hs256_error:
-                logger.debug(f"HS256 verification failed: {hs256_error}, trying JWKS...")
+                logger.error(f"HS256 verification failed: {hs256_error}")
                 # HS256 failed, try JWKS if algorithm is RS256/ES256
                 if alg in ["RS256", "ES256"] and SUPABASE_URL:
+                    logger.info(f"Falling back to JWKS for {alg} verification...")
                     try:
                         jwks = await get_supabase_jwks(SUPABASE_URL)
                         payload = jwt.decode(
@@ -285,7 +290,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
                             algorithms=["RS256", "ES256"], 
                             audience="authenticated",
                         )
-                        logger.debug(f"JWT verified successfully with {alg} via JWKS")
+                        logger.info(f"JWT verified successfully with {alg} via JWKS")
                     except Exception as jwks_error:
                         logger.error(f"JWKS verification also failed: {jwks_error}")
                         raise credentials_exception
