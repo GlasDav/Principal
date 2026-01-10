@@ -183,10 +183,10 @@ async def migrate_table(table_name):
                      print(f"   ❌ Error updating parent for Bucket {item['id']}: {str(e)}")
 
 
-async def migrate_transactions(rows):
+async def migrate_transactions(rows, columns):
     """Special handler for transactions to deal with splits (parent_transaction_id)"""
     # Separate parents and children (splits)
-    columns = rows[0].keys()
+    # columns passed in
     
     parents = []
     splits = []
@@ -254,9 +254,10 @@ async def main():
             print(f"\n🔄 Migrating table: {table}")
             try:
                 result = session.execute(text(f"SELECT * FROM {table}"))
+                columns = result.keys() # Get columns
                 rows = result.fetchall()
                 if rows:
-                    await migrate_transactions(rows)
+                    await migrate_transactions(rows, columns)
                 else:
                     print("   No transactions found.")
             except Exception as e:
