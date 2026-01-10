@@ -1,15 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { refreshHoldingPrices, getInvestmentHistory } from '../services/api';
+import api, { refreshHoldingPrices, getInvestmentHistory, downloadNetWorthTemplate } from '../services/api';
 import {
     TrendingUp, TrendingDown, Plus, DollarSign,
-    Landmark, CreditCard, Wallet, LineChart, RefreshCw, X, Home, PiggyBank
+    Landmark, CreditCard, Wallet, LineChart, RefreshCw, X, Home, PiggyBank, Download, Upload
 } from 'lucide-react';
 import { AreaChart, Area, PieChart, Pie, Cell, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import CheckInModal from '../components/CheckInModal';
 import AccountDetailsModal from '../components/AccountDetailsModal';
 import AddInvestmentModal from '../components/AddInvestmentModal';
 import InvestmentsTab from '../components/InvestmentsTab';
+import ImportNetWorthModal from '../components/ImportNetWorthModal';
 
 const getCategoryIcon = (category, type) => {
     const c = (category || '').toLowerCase();
@@ -32,6 +33,7 @@ export default function NetWorth() {
     const [chartMode, setChartMode] = useState('net_worth');
     const [showProjection, setShowProjection] = useState(false);
     const [isInvestmentModalOpen, setIsInvestmentModalOpen] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     // Helper
     const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
@@ -199,7 +201,23 @@ export default function NetWorth() {
                         <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark">Net Worth</h1>
                         <p className="text-text-muted dark:text-text-muted-dark mt-1">Track your assets and liabilities over time.</p>
                     </div>
-                    <div>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={downloadNetWorthTemplate}
+                            className="border border-border dark:border-border-dark hover:bg-surface dark:hover:bg-surface-dark text-text-secondary hover:text-text-primary px-4 py-2.5 rounded-xl font-medium flex items-center gap-2 transition text-sm"
+                            title="Download a CSV template with example data"
+                        >
+                            <Download size={18} />
+                            Template
+                        </button>
+                        <button
+                            onClick={() => setIsImportModalOpen(true)}
+                            className="border border-border dark:border-border-dark hover:bg-surface dark:hover:bg-surface-dark text-text-secondary hover:text-text-primary px-4 py-2.5 rounded-xl font-medium flex items-center gap-2 transition text-sm"
+                            title="Import net worth history from CSV"
+                        >
+                            <Upload size={18} />
+                            Import
+                        </button>
                         <button
                             onClick={() => setIsCheckInOpen(true)}
                             className="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-xl font-medium shadow-sm flex items-center gap-2 transition"
@@ -603,6 +621,11 @@ export default function NetWorth() {
                     <AddInvestmentModal
                         isOpen={isInvestmentModalOpen}
                         onClose={() => setIsInvestmentModalOpen(false)}
+                    />
+
+                    <ImportNetWorthModal
+                        isOpen={isImportModalOpen}
+                        onClose={() => setIsImportModalOpen(false)}
                     />
                 </>
             ) : (

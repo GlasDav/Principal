@@ -118,6 +118,20 @@ export const createAccount = async (data) => (await api.post('/net-worth/account
 export const updateAccount = async (id, data) => (await api.put(`/net-worth/accounts/${id}`, data)).data;
 export const deleteAccount = async (id) => (await api.delete(`/net-worth/accounts/${id}`)).data;
 
+// Net Worth Import/Export
+export const downloadNetWorthTemplate = async () => {
+    const response = await api.get('/net-worth/template', { responseType: 'blob' });
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'net_worth_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+};
+
 // --- Members ---
 export const getMembers = async () => {
     const response = await api.get('/settings/members');

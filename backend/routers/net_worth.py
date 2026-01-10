@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import date
@@ -6,11 +7,225 @@ from ..database import get_db
 from .. import models, schemas, auth
 from ..services.notification_service import NotificationService
 import yfinance as yf
+import csv
+import io
+from collections import defaultdict
 
 router = APIRouter(
     prefix="/net-worth",
     tags=["net-worth"],
 )
+
+# --- CSV Import/Export ---
+
+@router.get("/template")
+def download_template(current_user: models.User = Depends(auth.get_current_user)):
+    """
+    Download a CSV template for importing net worth history.
+    Template includes example rows showing the expected format.
+    """
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header row
+    writer.writerow(["date", "account_name", "account_type", "account_category", "balance"])
+    
+    # Example rows to guide the user
+    writer.writerow(["2024-01-01", "Savings Account", "Asset", "Cash", "10000.00"])
+    writer.writerow(["2024-01-01", "Home Loan", "Liability", "Real Estate", "350000.00"])
+    writer.writerow(["2024-01-01", "Brokerage Account", "Asset", "Investment", "25000.00"])
+    writer.writerow(["2024-02-01", "Savings Account", "Asset", "Cash", "11500.00"])
+    writer.writerow(["2024-02-01", "Home Loan", "Liability", "Real Estate", "349200.00"])
+    writer.writerow(["2024-02-01", "Brokerage Account", "Asset", "Investment", "26500.00"])
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=net_worth_template.csv"}
+    )
+
+
+@router.post("/import-history", response_model=schemas.NetWorthImportResult)
+def import_history(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Import net worth history from a CSV file.
+    
+    Expected columns: date, account_name, account_type, account_category, balance
+    
+    - Creates new accounts if they don't exist
+    - Creates/updates snapshots for each unique date
+    - Liabilities should be entered as positive numbers (they will be subtracted for net worth)
+    """
+    errors = []
+    created_accounts = 0
+    updated_accounts = 0
+    imported_snapshots = 0
+    
+    # Read and decode CSV
+    try:
+        content = file.file.read().decode('utf-8')
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not read file: {str(e)}")
+    
+    reader = csv.DictReader(io.StringIO(content))
+    
+    # Validate columns
+    required_columns = {"date", "account_name", "account_type", "account_category", "balance"}
+    if not reader.fieldnames:
+        raise HTTPException(status_code=400, detail="CSV file is empty or invalid")
+    
+    missing_columns = required_columns - set(col.strip().lower() for col in reader.fieldnames)
+    if missing_columns:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Missing required columns: {', '.join(missing_columns)}"
+        )
+    
+    # Normalize column names (handle case variations)
+    def normalize_row(row):
+        return {k.strip().lower(): v.strip() if v else "" for k, v in row.items()}
+    
+    # Group rows by date
+    date_groups = defaultdict(list)
+    row_number = 1
+    
+    for row in reader:
+        row_number += 1
+        normalized = normalize_row(row)
+        
+        # Validate and parse date
+        try:
+            from datetime import datetime
+            parsed_date = datetime.strptime(normalized["date"], "%Y-%m-%d").date()
+        except ValueError:
+            errors.append(f"Row {row_number}: Invalid date format '{normalized['date']}'. Use YYYY-MM-DD.")
+            continue
+        
+        # Validate account_type
+        account_type = normalized["account_type"].title()
+        if account_type not in ["Asset", "Liability"]:
+            errors.append(f"Row {row_number}: account_type must be 'Asset' or 'Liability', got '{normalized['account_type']}'")
+            continue
+        
+        # Validate balance
+        try:
+            balance = float(normalized["balance"].replace(",", ""))
+        except ValueError:
+            errors.append(f"Row {row_number}: Invalid balance '{normalized['balance']}'")
+            continue
+        
+        date_groups[parsed_date].append({
+            "account_name": normalized["account_name"],
+            "account_type": account_type,
+            "account_category": normalized["account_category"].title() or "Other",
+            "balance": balance
+        })
+    
+    # Track accounts by name for this user
+    account_cache = {}
+    existing_accounts = db.query(models.Account).filter(
+        models.Account.user_id == current_user.id,
+        models.Account.is_active == True
+    ).all()
+    for acc in existing_accounts:
+        account_cache[acc.name.lower()] = acc
+    
+    # Process each date group
+    for snapshot_date, rows in sorted(date_groups.items()):
+        # Check for existing snapshot on this date
+        existing_snapshot = db.query(models.NetWorthSnapshot).filter(
+            models.NetWorthSnapshot.user_id == current_user.id,
+            models.NetWorthSnapshot.date == snapshot_date
+        ).first()
+        
+        if existing_snapshot:
+            # Delete existing balances for this snapshot (we'll recreate them)
+            db.query(models.AccountBalance).filter(
+                models.AccountBalance.snapshot_id == existing_snapshot.id
+            ).delete()
+            snapshot = existing_snapshot
+        else:
+            # Create new snapshot
+            snapshot = models.NetWorthSnapshot(
+                user_id=current_user.id,
+                date=snapshot_date,
+                total_assets=0,
+                total_liabilities=0,
+                net_worth=0
+            )
+            db.add(snapshot)
+            db.commit()
+            db.refresh(snapshot)
+            imported_snapshots += 1
+        
+        # Process accounts and balances for this date
+        total_assets = 0.0
+        total_liabilities = 0.0
+        
+        for row_data in rows:
+            account_key = row_data["account_name"].lower()
+            
+            # Find or create account
+            if account_key in account_cache:
+                account = account_cache[account_key]
+                # Update category/type if changed
+                if account.type != row_data["account_type"] or account.category != row_data["account_category"]:
+                    account.type = row_data["account_type"]
+                    account.category = row_data["account_category"]
+                    updated_accounts += 1
+            else:
+                # Create new account
+                account = models.Account(
+                    user_id=current_user.id,
+                    name=row_data["account_name"],
+                    type=row_data["account_type"],
+                    category=row_data["account_category"],
+                    balance=row_data["balance"],
+                    is_active=True
+                )
+                db.add(account)
+                db.commit()
+                db.refresh(account)
+                account_cache[account_key] = account
+                created_accounts += 1
+            
+            # Update account's current balance to the latest imported value
+            account.balance = row_data["balance"]
+            
+            # Create account balance record
+            balance_record = models.AccountBalance(
+                snapshot_id=snapshot.id,
+                account_id=account.id,
+                balance=row_data["balance"]
+            )
+            db.add(balance_record)
+            
+            # Accumulate totals
+            if row_data["account_type"] == "Asset":
+                total_assets += row_data["balance"]
+            else:
+                total_liabilities += row_data["balance"]
+        
+        # Update snapshot totals
+        snapshot.total_assets = total_assets
+        snapshot.total_liabilities = total_liabilities
+        snapshot.net_worth = total_assets - total_liabilities
+        
+        db.commit()
+    
+    return schemas.NetWorthImportResult(
+        imported_snapshots=imported_snapshots,
+        created_accounts=created_accounts,
+        updated_accounts=updated_accounts,
+        errors=errors
+    )
+
 
 # --- Accounts ---
 

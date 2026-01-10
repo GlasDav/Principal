@@ -682,3 +682,12 @@ class UpdateMemberRoleRequest(BaseModel):
             raise ValueError("Role must be 'admin' or 'member'")
         return v
 
+
+# Net Worth Import
+class NetWorthImportResult(BaseModel):
+    """Response schema for net worth CSV import."""
+    imported_snapshots: int
+    created_accounts: int
+    updated_accounts: int
+    errors: List[str] = []
+
