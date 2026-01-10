@@ -47,21 +47,7 @@ const ColorPicker = ({ currentColor, onChange }) => {
                     />
 
                     {/* Color Grid - 3x3 */}
-                    <div style={{
-                        position: 'absolute',
-                        right: 0,
-                        marginTop: '8px',
-                        padding: '8px',
-                        backgroundColor: 'var(--color-slate-800, #1e293b)',
-                        border: '1px solid var(--color-slate-700, #334155)',
-                        borderRadius: '8px',
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                        zIndex: 50,
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: '6px',
-                        width: '102px',
-                    }}>
+                    <div className="absolute right-0 mt-2 p-2 bg-popover dark:bg-popover-dark border border-border dark:border-border-dark rounded-lg shadow-lg z-50 grid grid-cols-3 gap-1.5 w-[102px]">
                         {COLOR_PALETTE.map((color) => (
                             <button
                                 key={color}
@@ -106,7 +92,7 @@ const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation }) => {
     };
 
     return (
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 space-y-3 hover:shadow-md transition-shadow">
+        <div className="bg-card dark:bg-card-dark p-4 rounded-xl shadow-sm border border-border dark:border-border-dark space-y-3 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
                 <div
                     className="p-2 rounded-lg text-white"
@@ -118,7 +104,7 @@ const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation }) => {
                 <div className="flex flex-col flex-1 gap-1">
                     <div className="flex items-center gap-2">
                         <input
-                            className="font-semibold text-slate-800 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-indigo-500 outline-none transition px-1 flex-1"
+                            className="font-semibold text-text-primary dark:text-text-primary-dark bg-transparent border-b border-transparent hover:border-border focus:border-primary outline-none transition px-1 flex-1"
                             value={localName}
                             onChange={(e) => setLocalName(e.target.value)}
                             onBlur={handleNameBlur}
@@ -128,7 +114,7 @@ const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation }) => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400 font-medium">Theme</span>
+                    <span className="text-xs text-text-muted font-medium">Theme</span>
                     <ColorPicker
                         currentColor={member.color}
                         onChange={(color) => updateMemberMutation.mutate({ id: member.id, data: { ...member, color } })}
@@ -139,7 +125,7 @@ const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation }) => {
                     onClick={() => {
                         if (confirm("Delete this member? Limits associated with them will be removed.")) deleteMemberMutation.mutate(member.id);
                     }}
-                    className="text-slate-300 hover:text-red-400 transition self-start"
+                    className="text-text-muted hover:text-accent-error transition self-start"
                 >
                     <Trash2 size={16} />
                 </button>
@@ -170,20 +156,20 @@ export default function MembersSettings() {
     if (isLoading) return <div className="p-4">Loading members...</div>;
 
     return (
-        <section className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+        <section className="bg-card dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border dark:border-border-dark">
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                    <div className="p-2 bg-primary/10 text-primary rounded-lg">
                         <Users size={20} />
                     </div>
                     <div>
-                        <h2 className="font-semibold text-slate-800 dark:text-slate-100">Household Members</h2>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Manage people in your household for budgeting</p>
+                        <h2 className="font-semibold text-text-primary dark:text-text-primary-dark">Household Members</h2>
+                        <p className="text-sm text-text-muted">Manage people in your household for budgeting</p>
                     </div>
                 </div>
                 <button
                     onClick={() => createMemberMutation.mutate({ name: "New Member", color: "#6366f1", avatar: "User" })}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20 transition"
                 >
                     <Plus size={16} />
                     Add Member
@@ -202,7 +188,7 @@ export default function MembersSettings() {
             </div>
 
             {members.length === 0 && (
-                <div className="text-center py-8 text-slate-400 text-sm italic bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-dashed border-slate-200 dark:border-slate-700">
+                <div className="text-center py-8 text-text-muted text-sm italic bg-surface dark:bg-surface-dark rounded-lg border border-dashed border-border dark:border-border-dark">
                     No members found. Add a member to start tracking individual limits.
                 </div>
             )}

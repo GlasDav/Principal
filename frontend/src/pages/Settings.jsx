@@ -37,11 +37,11 @@ export default function Settings() {
     return (
         <>
             {/* Sidebar - fixed position starting at main sidebar width, top at header height */}
-            <aside className="fixed left-64 top-[72px] bottom-0 w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-10">
+            <aside className="fixed left-64 top-[72px] bottom-0 w-64 bg-card dark:bg-card-dark border-r border-border dark:border-border-dark flex flex-col z-10">
                 {/* Header */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-700">
-                    <h1 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                        <SettingsIcon className="text-indigo-600" />
+                <div className="p-4 border-b border-border dark:border-border-dark">
+                    <h1 className="text-xl font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-2">
+                        <SettingsIcon className="text-primary" />
                         Settings
                     </h1>
                 </div>
@@ -52,8 +52,8 @@ export default function Settings() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
-                                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+                                ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light'
+                                : 'text-text-muted hover:bg-surface dark:hover:bg-surface-dark'
                                 }`}
                         >
                             <tab.icon size={18} />
@@ -63,24 +63,24 @@ export default function Settings() {
                 </nav>
 
                 {/* Footer Controls - structure matches main sidebar footer exactly */}
-                <div className="mt-auto p-3 border-t border-slate-100 dark:border-slate-700">
+                <div className="mt-auto p-3 border-t border-border dark:border-border-dark">
                     <button
                         onClick={toggleTheme}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 w-full transition-all duration-200 mb-1"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-muted hover:bg-surface dark:hover:bg-surface-dark w-full transition-all duration-200 mb-1"
                     >
                         {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
                         Appearance
                     </button>
-                    <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-500 w-full">
+                    <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-muted w-full">
                         <DollarSign size={18} />
                         <span className="flex-1">Currency</span>
-                        <span className="text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">AUD</span>
+                        <span className="text-xs text-text-primary dark:text-text-primary-dark bg-surface dark:bg-surface-dark px-2 py-0.5 rounded">AUD</span>
                     </div>
                 </div>
             </aside>
 
             {/* Content Area - add left margin to account for fixed sidebar */}
-            <main className="ml-64 flex-1 p-6 md:p-8 bg-slate-50 dark:bg-slate-900 min-h-[calc(100vh-72px)]">
+            <main className="ml-64 flex-1 p-6 md:p-8 bg-surface dark:bg-surface-dark min-h-[calc(100vh-72px)]">
                 <div className="max-w-4xl mx-auto">
                     <ActiveComponent />
                 </div>

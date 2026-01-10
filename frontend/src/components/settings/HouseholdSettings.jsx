@@ -99,8 +99,8 @@ const leaveHousehold = async () => {
 const RoleIcon = ({ role }) => {
     switch (role) {
         case 'owner': return <Crown size={14} className="text-amber-500" />;
-        case 'admin': return <Shield size={14} className="text-indigo-500" />;
-        default: return <User size={14} className="text-slate-400" />;
+        case 'admin': return <Shield size={14} className="text-primary" />;
+        default: return <User size={14} className="text-text-muted" />;
     }
 };
 
@@ -174,7 +174,7 @@ export default function HouseholdSettings() {
     if (isLoading) {
         return (
             <div className="p-8 flex justify-center">
-                <Loader2 className="animate-spin h-8 w-8 text-indigo-600" />
+                <Loader2 className="animate-spin h-8 w-8 text-primary" />
             </div>
         );
     }
@@ -184,15 +184,15 @@ export default function HouseholdSettings() {
             {/* Header */}
             <div className="flex justify-between items-start">
                 <div>
-                    <h3 className="text-lg font-medium text-slate-800 dark:text-white">Family Sharing</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    <h3 className="text-lg font-medium text-text-primary dark:text-text-primary-dark">Family Sharing</h3>
+                    <p className="text-sm text-text-muted mt-1">
                         Manage your household and share financial data with family members.
                     </p>
                 </div>
             </div>
 
             {/* Household Info */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+            <div className="bg-card dark:bg-card-dark rounded-xl border border-border dark:border-border-dark p-6">
                 <div className="flex items-center justify-between mb-4">
                     {editingName ? (
                         <div className="flex items-center gap-2">
@@ -200,30 +200,30 @@ export default function HouseholdSettings() {
                                 type="text"
                                 value={householdName}
                                 onChange={(e) => setHouseholdName(e.target.value)}
-                                className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
+                                className="px-3 py-1 border border-border dark:border-border-dark rounded-lg bg-card dark:bg-card-dark text-text-primary dark:text-text-primary-dark"
                                 autoFocus
                             />
                             <button
                                 onClick={() => updateMutation.mutate({ name: householdName })}
-                                className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-sm"
+                                className="px-3 py-1 bg-primary text-white rounded-lg text-sm"
                             >
                                 Save
                             </button>
                             <button
                                 onClick={() => setEditingName(false)}
-                                className="px-3 py-1 text-slate-500 hover:text-slate-700"
+                                className="px-3 py-1 text-text-muted hover:text-text-secondary"
                             >
                                 Cancel
                             </button>
                         </div>
                     ) : (
                         <div className="flex items-center gap-3">
-                            <Users size={24} className="text-indigo-500" />
+                            <Users size={24} className="text-primary" />
                             <div>
-                                <h4 className="text-xl font-semibold text-slate-800 dark:text-white">
+                                <h4 className="text-xl font-semibold text-text-primary dark:text-text-primary-dark">
                                     {household?.name}
                                 </h4>
-                                <p className="text-sm text-slate-500">
+                                <p className="text-sm text-text-muted">
                                     {household?.members?.length || 0} member{household?.members?.length !== 1 ? 's' : ''}
                                 </p>
                             </div>
@@ -232,7 +232,7 @@ export default function HouseholdSettings() {
                                     setHouseholdName(household?.name || '');
                                     setEditingName(true);
                                 }}
-                                className="ml-2 text-slate-400 hover:text-slate-600"
+                                className="ml-2 text-text-muted hover:text-text-secondary"
                                 title="Edit name"
                             >
                                 <Settings size={16} />
@@ -241,7 +241,7 @@ export default function HouseholdSettings() {
                     )}
                     <button
                         onClick={() => setShowInviteModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition"
+                        className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-lg transition"
                     >
                         <UserPlus size={16} />
                         Invite Member
@@ -250,22 +250,22 @@ export default function HouseholdSettings() {
 
                 {/* Members List */}
                 <div className="space-y-2">
-                    <h5 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Members</h5>
+                    <h5 className="text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-2">Members</h5>
                     {household?.members?.map((member) => (
-                        <div key={member.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg group">
+                        <div key={member.id} className="flex items-center justify-between p-3 bg-surface dark:bg-surface-dark rounded-lg group">
                             <div className="flex items-center gap-3">
                                 <RoleIcon role={member.role} />
                                 <div>
-                                    <span className="font-medium text-slate-800 dark:text-slate-200">
+                                    <span className="font-medium text-text-primary dark:text-text-primary-dark">
                                         {member.user_name || member.user_email}
                                     </span>
                                     {member.user_name && (
-                                        <span className="text-sm text-slate-500 dark:text-slate-400 ml-2">
+                                        <span className="text-sm text-text-muted ml-2">
                                             {member.user_email}
                                         </span>
                                     )}
                                 </div>
-                                <span className="text-xs bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded capitalize">
+                                <span className="text-xs bg-card dark:bg-card-dark text-text-secondary dark:text-text-secondary-dark px-2 py-0.5 rounded capitalize">
                                     {member.role}
                                 </span>
                             </div>
@@ -274,7 +274,7 @@ export default function HouseholdSettings() {
                                     <select
                                         value={member.role}
                                         onChange={(e) => updateRoleMutation.mutate({ userId: member.user_id, role: e.target.value })}
-                                        className="text-xs border border-slate-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700"
+                                        className="text-xs border border-border dark:border-border-dark rounded px-2 py-1 bg-card dark:bg-card-dark text-text-primary dark:text-text-primary-dark"
                                     >
                                         <option value="member">Member</option>
                                         <option value="admin">Admin</option>
@@ -285,7 +285,7 @@ export default function HouseholdSettings() {
                                                 removeMutation.mutate(member.user_id);
                                             }
                                         }}
-                                        className="text-slate-400 hover:text-red-500 p-1"
+                                        className="text-text-muted hover:text-accent-error p-1"
                                         title="Remove member"
                                     >
                                         <Trash2 size={14} />
@@ -299,19 +299,19 @@ export default function HouseholdSettings() {
                 {/* Pending Invites */}
                 {household?.pending_invites?.length > 0 && (
                     <div className="mt-6">
-                        <h5 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Pending Invites</h5>
+                        <h5 className="text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-2">Pending Invites</h5>
                         {household.pending_invites.map((invite) => (
                             <div key={invite.id} className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg mb-2">
                                 <div className="flex items-center gap-3">
                                     <Mail size={16} className="text-amber-600" />
-                                    <span className="text-slate-700 dark:text-slate-300">{invite.email}</span>
+                                    <span className="text-text-primary dark:text-text-primary-dark">{invite.email}</span>
                                     <span className="text-xs text-amber-600 dark:text-amber-400">
                                         Expires {new Date(invite.expires_at).toLocaleDateString()}
                                     </span>
                                 </div>
                                 <button
                                     onClick={() => cancelInviteMutation.mutate(invite.id)}
-                                    className="text-slate-400 hover:text-red-500 text-sm"
+                                    className="text-text-muted hover:text-accent-error text-sm"
                                 >
                                     Cancel
                                 </button>
@@ -322,7 +322,7 @@ export default function HouseholdSettings() {
 
                 {/* Leave Household */}
                 {household?.members?.length > 1 && (
-                    <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <div className="mt-6 pt-4 border-t border-border dark:border-border-dark">
                         <button
                             onClick={() => {
                                 if (confirm('Are you sure you want to leave this household?')) {
@@ -330,7 +330,7 @@ export default function HouseholdSettings() {
                                 }
                             }}
                             disabled={leaveMutation.isPending}
-                            className="flex items-center gap-2 text-red-600 hover:text-red-700 text-sm"
+                            className="flex items-center gap-2 text-accent-error hover:text-accent-error/80 text-sm"
                         >
                             <LogOut size={16} />
                             Leave Household
@@ -342,18 +342,18 @@ export default function HouseholdSettings() {
             {/* Invite Modal */}
             {showInviteModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
-                        <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">
+                    <div className="bg-card dark:bg-card-dark rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+                        <h3 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark mb-4">
                             Invite Family Member
                         </h3>
                         {inviteError && (
-                            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm">
+                            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 text-accent-error rounded-lg text-sm">
                                 {inviteError}
                             </div>
                         )}
                         <form onSubmit={handleInvite} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                     Email Address
                                 </label>
                                 <input
@@ -361,16 +361,16 @@ export default function HouseholdSettings() {
                                     type="email"
                                     required
                                     placeholder="family@example.com"
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
+                                    className="w-full px-3 py-2 border border-border dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                     Role
                                 </label>
                                 <select
                                     name="role"
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
+                                    className="w-full px-3 py-2 border border-border dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark"
                                 >
                                     <option value="member">Member - Can view and edit data</option>
                                     <option value="admin">Admin - Can also manage members</option>
@@ -383,14 +383,14 @@ export default function HouseholdSettings() {
                                         setShowInviteModal(false);
                                         setInviteError(null);
                                     }}
-                                    className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+                                    className="px-4 py-2 text-text-muted hover:bg-surface dark:hover:bg-surface-dark rounded-lg"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={inviteMutation.isPending}
-                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg disabled:opacity-50"
+                                    className="px-4 py-2 bg-primary hover:bg-primary-hover text-white font-medium rounded-lg disabled:opacity-50"
                                 >
                                     {inviteMutation.isPending ? 'Sending...' : 'Send Invite'}
                                 </button>

@@ -93,20 +93,20 @@ export default function SecuritySettings() {
     };
 
     return (
-        <section className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 space-y-8">
+        <section className="bg-card dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border dark:border-border-dark space-y-8">
             <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg">
+                <div className="p-2 bg-surface dark:bg-surface-dark text-text-secondary dark:text-text-secondary-dark rounded-lg">
                     <Shield size={20} />
                 </div>
                 <div>
-                    <h2 className="font-semibold text-slate-800 dark:text-slate-100">Security</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Manage your account security</p>
+                    <h2 className="font-semibold text-text-primary dark:text-text-primary-dark">Security</h2>
+                    <p className="text-sm text-text-muted">Manage your account security</p>
                 </div>
             </div>
 
             {/* Change Password */}
             <div className="max-w-md">
-                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-4 flex items-center gap-2">
                     <Key size={16} /> Change Password
                 </h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,7 +114,7 @@ export default function SecuritySettings() {
                         <input
                             type="password"
                             placeholder="Current Password"
-                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
+                            className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg text-sm"
                             value={passwordData.current}
                             onChange={e => setPasswordData({ ...passwordData, current: e.target.value })}
                             required
@@ -124,7 +124,7 @@ export default function SecuritySettings() {
                         <input
                             type="password"
                             placeholder="New Password"
-                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
+                            className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg text-sm"
                             value={passwordData.new}
                             onChange={e => setPasswordData({ ...passwordData, new: e.target.value })}
                             required
@@ -134,40 +134,40 @@ export default function SecuritySettings() {
                         <input
                             type="password"
                             placeholder="Confirm New Password"
-                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
+                            className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg text-sm"
                             value={passwordData.confirm}
                             onChange={e => setPasswordData({ ...passwordData, confirm: e.target.value })}
                             required
                         />
                     </div>
 
-                    {error && <p className="text-xs text-red-500">{error}</p>}
-                    {message && <p className="text-xs text-emerald-500 flex items-center gap-1"><CheckCircle size={12} /> {message}</p>}
+                    {error && <p className="text-xs text-accent-error">{error}</p>}
+                    {message && <p className="text-xs text-accent-success flex items-center gap-1"><CheckCircle size={12} /> {message}</p>}
 
                     <button
                         type="submit"
                         disabled={changePasswordMutation.isPending}
-                        className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                        className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover transition disabled:opacity-50"
                     >
                         {changePasswordMutation.isPending ? 'Updating...' : 'Update Password'}
                     </button>
                 </form>
             </div>
 
-            <hr className="border-slate-100 dark:border-slate-700" />
+            <hr className="border-border dark:border-border-dark" />
 
             {/* MFA Placeholder */}
             <div>
-                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-2 flex items-center gap-2">
                     <Smartphone size={16} /> Multi-Factor Authentication
                 </h3>
-                <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+                <div className="flex items-center justify-between p-4 bg-surface dark:bg-surface-dark rounded-lg border border-border dark:border-border-dark">
                     <div>
-                        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Two-Factor Authentication (2FA)</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Secure your account with an additional verification step.</p>
+                        <p className="text-sm font-medium text-text-primary dark:text-text-primary-dark">Two-Factor Authentication (2FA)</p>
+                        <p className="text-xs text-text-muted">Secure your account with an additional verification step.</p>
                     </div>
                     <button
-                        className="px-3 py-1.5 text-xs font-medium bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-lg cursor-not-allowed"
+                        className="px-3 py-1.5 text-xs font-medium bg-muted dark:bg-muted-dark text-text-muted rounded-lg cursor-not-allowed"
                         disabled
                     >
                         Coming Soon
@@ -175,44 +175,44 @@ export default function SecuritySettings() {
                 </div>
             </div>
 
-            <hr className="border-slate-100 dark:border-slate-700" />
+            <hr className="border-border dark:border-border-dark" />
 
             {/* Sessions */}
             <div>
-                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-2 flex items-center gap-2">
                     <Lock size={16} /> Session Management
                 </h3>
-                <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-100 dark:border-amber-800">
+                <div className="flex items-center justify-between p-4 bg-accent-warning/10 rounded-lg border border-accent-warning/20">
                     <div>
-                        <p className="text-sm font-medium text-amber-900 dark:text-amber-200">Log out of all devices</p>
-                        <p className="text-xs text-amber-700 dark:text-amber-400">This will terminate all active sessions except this one.</p>
+                        <p className="text-sm font-medium text-accent-warning">Log out of all devices</p>
+                        <p className="text-xs text-accent-warning">This will terminate all active sessions except this one.</p>
                     </div>
                     <button
                         onClick={() => {
                             if (confirm("Are you sure you want to log out of all other devices?")) logoutAllMutation.mutate();
                         }}
-                        className="px-3 py-1.5 text-xs font-medium bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-700 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/30 transition shadow-sm"
+                        className="px-3 py-1.5 text-xs font-medium bg-card dark:bg-card-dark text-accent-warning border border-accent-warning/20 rounded-lg hover:bg-accent-warning/10 transition shadow-sm"
                     >
                         Log Out All
                     </button>
                 </div>
             </div>
 
-            <hr className="border-slate-100 dark:border-slate-700" />
+            <hr className="border-border dark:border-border-dark" />
 
             {/* Delete Account - Danger Zone */}
             <div>
-                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-2 flex items-center gap-2">
                     <Trash2 size={16} /> Delete Account
                 </h3>
-                <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="flex items-center justify-between p-4 bg-accent-error/10 rounded-lg border border-accent-error/20">
                     <div>
-                        <p className="text-sm font-medium text-red-900 dark:text-red-200">Permanently delete your account</p>
-                        <p className="text-xs text-red-700 dark:text-red-400">This action cannot be undone. All your data will be permanently deleted.</p>
+                        <p className="text-sm font-medium text-accent-error">Permanently delete your account</p>
+                        <p className="text-xs text-accent-error">This action cannot be undone. All your data will be permanently deleted.</p>
                     </div>
                     <button
                         onClick={handleDeleteAccount}
-                        className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-sm flex items-center gap-1.5"
+                        className="px-3 py-1.5 text-xs font-medium bg-accent-error text-white rounded-lg hover:bg-accent-error-hover transition shadow-sm flex items-center gap-1.5"
                     >
                         <Trash2 size={14} />
                         Delete My Account
@@ -223,22 +223,22 @@ export default function SecuritySettings() {
             {/* Delete Account Modal */}
             {showDeleteModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full">
+                    <div className="bg-card dark:bg-card-dark rounded-xl shadow-2xl max-w-md w-full">
                         {/* Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between p-6 border-b border-border dark:border-border-dark">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+                                <div className="p-2 bg-accent-error/10 text-accent-error rounded-lg">
                                     <AlertTriangle size={20} />
                                 </div>
-                                <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+                                <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">
                                     {deleteStep === 1 ? 'Delete Account?' : 'Confirm Deletion'}
                                 </h2>
                             </div>
                             <button
                                 onClick={handleDeleteCancel}
-                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition"
+                                className="p-1 hover:bg-surface dark:hover:bg-surface-dark rounded transition"
                             >
-                                <X size={20} className="text-slate-500" />
+                                <X size={20} className="text-text-muted" />
                             </button>
                         </div>
 
@@ -246,17 +246,17 @@ export default function SecuritySettings() {
                         <div className="p-6 space-y-4">
                             {deleteStep === 1 ? (
                                 <>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                                    <p className="text-sm text-text-secondary dark:text-text-secondary-dark">
                                         You are about to permanently delete your account. This will:
                                     </p>
-                                    <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-2 list-disc list-inside">
+                                    <ul className="text-sm text-text-secondary dark:text-text-secondary-dark space-y-2 list-disc list-inside">
                                         <li>Delete all your transactions and financial data</li>
                                         <li>Remove all budget categories and rules</li>
                                         <li>Delete all accounts and investment holdings</li>
                                         <li>Remove your goals and net worth history</li>
                                     </ul>
-                                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                                        <p className="text-sm font-medium text-red-900 dark:text-red-200 flex items-center gap-2">
+                                    <div className="bg-accent-error/10 border border-accent-error/20 rounded-lg p-3">
+                                        <p className="text-sm font-medium text-accent-error flex items-center gap-2">
                                             <AlertTriangle size={16} />
                                             This action cannot be undone!
                                         </p>
@@ -264,13 +264,13 @@ export default function SecuritySettings() {
                                 </>
                             ) : (
                                 <>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                                    <p className="text-sm text-text-secondary dark:text-text-secondary-dark">
                                         Please enter your password to confirm account deletion:
                                     </p>
                                     <input
                                         type="password"
                                         placeholder="Enter your password"
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                                        className="w-full px-3 py-2 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent-error"
                                         value={deletePassword}
                                         onChange={(e) => {
                                             setDeletePassword(e.target.value);
@@ -282,7 +282,7 @@ export default function SecuritySettings() {
                                         autoFocus
                                     />
                                     {deleteError && (
-                                        <p className="text-xs text-red-500 flex items-center gap-1">
+                                        <p className="text-xs text-accent-error flex items-center gap-1">
                                             <AlertTriangle size={12} />
                                             {deleteError}
                                         </p>
@@ -292,10 +292,10 @@ export default function SecuritySettings() {
                         </div>
 
                         {/* Footer */}
-                        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-end gap-3 p-6 border-t border-border dark:border-border-dark">
                             <button
                                 onClick={handleDeleteCancel}
-                                className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
+                                className="px-4 py-2 text-sm font-medium text-text-secondary dark:text-text-secondary-dark hover:bg-surface dark:hover:bg-surface-dark rounded-lg transition"
                                 disabled={deleteAccountMutation.isPending}
                             >
                                 Cancel
@@ -303,7 +303,7 @@ export default function SecuritySettings() {
                             <button
                                 onClick={handleDeleteConfirm}
                                 disabled={deleteAccountMutation.isPending}
-                                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition disabled:opacity-50 flex items-center gap-2"
+                                className="px-4 py-2 bg-accent-error text-white text-sm font-medium rounded-lg hover:bg-accent-error-hover transition disabled:opacity-50 flex items-center gap-2"
                             >
                                 {deleteAccountMutation.isPending ? (
                                     <>Deleting...</>

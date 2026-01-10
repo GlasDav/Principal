@@ -22,14 +22,14 @@ export default function CategoriesSettings() {
         moveBucket
     } = useBucketOperations();
 
-    if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>;
+    if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-slate-800 dark:text-white">Budget Categories</h3>
+                <h3 className="text-lg font-medium text-text-primary dark:text-text-primary-dark">Budget Categories</h3>
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-text-muted">
                 Manage your budget categories, limits, and grouping. Changes here affect your Main Budget page.
             </p>
 

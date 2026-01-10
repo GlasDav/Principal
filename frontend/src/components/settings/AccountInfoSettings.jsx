@@ -100,7 +100,7 @@ const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation, isOnly
     };
 
     return (
-        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+        <div className="flex items-center justify-between p-3 bg-surface dark:bg-surface-dark rounded-lg border border-border dark:border-border-dark">
             <div className="flex items-center gap-3 flex-1">
                 <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
@@ -109,7 +109,7 @@ const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation, isOnly
                     {member.name.charAt(0).toUpperCase()}
                 </div>
                 <input
-                    className="font-medium text-slate-800 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 outline-none transition px-1 flex-1 text-sm"
+                    className="font-medium text-text-primary dark:text-text-primary-dark bg-transparent border-b border-transparent hover:border-text-muted dark:hover:border-text-muted-dark focus:border-primary outline-none transition px-1 flex-1 text-sm"
                     value={localName}
                     onChange={(e) => setLocalName(e.target.value)}
                     onBlur={handleNameBlur}
@@ -128,7 +128,7 @@ const MemberCard = ({ member, updateMemberMutation, deleteMemberMutation, isOnly
                                 deleteMemberMutation.mutate(member.id);
                             }
                         }}
-                        className="text-slate-400 hover:text-red-500 transition p-1"
+                        className="text-text-muted hover:text-accent-error transition p-1"
                         title="Delete member"
                     >
                         <Trash2 size={14} />
@@ -217,8 +217,8 @@ export default function AccountSettings() {
 
     if (!user) {
         return (
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
-                <p className="text-slate-500">No user information available</p>
+            <div className="bg-card dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border dark:border-border-dark">
+                <p className="text-text-muted">No user information available</p>
             </div>
         );
     }
@@ -232,106 +232,106 @@ export default function AccountSettings() {
     return (
         <div className="space-y-6">
             {/* Account Information Section */}
-            <section className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+            <section className="bg-card dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border dark:border-border-dark">
                 <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                    <div className="p-2 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light rounded-lg">
                         <User size={20} />
                     </div>
                     <div>
-                        <h2 className="font-semibold text-slate-800 dark:text-slate-100">Account Information</h2>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Your profile and account details</p>
+                        <h2 className="font-semibold text-text-primary dark:text-text-primary-dark">Account Information</h2>
+                        <p className="text-sm text-text-secondary dark:text-text-secondary-dark">Your profile and account details</p>
                     </div>
                 </div>
 
                 <div className="space-y-4">
                     {/* Email */}
-                    <div className="flex items-start gap-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
-                        <div className="p-2 bg-white dark:bg-slate-800 rounded-lg">
-                            <Mail size={18} className="text-slate-500" />
+                    <div className="flex items-start gap-4 p-4 bg-surface dark:bg-surface-dark rounded-lg border border-border dark:border-border-dark">
+                        <div className="p-2 bg-card dark:bg-card-dark rounded-lg">
+                            <Mail size={18} className="text-text-muted" />
                         </div>
                         <div className="flex-1">
-                            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email Address</label>
-                            <p className="text-slate-800 dark:text-slate-100 font-medium mt-1">{user.email || 'Not set'}</p>
+                            <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Email Address</label>
+                            <p className="text-text-primary dark:text-text-primary-dark font-medium mt-1">{user.email || 'Not set'}</p>
                         </div>
                     </div>
 
                     {/* Username */}
                     {user.username && (
-                        <div className="flex items-start gap-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
-                            <div className="p-2 bg-white dark:bg-slate-800 rounded-lg">
-                                <User size={18} className="text-slate-500" />
+                        <div className="flex items-start gap-4 p-4 bg-surface dark:bg-surface-dark rounded-lg border border-border dark:border-border-dark">
+                            <div className="p-2 bg-card dark:bg-card-dark rounded-lg">
+                                <User size={18} className="text-text-muted" />
                             </div>
                             <div className="flex-1">
-                                <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Username</label>
-                                <p className="text-slate-800 dark:text-slate-100 font-medium mt-1">{user.username}</p>
+                                <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Username</label>
+                                <p className="text-text-primary dark:text-text-primary-dark font-medium mt-1">{user.username}</p>
                             </div>
                         </div>
                     )}
 
                     {/* Account Created */}
-                    <div className="flex items-start gap-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
-                        <div className="p-2 bg-white dark:bg-slate-800 rounded-lg">
-                            <Calendar size={18} className="text-slate-500" />
+                    <div className="flex items-start gap-4 p-4 bg-surface dark:bg-surface-dark rounded-lg border border-border dark:border-border-dark">
+                        <div className="p-2 bg-card dark:bg-card-dark rounded-lg">
+                            <Calendar size={18} className="text-text-muted" />
                         </div>
                         <div className="flex-1">
-                            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Member Since</label>
-                            <p className="text-slate-800 dark:text-slate-100 font-medium mt-1">{accountCreatedDate}</p>
+                            <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Member Since</label>
+                            <p className="text-text-primary dark:text-text-primary-dark font-medium mt-1">{accountCreatedDate}</p>
                         </div>
                     </div>
 
                     {/* Account Status */}
-                    <div className="flex items-start gap-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
-                        <div className="p-2 bg-white dark:bg-slate-800 rounded-lg">
-                            <Shield size={18} className="text-emerald-500" />
+                    <div className="flex items-start gap-4 p-4 bg-surface dark:bg-surface-dark rounded-lg border border-border dark:border-border-dark">
+                        <div className="p-2 bg-card dark:bg-card-dark rounded-lg">
+                            <Shield size={18} className="text-accent-success" />
                         </div>
                         <div className="flex-1">
-                            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Account Status</label>
+                            <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Account Status</label>
                             <div className="flex items-center gap-2 mt-1">
-                                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                                <p className="text-slate-800 dark:text-slate-100 font-medium">Active</p>
+                                <div className="w-2 h-2 bg-accent-success rounded-full"></div>
+                                <p className="text-text-primary dark:text-text-primary-dark font-medium">Active</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Info Note */}
-                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                <div className="mt-6 p-4 bg-primary/10 dark:bg-primary/20 border border-primary/20 dark:border-primary/30 rounded-lg">
+                    <p className="text-sm text-primary dark:text-primary-light">
                         <strong>Note:</strong> To update your email address or username, please contact support or use the security settings.
                     </p>
                 </div>
             </section>
 
             {/* Family Sharing Section */}
-            <section className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+            <section className="bg-card dark:bg-card-dark rounded-xl p-6 shadow-sm border border-border dark:border-border-dark">
                 <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg">
+                    <div className="p-2 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light rounded-lg">
                         <Home size={20} />
                     </div>
                     <div>
-                        <h2 className="font-semibold text-slate-800 dark:text-slate-100">Family Sharing</h2>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Share your budget with family members</p>
+                        <h2 className="font-semibold text-text-primary dark:text-text-primary-dark">Family Sharing</h2>
+                        <p className="text-sm text-text-secondary dark:text-text-secondary-dark">Share your budget with family members</p>
                     </div>
                 </div>
 
                 {!household ? (
-                    <div className="p-8 text-center bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
-                        <div className="animate-spin w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full mx-auto mb-2"></div>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Loading family sharing...</p>
+                    <div className="p-8 text-center bg-surface dark:bg-surface-dark rounded-lg border border-border dark:border-border-dark">
+                        <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                        <p className="text-sm text-text-muted">Loading family sharing...</p>
                     </div>
                 ) : (
                     <div className="space-y-6">
                         {/* Shared Access List */}
                         <div>
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Shared Access</h3>
+                                <h3 className="text-sm font-semibold text-text-primary dark:text-text-primary-dark">Shared Access</h3>
                                 <div className="flex items-center gap-2">
                                     {household.invite_code && (
                                         <button
                                             onClick={handleCopyInviteLink}
-                                            className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-700 rounded-lg text-xs font-medium hover:bg-purple-50 dark:hover:bg-purple-900/30 transition text-slate-700 dark:text-slate-300"
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-card dark:bg-card-dark border border-border dark:border-border-dark rounded-lg text-xs font-medium hover:bg-surface dark:hover:bg-surface-dark transition text-text-primary dark:text-text-primary-dark"
                                         >
-                                            {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                                            {copied ? <Check size={14} className="text-accent-success" /> : <Copy size={14} />}
                                             {copied ? 'Copied Link' : 'Copy Invite Link'}
                                         </button>
                                     )}
@@ -340,7 +340,7 @@ export default function AccountSettings() {
                                             const email = prompt('Enter email address to invite:');
                                             if (email) inviteMemberMutation.mutate(email);
                                         }}
-                                        className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium flex items-center gap-1"
+                                        className="text-sm text-primary dark:text-primary-light hover:text-primary-hover dark:hover:text-primary-hover font-medium flex items-center gap-1"
                                     >
                                         <Plus size={14} />
                                         Invite Member
@@ -351,17 +351,17 @@ export default function AccountSettings() {
                             <div className="space-y-2">
                                 {/* Always show current user first */}
                                 {(!household.members || !household.members.some(m => m.id === user.id)) && (
-                                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+                                    <div className="flex items-center justify-between p-3 bg-surface dark:bg-surface-dark rounded-lg border border-border dark:border-border-dark">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                                                <User size={16} className="text-purple-600 dark:text-purple-400" />
+                                            <div className="w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center">
+                                                <User size={16} className="text-primary dark:text-primary-light" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                                                <p className="text-sm font-medium text-text-primary dark:text-text-primary-dark">
                                                     {user.email}
-                                                    <span className="ml-2 text-xs text-slate-400">(You)</span>
+                                                    <span className="ml-2 text-xs text-text-muted">(You)</span>
                                                 </p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                <p className="text-xs text-text-muted">
                                                     Owner
                                                 </p>
                                             </div>
@@ -371,20 +371,20 @@ export default function AccountSettings() {
                                 {household.members?.map((member) => (
                                     <div
                                         key={member.id}
-                                        className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700"
+                                        className="flex items-center justify-between p-3 bg-surface dark:bg-surface-dark rounded-lg border border-border dark:border-border-dark"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                                                <User size={16} className="text-purple-600 dark:text-purple-400" />
+                                            <div className="w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center">
+                                                <User size={16} className="text-primary dark:text-primary-light" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                                                <p className="text-sm font-medium text-text-primary dark:text-text-primary-dark">
                                                     {member.email}
                                                     {member.id === user.id && (
-                                                        <span className="ml-2 text-xs text-slate-400">(You)</span>
+                                                        <span className="ml-2 text-xs text-text-muted">(You)</span>
                                                     )}
                                                 </p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                <p className="text-xs text-text-muted">
                                                     {member.id === user.id ? 'Owner' : (member.role || 'Member')}
                                                 </p>
                                             </div>
@@ -396,7 +396,7 @@ export default function AccountSettings() {
                                                         removeMemberMutation.mutate(member.id);
                                                     }
                                                 }}
-                                                className="text-slate-400 hover:text-red-500 transition"
+                                                className="text-text-muted hover:text-accent-error transition"
                                             >
                                                 <Trash2 size={16} />
                                             </button>
@@ -407,17 +407,17 @@ export default function AccountSettings() {
                         </div>
 
                         {/* Spending Profiles Section */}
-                        <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <div className="pt-4 border-t border-border dark:border-border-dark">
                             <div className="flex items-center justify-between mb-3">
                                 <div>
-                                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Spending Profiles</h3>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    <h3 className="text-sm font-semibold text-text-primary dark:text-text-primary-dark">Spending Profiles</h3>
+                                    <p className="text-xs text-text-secondary dark:text-text-secondary-dark mt-0.5">
                                         Track spending by person (e.g., you, partner, kids)
                                     </p>
                                 </div>
                                 <button
                                     onClick={() => createSpenderMemberMutation.mutate({ name: "New Member", color: "#6366f1", avatar: "User" })}
-                                    className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium flex items-center gap-1"
+                                    className="text-sm text-primary dark:text-primary-light hover:text-primary-hover dark:hover:text-primary-hover font-medium flex items-center gap-1"
                                 >
                                     <Plus size={14} />
                                     Add Member
@@ -435,7 +435,7 @@ export default function AccountSettings() {
                                     />
                                 ))}
                                 {spenderMembers.length === 0 && (
-                                    <p className="text-sm text-slate-400 italic py-3 text-center bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                                    <p className="text-sm text-text-muted italic py-3 text-center bg-surface dark:bg-surface-dark rounded-lg">
                                         No members yet. Add a member to track individual spending.
                                     </p>
                                 )}
@@ -443,7 +443,7 @@ export default function AccountSettings() {
                         </div>
 
                         {/* Leave Household */}
-                        <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <div className="pt-4 border-t border-border dark:border-border-dark">
                             <button
                                 onClick={() => {
                                     if (confirm('Are you sure you want to leave this household?')) {
@@ -451,7 +451,7 @@ export default function AccountSettings() {
                                     }
                                 }}
 
-                                className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium"
+                                className="text-sm text-accent-error hover:text-accent-error/80 font-medium"
                             >
                                 Leave Household
                             </button>

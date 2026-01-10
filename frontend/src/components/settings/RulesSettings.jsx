@@ -97,17 +97,17 @@ function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClos
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Edit & Create Rule</h3>
-                    <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded">
-                        <X size={20} className="text-slate-400" />
+            <div className="bg-card dark:bg-card-dark rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between p-4 border-b border-border dark:border-border-dark">
+                    <h3 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">Edit & Create Rule</h3>
+                    <button onClick={onClose} className="p-1 hover:bg-surface dark:hover:bg-surface-dark rounded">
+                        <X size={20} className="text-text-muted" />
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-4 space-y-4">
                     {/* Suggestion info */}
-                    <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 text-sm text-amber-700 dark:text-amber-400">
+                    <div className="bg-accent-warning/10 rounded-lg p-3 text-sm text-accent-warning">
                         <p className="font-medium">{suggestion.reason}</p>
                         <p className="text-xs mt-1 flex items-center gap-1">
                             {suggestion.source === 'categorized' ? (
@@ -120,24 +120,24 @@ function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClos
 
                     {/* Keywords */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Keywords</label>
+                        <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">Keywords</label>
                         <input
                             type="text"
                             value={keywords}
                             onChange={(e) => setKeywords(e.target.value)}
                             placeholder="e.g. woolworths, uber"
-                            className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full px-3 py-2 text-sm border border-border dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                         />
-                        <p className="text-xs text-slate-400 mt-1">Edit to clean up or combine keywords</p>
+                        <p className="text-xs text-text-muted mt-1">Edit to clean up or combine keywords</p>
                     </div>
 
                     {/* Category */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                        <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">Category</label>
                         <select
                             value={bucketId}
                             onChange={(e) => setBucketId(e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full px-3 py-2 text-sm border border-border dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                         >
                             <option value="">Select Category...</option>
                             {renderCategoryOptions(treeBuckets)}
@@ -147,25 +147,25 @@ function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClos
                     {/* Amount Range */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Min Amount $</label>
+                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">Min Amount $</label>
                             <input
                                 type="number"
                                 step="0.01"
                                 value={minAmount}
                                 onChange={(e) => setMinAmount(e.target.value)}
                                 placeholder="0"
-                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                className="w-full px-3 py-2 text-sm border border-border dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Max Amount $</label>
+                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">Max Amount $</label>
                             <input
                                 type="number"
                                 step="0.01"
                                 value={maxAmount}
                                 onChange={(e) => setMaxAmount(e.target.value)}
                                 placeholder="∞"
-                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                className="w-full px-3 py-2 text-sm border border-border dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                             />
                         </div>
                     </div>
@@ -174,13 +174,13 @@ function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClos
                     <div className="grid grid-cols-1 gap-4">
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Apply Tags</label>
+                            <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">Apply Tags</label>
                             <input
                                 type="text"
                                 value={applyTags}
                                 onChange={(e) => setApplyTags(e.target.value)}
                                 placeholder="e.g. Tax-Deductible"
-                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                className="w-full px-3 py-2 text-sm border border-border dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                             />
                         </div>
                     </div>
@@ -189,11 +189,11 @@ function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClos
                     <div className="flex items-center gap-4">
                         {members.length > 0 && (
                             <div className="flex-1">
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Assign To</label>
+                                <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">Assign To</label>
                                 <select
                                     value={assignTo}
                                     onChange={(e) => setAssignTo(e.target.value)}
-                                    className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 text-sm border border-border dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                                 >
                                     <option value="">Unchanged</option>
                                     <option value="Joint">Joint</option>
@@ -209,9 +209,9 @@ function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClos
                                 id="modalMarkForReview"
                                 checked={markForReview}
                                 onChange={(e) => setMarkForReview(e.target.checked)}
-                                className="w-4 h-4 text-indigo-600 bg-slate-100 border-slate-300 rounded focus:ring-indigo-500"
+                                className="w-4 h-4 text-primary bg-input border-input rounded focus:ring-primary"
                             />
-                            <label htmlFor="modalMarkForReview" className="text-sm text-slate-600 dark:text-slate-300">
+                            <label htmlFor="modalMarkForReview" className="text-sm text-text-secondary dark:text-text-secondary-dark">
                                 Mark for Review
                             </label>
                         </div>
@@ -220,10 +220,10 @@ function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClos
                     {/* Sample Transactions */}
                     {suggestion.sample_transactions?.length > 0 && (
                         <div className="pt-2">
-                            <p className="text-xs font-medium text-slate-500 mb-2">Sample Matches:</p>
+                            <p className="text-xs font-medium text-text-muted mb-2">Sample Matches:</p>
                             <div className="space-y-1 max-h-24 overflow-y-auto">
                                 {suggestion.sample_transactions.map((t, i) => (
-                                    <div key={i} className="text-xs text-slate-500 flex justify-between bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded">
+                                    <div key={i} className="text-xs text-text-muted flex justify-between bg-surface dark:bg-surface-dark px-2 py-1 rounded">
                                         <span className="truncate">{t.description}</span>
                                         <span className="font-medium ml-2">${Math.abs(t.amount).toFixed(2)}</span>
                                     </div>
@@ -233,18 +233,18 @@ function EditSuggestionModal({ suggestion, buckets, treeBuckets, members, onClos
                     )}
 
                     {/* Actions */}
-                    <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <div className="flex gap-3 pt-4 border-t border-border dark:border-border-dark">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg transition"
+                            className="flex-1 px-4 py-2 bg-surface hover:bg-surface-hover dark:bg-surface-dark dark:hover:bg-surface-hover text-text-primary dark:text-text-primary-dark text-sm font-medium rounded-lg transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={!keywords.trim() || !bucketId || isPending}
-                            className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isPending ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                             Create Rule
@@ -348,15 +348,15 @@ export default function RulesSettings() {
         dismissAllMutation.mutate(keywords);
     };
 
-    if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>;
+    if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
 
     const suggestions = suggestionsData?.suggestions || [];
 
     return (
         <div className="space-y-6">
             <div>
-                <h3 className="text-lg font-medium text-slate-800 dark:text-white">Smart Rules</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                <h3 className="text-lg font-medium text-text-primary dark:text-text-primary-dark">Smart Rules</h3>
+                <p className="text-sm text-text-muted mt-1">
                     Automatically categorize transactions based on keywords. Rules are applied when you click "Run Rules Now" or during import.
                 </p>
             </div>
@@ -365,52 +365,52 @@ export default function RulesSettings() {
 
             {/* Suggested Rules Section - Below Defined Rules */}
             {suggestions.length > 0 && (
-                <div className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl border border-amber-200 dark:border-amber-700 p-4">
+                <div className="bg-gradient-to-r from-accent-warning/5 to-accent-warning/10 rounded-xl border border-accent-warning/20 p-4">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                            <Lightbulb size={18} className="text-amber-600 dark:text-amber-400" />
-                            <h4 className="font-medium text-amber-800 dark:text-amber-300">Suggested Rules</h4>
-                            <span className="text-xs bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">{suggestions.length}</span>
+                            <Lightbulb size={18} className="text-accent-warning" />
+                            <h4 className="font-medium text-text-primary dark:text-text-primary-dark">Suggested Rules</h4>
+                            <span className="text-xs bg-accent-warning/20 text-text-primary dark:text-text-primary-dark px-2 py-0.5 rounded-full">{suggestions.length}</span>
                         </div>
                         <div className="flex gap-2">
                             <button
                                 onClick={handleDismissAll}
                                 disabled={dismissAllMutation.isPending}
-                                className="text-xs px-2 py-1 bg-white/50 dark:bg-black/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded transition"
+                                className="text-xs px-2 py-1 bg-surface/50 dark:bg-black/20 hover:bg-accent-error/10 text-text-muted hover:text-accent-error rounded transition"
                             >
                                 Dismiss All
                             </button>
                             <button
                                 onClick={handleAddAll}
                                 disabled={bulkCreateMutation.isPending}
-                                className="text-xs px-2 py-1 bg-white/50 dark:bg-black/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-indigo-700 dark:text-indigo-300 hover:text-emerald-700 dark:hover:text-emerald-300 rounded transition font-medium"
+                                className="text-xs px-2 py-1 bg-surface/50 dark:bg-black/20 hover:bg-accent-success/10 text-primary hover:text-accent-success rounded transition font-medium"
                             >
                                 Add All
                             </button>
                         </div>
                     </div>
-                    <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
+                    <p className="text-xs text-accent-warning mb-3">
                         Based on patterns in your transactions. Click to edit, or Add All to fast-track.
                     </p>
                     <div className="space-y-2">
                         {suggestions.map((suggestion, idx) => (
-                            <div key={idx} className="flex items-center justify-between bg-white dark:bg-slate-800 rounded-lg p-3 border border-amber-100 dark:border-slate-700">
+                            <div key={idx} className="flex items-center justify-between bg-card dark:bg-card-dark rounded-lg p-3 border border-border dark:border-border-dark">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                        <span className="font-mono text-sm font-medium text-slate-800 dark:text-slate-200">{suggestion.keywords}</span>
-                                        <span className="text-slate-400">→</span>
-                                        <span className="text-sm text-indigo-600 dark:text-indigo-400">{suggestion.suggested_category}</span>
+                                        <span className="font-mono text-sm font-medium text-text-primary dark:text-text-primary-dark">{suggestion.keywords}</span>
+                                        <span className="text-text-muted">→</span>
+                                        <span className="text-sm text-primary">{suggestion.suggested_category}</span>
                                         {suggestion.source === 'categorized' && (
-                                            <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                            <span className="text-xs bg-accent-success/10 text-accent-success px-1.5 py-0.5 rounded flex items-center gap-1">
                                                 <History size={10} /> Your pattern
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{suggestion.reason}</p>
+                                    <p className="text-xs text-text-muted mt-1">{suggestion.reason}</p>
                                 </div>
                                 <button
                                     onClick={() => setEditingSuggestion(suggestion)}
-                                    className="ml-4 flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition"
+                                    className="ml-4 flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-hover text-white text-xs font-medium rounded-lg transition"
                                 >
                                     <Edit2 size={14} />
                                     Edit & Add
@@ -418,7 +418,7 @@ export default function RulesSettings() {
                                 <button
                                     onClick={() => dismissMutation.mutate(suggestion.keywords)}
                                     title="Dismiss suggestion"
-                                    className="ml-2 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-red-500 rounded transition"
+                                    className="ml-2 p-1.5 hover:bg-surface dark:hover:bg-surface-dark text-text-muted hover:text-accent-error rounded transition"
                                 >
                                     <X size={16} />
                                 </button>
@@ -429,7 +429,7 @@ export default function RulesSettings() {
             )}
 
             {suggestionsLoading && (
-                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-2 text-sm text-text-muted">
                     <Loader2 size={16} className="animate-spin" />
                     Analyzing transaction patterns...
                 </div>

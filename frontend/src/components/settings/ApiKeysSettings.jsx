@@ -92,7 +92,7 @@ export default function ApiKeysSettings() {
     if (isLoading) {
         return (
             <div className="p-8 flex justify-center">
-                <Loader2 className="animate-spin h-8 w-8 text-indigo-600" />
+                <Loader2 className="animate-spin h-8 w-8 text-primary" />
             </div>
         );
     }
@@ -101,14 +101,14 @@ export default function ApiKeysSettings() {
         <div className="space-y-6">
             <div className="flex justify-between items-start">
                 <div>
-                    <h3 className="text-lg font-medium text-slate-800 dark:text-white">API Keys</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    <h3 className="text-lg font-medium text-text-primary dark:text-text-primary-dark">API Keys</h3>
+                    <p className="text-sm text-text-muted mt-1">
                         Create API keys for programmatic access. Keys are shown only once upon creation.
                     </p>
                 </div>
                 <button
                     onClick={() => setShowCreateModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-lg transition"
                 >
                     <Plus size={16} />
                     Create Key
@@ -117,21 +117,21 @@ export default function ApiKeysSettings() {
 
             {/* Newly Created Key Alert */}
             {newKeyData && (
-                <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-xl p-4">
+                <div className="bg-accent-success/10 dark:bg-accent-success/20 border border-accent-success/20 dark:border-accent-success/30 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-2">
-                        <Check size={18} className="text-green-600 dark:text-green-400" />
-                        <span className="font-medium text-green-800 dark:text-green-300">API Key Created</span>
+                        <Check size={18} className="text-accent-success" />
+                        <span className="font-medium text-accent-success">API Key Created</span>
                     </div>
-                    <p className="text-sm text-green-700 dark:text-green-400 mb-3">
+                    <p className="text-sm text-accent-success/80 mb-3">
                         Copy this key now. You won't be able to see it again!
                     </p>
                     <div className="flex items-center gap-2">
-                        <code className="flex-1 bg-white dark:bg-slate-800 px-3 py-2 rounded-lg font-mono text-sm text-slate-800 dark:text-slate-200 truncate border border-green-200 dark:border-slate-600">
+                        <code className="flex-1 bg-card dark:bg-card-dark px-3 py-2 rounded-lg font-mono text-sm text-text-primary dark:text-text-primary-dark truncate border border-accent-success/20 dark:border-border-dark">
                             {newKeyData.key}
                         </code>
                         <button
                             onClick={handleCopyKey}
-                            className="flex items-center gap-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition"
+                            className="flex items-center gap-1 px-3 py-2 bg-accent-success hover:bg-accent-success/90 text-white text-sm font-medium rounded-lg transition"
                         >
                             {copied ? <Check size={16} /> : <Copy size={16} />}
                             {copied ? 'Copied!' : 'Copy'}
@@ -139,7 +139,7 @@ export default function ApiKeysSettings() {
                     </div>
                     <button
                         onClick={() => setNewKeyData(null)}
-                        className="mt-3 text-sm text-green-600 dark:text-green-400 hover:underline"
+                        className="mt-3 text-sm text-accent-success hover:underline"
                     >
                         Dismiss
                     </button>
@@ -147,31 +147,31 @@ export default function ApiKeysSettings() {
             )}
 
             {/* API Keys List */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="bg-card dark:bg-card-dark rounded-xl border border-border dark:border-border-dark overflow-hidden">
                 {apiKeys.length === 0 ? (
-                    <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+                    <div className="p-8 text-center text-text-muted">
                         <Key size={32} className="mx-auto mb-3 opacity-50" />
                         <p>No API keys yet</p>
                         <p className="text-sm">Create a key to get started with the API</p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                    <div className="divide-y divide-border dark:divide-border-dark">
                         {apiKeys.map((key) => (
-                            <div key={key.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition group">
+                            <div key={key.id} className="p-4 flex items-center justify-between hover:bg-surface dark:hover:bg-surface-dark transition group">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-3">
-                                        <Key size={16} className="text-indigo-500" />
-                                        <span className="font-medium text-slate-800 dark:text-slate-200">{key.name}</span>
-                                        <code className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded font-mono text-slate-500 dark:text-slate-400">
+                                        <Key size={16} className="text-primary" />
+                                        <span className="font-medium text-text-primary dark:text-text-primary-dark">{key.name}</span>
+                                        <code className="text-xs bg-surface dark:bg-surface-dark px-2 py-0.5 rounded font-mono text-text-muted">
                                             {key.key_prefix}...
                                         </code>
                                         {!key.is_active && (
-                                            <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded">
+                                            <span className="text-xs bg-accent-error/10 text-accent-error px-2 py-0.5 rounded">
                                                 Disabled
                                             </span>
                                         )}
                                     </div>
-                                    <div className="mt-1 flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                                    <div className="mt-1 flex items-center gap-4 text-xs text-text-muted">
                                         <span>Scopes: {key.scopes}</span>
                                         <span>Created: {formatDate(key.created_at)}</span>
                                         <span>Expires: {key.expires_at ? formatDate(key.expires_at) : 'Never'}</span>
@@ -185,7 +185,7 @@ export default function ApiKeysSettings() {
                                         }
                                     }}
                                     disabled={deleteMutation.isPending}
-                                    className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition p-2"
+                                    className="text-text-muted hover:text-accent-error opacity-0 group-hover:opacity-100 transition p-2"
                                     title="Revoke key"
                                 >
                                     <Trash2 size={16} />
@@ -199,11 +199,11 @@ export default function ApiKeysSettings() {
             {/* Create Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
-                        <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Create API Key</h3>
+                    <div className="bg-card dark:bg-card-dark rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+                        <h3 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark mb-4">Create API Key</h3>
                         <form onSubmit={handleCreate} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                     Name
                                 </label>
                                 <input
@@ -211,16 +211,16 @@ export default function ApiKeysSettings() {
                                     type="text"
                                     required
                                     placeholder="e.g., Zapier Integration"
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 border border-input dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                     Scopes
                                 </label>
                                 <select
                                     name="scopes"
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 border border-input dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                                 >
                                     <option value="read">Read Only</option>
                                     <option value="read,write">Read & Write</option>
@@ -228,28 +228,28 @@ export default function ApiKeysSettings() {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-text-secondary dark:text-text-secondary-dark mb-1">
                                     Expires In (days)
                                 </label>
                                 <input
                                     name="expires"
                                     type="number"
                                     placeholder="Leave empty for no expiry"
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 border border-input dark:border-border-dark rounded-lg bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark focus:ring-2 focus:ring-primary outline-none"
                                 />
                             </div>
                             <div className="flex justify-end gap-3 pt-2">
                                 <button
                                     type="button"
                                     onClick={() => setShowCreateModal(false)}
-                                    className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
+                                    className="px-4 py-2 text-text-muted hover:bg-surface dark:hover:bg-surface-dark rounded-lg transition"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={createMutation.isPending}
-                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition disabled:opacity-50"
+                                    className="px-4 py-2 bg-primary hover:bg-primary-hover text-white font-medium rounded-lg transition disabled:opacity-50"
                                 >
                                     {createMutation.isPending ? 'Creating...' : 'Create Key'}
                                 </button>
