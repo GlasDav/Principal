@@ -264,6 +264,14 @@ class User(UserBase):
     name: Optional[str] = None
     created_at: Optional[datetime] = None
     buckets: List[BudgetBucket] = []
+    
+    @field_validator('id', mode='before')
+    @classmethod
+    def serialize_uuid(cls, v):
+        """Convert UUID to string if needed"""
+        if v is not None and not isinstance(v, str):
+            return str(v)
+        return v
 
     class Config:
         from_attributes = True
