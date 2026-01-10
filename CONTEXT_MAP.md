@@ -285,12 +285,19 @@ erDiagram
 - **UI Unification:**
   - **Budget Page Tabs:** Changed from pill-style tabs (right-aligned) to underline-style tabs (left-aligned) to match Reports page.
   - **Page Container Layout:** Removed inconsistent `-m-8` wrappers in ReportsHub; Reports and Calendar pages now use consistent container styling.
-- **App Rename (Principal → DollarData):**
+- **App Rename (Principal → DollarData) - COMPLETE:**
   - Updated frontend branding: `index.html`, `App.jsx`, `Login.jsx`, `Footer.jsx`, `FeedbackModal.jsx`.
   - Updated legal pages: `TermsOfService.jsx`, `PrivacyPolicy.jsx`.
   - Updated backend: `main.py` (API title, contact, welcome message).
   - Updated AI assistant prompt in `ai_assistant.py`.
-  - Updated documentation: `ROADMAP.md`, `CONTEXT_MAP.md`.
+  - Updated documentation: `ROADMAP.md`, `CONTEXT_MAP.md`, `feature_documentation.md`, `Feature Roadmap.md`, `BRAND GUIDELINES.md`.
+  - **Logo:** Replaced generic bar chart favicon with official DollarData "D" logo (`frontend/public/logo.svg`).
+  - **Docker config:** Network, DB user/password/name updated to `dollardata` in `docker-compose.yml`.
+  - **Backend config:** `config.py`, `database.py`, `gunicorn.conf.py` updated.
+  - **Deployment:** `deploy.md`, `BACKUP_STRATEGY.md`, `HTTPS_ENFORCEMENT.md`, `POSTGRESQL_SETUP.md` paths updated.
+  - **Demo account:** Email changed from `demo@principal.finance` → `demo@dollardata.app`.
+  - **Pending:** VPS folder rename (`/opt/principal` → `/opt/dollardata`) - completed during deployment.
+  - **Pending:** Configure `dollardata.au` domain (awaiting GoDaddy ID verification).
 
 ## Known Issues
 - **Recent Transactions Widget:** Currently not displaying transactions on dashboard (Investigating).
