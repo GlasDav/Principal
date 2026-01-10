@@ -10,7 +10,7 @@ router = APIRouter(
     tags=["Goals"]
 )
 
-@router.get("/", response_model=List[schemas.Goal])
+@router.get("", response_model=List[schemas.Goal])
 def get_goals(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user)
