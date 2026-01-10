@@ -40,14 +40,22 @@ async def get_supabase_jwks(supabase_url: str) -> Dict[str, Any]:
         return _jwks_cache
 
     jwks_url = f"{supabase_url.rstrip('/')}/auth/v1/jwks"
+    
+    # Add API Key to headers to avoid 401
+    headers = {}
+    api_key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    if api_key:
+        headers["apikey"] = api_key
+        
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(jwks_url)
+            response = await client.get(jwks_url, headers=headers)
             response.raise_for_status()
             _jwks_cache = response.json()
             return _jwks_cache
     except Exception as e:
         logger.error(f"Failed to fetch JWKS from {jwks_url}: {e}")
+        # Clear cache if failed potentially?
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Could not verify authentication keys"
