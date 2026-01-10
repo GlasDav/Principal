@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, extract, case
+from sqlalchemy import func, extract, case, or_
 from typing import List, Optional
 from datetime import datetime, timedelta, date
 import statistics
@@ -17,6 +17,8 @@ def get_dashboard_data(
     start_date: str = Query(..., description="ISO Date string"), 
     end_date: str = Query(..., description="ISO Date string"),
     spender: str = Query(default="Combined"), # Combined, User A, User B
+    account_id: Optional[int] = Query(None), # Filter by Account
+    tags: Optional[str] = Query(None), # Comma-separated tags (OR logic)
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
     ):
@@ -43,6 +45,15 @@ def get_dashboard_data(
 
     if spender != "Combined":
         query = query.filter(models.Transaction.spender == spender)
+
+    if account_id:
+        query = query.filter(models.Transaction.account_id == account_id)
+
+    if tags:
+        tag_list = [t.strip() for t in tags.split(',') if t.strip()]
+        if tag_list:
+            tag_filters = [models.Transaction.tags.ilike(f"%{t}%") for t in tag_list]
+            query = query.filter(or_(*tag_filters))
         
     # Result: List of (bucket_id, total_amount)
     # Note: We need separate sums for Income vs Expense if we want precise accuracy, 
@@ -54,18 +65,15 @@ def get_dashboard_data(
     # So simple SUM is correct.
     
     results = query.group_by(models.Transaction.bucket_id).all()
-    spend_map = {bid: abs(total) if total < 0 else -total for bid, total in results if bid is not None}
-    # Note: if total is positive (refunds > expenses), spent is effectively negative? 
-    # Or should we treat it as 0 logic? 
-    # Standard logic: if total < 0 (net expense), spent = abs(total).
-    # if total > 0 (net income/refund), spent = -total (negative spending).
     
-    # Refined logic:
+    # Track spent (expenses) and income separately for rollup
     spend_map = {}
+    inc_map = {}
     for bid, total in results:
         if bid is None: continue
-        # Transaction amount: -100 (expense). Total: -100. Spent: 100.
+        # total < 0 means net expense. total > 0 means net income.
         spend_map[bid] = -total if total < 0 else 0 
+        inc_map[bid] = total if total > 0 else 0
         
     # Hierarchy Rollup: Sum child spending into parent
     # 1. Build children map
@@ -76,28 +84,33 @@ def get_dashboard_data(
             
     # 2. Recursive Rollup
     rollup_spend_map = {}
+    rollup_inc_map = {}
     
     def calculate_rollup(bid):
         if bid in rollup_spend_map:
-            return rollup_spend_map[bid]
+            return rollup_spend_map[bid], rollup_inc_map[bid]
             
-        # Start with own spending
-        total = spend_map.get(bid, 0.0)
+        # Start with own spending/income
+        t_spent = spend_map.get(bid, 0.0)
+        t_inc = inc_map.get(bid, 0.0)
         
-        # Add children spending
+        # Add children spending/income
         children = children_map.get(bid, [])
         for child_id in children:
-            total += calculate_rollup(child_id)
+            c_s, c_i = calculate_rollup(child_id)
+            t_spent += c_s
+            t_inc += c_i
             
-        rollup_spend_map[bid] = total
-        return total
+        rollup_spend_map[bid] = t_spent
+        rollup_inc_map[bid] = t_inc
+        return t_spent, t_inc
         
     # Calculate for all
     for b in buckets:
         calculate_rollup(b.id)
         
-    # Use rollup_spend_map for display (updates existing spend_map logic effectively)
     spend_map = rollup_spend_map
+    income_map = rollup_inc_map
         
     # 3. Rollover Logic (Optimized N+1 fix)
     # If any bucket is rollover, we need YTD spending before s_date.
@@ -110,7 +123,7 @@ def get_dashboard_data(
         # Batch Query for YTD Spending (ALL rollover buckets at once)
         rollover_ids = [b.id for b in rollover_buckets]
         
-        ytd_results = db.query(
+        ytd_query = db.query(
             models.Transaction.bucket_id,
             func.sum(models.Transaction.amount)
         ).filter(
@@ -118,7 +131,20 @@ def get_dashboard_data(
             models.Transaction.bucket_id.in_(rollover_ids),
             models.Transaction.date >= ytd_start,
             models.Transaction.date < s_date # Strictly before view start
-        ).group_by(models.Transaction.bucket_id).all()
+        )
+
+        # Apply same filters to rollover calculation
+        if spender != "Combined":
+            ytd_query = ytd_query.filter(models.Transaction.spender == spender)
+        if account_id:
+             ytd_query = ytd_query.filter(models.Transaction.account_id == account_id)
+        if tags:
+            tag_list = [t.strip() for t in tags.split(',') if t.strip()]
+            if tag_list:
+                tag_filters = [models.Transaction.tags.ilike(f"%{t}%") for t in tag_list]
+                ytd_query = ytd_query.filter(or_(*tag_filters))
+
+        ytd_results = ytd_query.group_by(models.Transaction.bucket_id).all()
         
         ytd_spend_map = {bid: abs(total) if total < 0 else 0 for bid, total in ytd_results}
         
@@ -150,6 +176,15 @@ def get_dashboard_data(
     if spender != "Combined":
         bucket_totals_query = bucket_totals_query.filter(models.Transaction.spender == spender)
     
+    if account_id:
+        bucket_totals_query = bucket_totals_query.filter(models.Transaction.account_id == account_id)
+
+    if tags:
+        tag_list = [t.strip() for t in tags.split(',') if t.strip()]
+        if tag_list:
+            tag_filters = [models.Transaction.tags.ilike(f"%{t}%") for t in tag_list]
+            bucket_totals_query = bucket_totals_query.filter(or_(*tag_filters))
+
     bucket_totals = bucket_totals_query.group_by(models.Transaction.bucket_id).all()
     
     # Build bucket lookup for group checking
@@ -261,6 +296,7 @@ def get_dashboard_data(
             "limit": limit,
             "rollover_amount": rollover_val, # Send separately so frontend can toggle
             "spent": spent,
+            "income": income_map.get(b.id, 0.0),
             "remaining": limit - spent,
             "percent": percent,
             "is_over": spent > limit,
@@ -319,9 +355,11 @@ def get_analytics_history(
     start_date: str = Query(..., description="ISO Date string"), 
     end_date: str = Query(..., description="ISO Date string"),
     spender: str = Query(default="Combined"), # Combined, User A, User B
+    account_id: Optional[int] = Query(None), # Filter by Account
     bucket_id: Optional[int] = Query(None),
     bucket_ids: Optional[str] = Query(None), # Comma-separated bucket IDs
     group: Optional[str] = Query(None), # Non-Discretionary, Discretionary
+    tags: Optional[str] = Query(None), # Comma-separated tags (OR logic)
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
@@ -475,6 +513,17 @@ def get_analytics_history(
         
         if spender != "Combined":
             query = query.filter(models.Transaction.spender == spender)
+        
+        # Apply Account filter if present
+        if account_id:
+            query = query.filter(models.Transaction.account_id == account_id)
+
+        # Apply Tags filter if present
+        if tags:
+            tag_list = [t.strip() for t in tags.split(',') if t.strip()]
+            if tag_list:
+                tag_filters = [models.Transaction.tags.ilike(f"%{t}%") for t in tag_list]
+                query = query.filter(or_(*tag_filters))
         
         if bucket_id or bucket_ids or group:
              query = query.filter(models.Transaction.bucket_id.in_(relevant_bucket_ids))

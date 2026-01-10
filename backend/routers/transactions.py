@@ -26,6 +26,8 @@ def get_transactions(
     max_amount: Optional[float] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    account_id: Optional[int] = None,  # New filter
+    tags: Optional[str] = None,        # New filter
     sort_by: Optional[str] = Query(None, regex="^(date|amount|description)$"),
     sort_dir: Optional[str] = Query(None, regex="^(asc|desc)$"),
     db: Session = Depends(get_db),
@@ -48,6 +50,15 @@ def get_transactions(
     
     if spender:
         query = query.filter(models.Transaction.spender == spender)
+
+    if account_id:
+        query = query.filter(models.Transaction.account_id == account_id)
+
+    if tags:
+        tag_list = [t.strip() for t in tags.split(',') if t.strip()]
+        if tag_list:
+            tag_filters = [models.Transaction.tags.ilike(f"%{t}%") for t in tag_list]
+            query = query.filter(or_(*tag_filters))
 
     if assigned_to:
         if assigned_to == "ANY":
