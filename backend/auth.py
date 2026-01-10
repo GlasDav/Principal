@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 import logging
 import os
+import httpx
 
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
@@ -21,11 +22,36 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-# CONSTANTS - Environment Configuration
-# Legacy SECRET_KEY might be used for signing other things, but Supabase uses SUPABASE_JWT_SECRET
+# Legacy Secret for internal signing if needed (not for Supabase)
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-only")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+
+# Global Cache for JWKS
+_jwks_cache: Dict[str, Any] = {}
+
+async def get_supabase_jwks(supabase_url: str) -> Dict[str, Any]:
+    """Fetch and cache JWKS from Supabase."""
+    global _jwks_cache
+    
+    # Simple caching strategy: if populated, return it. 
+    # In production, might want TTL, but keys rotate rarely.
+    if _jwks_cache:
+        return _jwks_cache
+
+    jwks_url = f"{supabase_url.rstrip('/')}/auth/v1/jwks"
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(jwks_url)
+            response.raise_for_status()
+            _jwks_cache = response.json()
+            return _jwks_cache
+    except Exception as e:
+        logger.error(f"Failed to fetch JWKS from {jwks_url}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Could not verify authentication keys"
+        )
 
 def create_default_user_setup(user: models.User, db: Session):
     """Create default accounts and buckets for a new user with hierarchical categories."""
@@ -224,18 +250,49 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    # SUPABASE JWT SECRET
+    
     SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
 
-    if not SUPABASE_JWT_SECRET:
-         logger.error("Missing SUPABASE_JWT_SECRET env var")
-         raise credentials_exception
-
+    if not SUPABASE_URL:
+         logger.error("Missing SUPABASE_URL env var")
+         # We can try falling back to HS256-only if URL is missing but Secret exists
+    
     try:
-        # Verify Supabase Token
-        # Supabase tokens use HS256 and have 'authenticated' audience
-        # NOTE: If Supabase uses RS256, we need parsing. But Supabase typically gives HS256 with JWT secret.
-        payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
+        # 1. Inspect Header to determine Algorithm
+        header = jwt.get_unverified_header(token)
+        alg = header.get("alg")
+        
+        payload = None
+        
+        if alg == "HS256":
+            if not SUPABASE_JWT_SECRET:
+                logger.error("Missing SUPABASE_JWT_SECRET for HS256 token")
+                raise credentials_exception
+            
+            payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
+            
+        elif alg == "RS256":
+            if not SUPABASE_URL:
+                logger.error("Received RS256 token but SUPABASE_URL is not set")
+                raise credentials_exception
+            
+            # Fetch JWKS
+            jwks = await get_supabase_jwks(SUPABASE_URL)
+            
+            # Verify with Key
+            payload = jwt.decode(
+                token, 
+                jwks, 
+                algorithms=["RS256"], 
+                audience="authenticated",
+                # Python-Jose with JWKS dict automatically finds key by 'kid'
+            )
+            
+        else:
+            logger.error(f"Unsupported JWT Algorithm: {alg}")
+            raise credentials_exception
+
         user_id: str = payload.get("sub")
         email: str = payload.get("email")
         
@@ -244,6 +301,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 
     except JWTError as e:
         logger.error(f"JWT Verification failed: {e}")
+        raise credentials_exception
+    except Exception as e:
+        logger.error(f"Using JWT auth failed unexpected: {e}")
         raise credentials_exception
 
     # Query User (from public.profiles)
