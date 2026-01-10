@@ -211,9 +211,10 @@ export default function Reports() {
 
     const pieChartData = Object.keys(groupData).map(key => ({ name: key, value: groupData[key] }));
 
-    // Prepare Income Chart Data (New)
+    // Prepare Income Chart Data - Show child categories of Income group
+    const incomeBucketIds = buckets.filter(b => b.group === "Income").map(b => b.id);
     const incomeChartData = buckets
-        .filter(b => b.group === "Income" && !b.parent_id)
+        .filter(b => b.parent_id && incomeBucketIds.includes(b.parent_id))
         .map(b => ({ name: b.name, value: b.income }))
         .filter(b => b.value > 0);
 
@@ -482,10 +483,12 @@ export default function Reports() {
                                             data={pieChartData}
                                             cx="50%"
                                             cy="50%"
-                                            innerRadius={50}
-                                            outerRadius={70}
-                                            paddingAngle={5}
+                                            innerRadius={40}
+                                            outerRadius={65}
+                                            paddingAngle={3}
                                             dataKey="value"
+                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                            labelLine={false}
                                         >
                                             {pieChartData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -510,10 +513,12 @@ export default function Reports() {
                                                 data={incomeChartData}
                                                 cx="50%"
                                                 cy="50%"
-                                                innerRadius={50}
-                                                outerRadius={70}
-                                                paddingAngle={5}
+                                                innerRadius={40}
+                                                outerRadius={65}
+                                                paddingAngle={3}
                                                 dataKey="value"
+                                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                labelLine={false}
                                             >
                                                 {incomeChartData.map((entry, index) => (
                                                     <Cell key={`cell-income-${index}`} fill={['#10b981', '#34d399', '#6ee7b7', '#a7f3d0'][index % 4]} />
