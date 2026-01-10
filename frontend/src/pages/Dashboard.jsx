@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api, { getMembers, getUpcomingBills, getBucketsTree } from '../services/api';
+import { LayoutDashboard } from 'lucide-react';
+import CustomizeDashboardModal from '../components/dashboard/CustomizeDashboardModal';
 
 // Widget imports
 import { toLocalISOString } from '../utils/dateUtils';
@@ -61,6 +63,30 @@ export default function Dashboard() {
         }
         return defaultWidgetOrder;
     });
+
+    // Widget Visibility State
+    const [visibleWidgets, setVisibleWidgets] = useState(() => {
+        try {
+            const saved = localStorage.getItem('dashboard_visible_widgets');
+            return saved ? JSON.parse(saved) : {}; // Default: empty object means all visible (or logic below)
+        } catch (e) {
+            console.error("Failed to parse visible widgets", e);
+            return {};
+        }
+    });
+
+    const [isCustomizeModalOpen, setCustomizeModalOpen] = useState(false);
+
+    const handleToggleWidget = (id) => {
+        setVisibleWidgets(prev => {
+            const newState = { ...prev, [id]: prev[id] === false ? true : false };
+            localStorage.setItem('dashboard_visible_widgets', JSON.stringify(newState));
+            return newState;
+        });
+    };
+
+    // Filter widgets based on visibility
+    const displayedWidgets = widgetOrder.filter(id => visibleWidgets[id] !== false);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -234,8 +260,15 @@ export default function Dashboard() {
 
             {/* Filter Controls */}
             <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                <div>
+                <div className="flex items-center gap-3">
                     <h2 className="text-xl font-bold text-text-primary dark:text-text-primary-dark">Financial Overview</h2>
+                    <button
+                        onClick={() => setCustomizeModalOpen(true)}
+                        className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        title="Customize Dashboard"
+                    >
+                        <LayoutDashboard size={20} />
+                    </button>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
@@ -303,9 +336,9 @@ export default function Dashboard() {
 
             {/* Widget Grid */}
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={widgetOrder} strategy={verticalListSortingStrategy}>
+                <SortableContext items={displayedWidgets} strategy={verticalListSortingStrategy}>
                     <div className="space-y-8 pb-10">
-                        {widgetOrder.map((id) => (
+                        {displayedWidgets.map((id) => (
                             <SortableWidgetWrapper key={id} id={id}>
                                 {renderWidget(id)}
                             </SortableWidgetWrapper>
@@ -315,6 +348,14 @@ export default function Dashboard() {
             </DndContext>
 
             <OnboardingWizard />
+
+            <CustomizeDashboardModal
+                isOpen={isCustomizeModalOpen}
+                onClose={() => setCustomizeModalOpen(false)}
+                widgetOrder={widgetOrder}
+                visibleWidgets={visibleWidgets}
+                onToggleWidget={handleToggleWidget}
+            />
         </AnimatedPage>
     );
 }
