@@ -491,6 +491,14 @@ class HouseholdMember(HouseholdMemberBase):
     user_id: str
     created_at: datetime
     
+    @field_validator('user_id', mode='before')
+    @classmethod
+    def serialize_uuid(cls, v):
+        """Convert UUID to string if needed"""
+        if v is not None and not isinstance(v, str):
+            return str(v)
+        return v
+    
     class Config:
         from_attributes = True
 
