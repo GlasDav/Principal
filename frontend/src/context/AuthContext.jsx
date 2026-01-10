@@ -1,94 +1,101 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import { supabase } from '../services/supabaseClient';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem("token"));
-    const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken"));
+    const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
     const queryClient = useQueryClient();
 
-    // Set api default header whenever token changes
+    // Initialize Auth State & Listen for Changes
     useEffect(() => {
-        if (token) {
-            api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-            localStorage.setItem("token", token);
-        } else {
-            delete api.defaults.headers.common["Authorization"];
-            localStorage.removeItem("token");
-        }
-    }, [token]);
+        // Get initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            handleSession(session);
+        });
 
-    // Persist refresh token
-    useEffect(() => {
-        if (refreshToken) {
-            localStorage.setItem("refreshToken", refreshToken);
-        } else {
-            localStorage.removeItem("refreshToken");
-        }
-    }, [refreshToken]);
+        // Listen for changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            handleSession(session);
+        });
 
-    // Check if user is logged in (fetch profile)
-    useEffect(() => {
-        const fetchUser = async () => {
-            if (!token) {
-                setLoading(false);
-                return;
-            }
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const handleSession = async (session) => {
+        if (session) {
+            const accessToken = session.access_token;
+            setToken(accessToken);
+            api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+            localStorage.setItem("token", accessToken); // Keep for compatibility if needed, but Supabase handles persist
+
+            // Fetch full profile from backend (legacy user data)
             try {
-                // Fetch user profile from backend using shared api instance
                 const res = await api.get("/auth/users/me");
                 setUser(res.data);
             } catch (error) {
                 console.error("Failed to fetch user profile", error);
-                // If 401, the api interceptor will handle refresh/redirect
-            } finally {
-                setLoading(false);
+                // Fallback to basic Supabase user info if backend fails
+                setUser({
+                    email: session.user.email,
+                    name: session.user.user_metadata?.name,
+                    id: session.user.id
+                });
             }
-        };
-        fetchUser();
-    }, [token]);
+        } else {
+            setToken(null);
+            setUser(null);
+            delete api.defaults.headers.common["Authorization"];
+            localStorage.removeItem("token");
+            queryClient.clear();
+        }
+        setLoading(false);
+    };
 
-    const login = async (username, password) => {
-        const params = new URLSearchParams();
-        params.append("username", username);
-        params.append("password", password);
-
-        const res = await api.post("/auth/token", params);
-        setToken(res.data.access_token);
-        setRefreshToken(res.data.refresh_token);
-        setUser({ username });
+    const login = async (email, password) => {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+        if (error) throw error;
+        return data;
     };
 
     const register = async (email, password, name) => {
-        await api.post("/auth/register", {
+        const { data, error } = await supabase.auth.signUp({
             email,
             password,
-            name
+            options: {
+                data: { name },
+            },
         });
-        // Auto login after register
-        await login(email, password);
+        if (error) throw error;
+        // Supabase auto-logins if email confirmation is disabled or if configured to do so
+        return data;
     };
 
-    const googleLogin = async (googleToken) => {
-        const res = await api.post("/auth/google", { token: googleToken });
-        setToken(res.data.access_token);
-        setRefreshToken(res.data.refresh_token);
+    const googleLogin = async () => {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: `${window.location.origin}/auth/callback` // Ensure this route exists or backend handles it
+            }
+        });
+        if (error) throw error;
+        return data;
     };
 
-    const logout = () => {
-        setToken(null);
-        setRefreshToken(null);
-        setUser(null);
-        // Clear all cached data to prevent stale data for next user
-        queryClient.removeQueries();
+    const logout = async () => {
+        await supabase.auth.signOut();
+        // State updates handled by onAuthStateChange
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, refreshToken, login, logout, register, googleLogin, loading }}>
+        <AuthContext.Provider value={{ user, token, login, logout, register, googleLogin, loading }}>
             {children}
         </AuthContext.Provider>
     );

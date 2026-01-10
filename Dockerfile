@@ -21,6 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY backend/ ./backend/
+COPY scripts/ ./scripts/
 COPY gunicorn.conf.py .
 
 # Create non-root user for security
