@@ -18,14 +18,14 @@
 
 ### Option 3: Local Docker
 ```bash
-docker run -d --name principal-postgres \
+docker run -d --name dollardata-postgres \
   -e POSTGRES_PASSWORD=secretpassword \
-  -e POSTGRES_DB=principal \
+  -e POSTGRES_DB=dollardata \
   -p 5432:5432 \
   postgres:15
 ```
 
-Set: `DATABASE_URL=postgresql://postgres:secretpassword@localhost:5432/principal`
+Set: `DATABASE_URL=postgresql://postgres:secretpassword@localhost:5432/dollardata`
 
 ## Environment Variables
 
@@ -64,7 +64,7 @@ gunicorn backend.main:app -c gunicorn.conf.py
 
 ### Local Docker
 ```bash
-docker run -d --name principal-redis -p 6379:6379 redis:7
+docker run -d --name dollardata-redis -p 6379:6379 redis:7
 ```
 Set: `REDIS_URL=redis://localhost:6379`
 

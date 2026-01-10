@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 # Database configuration from environment
 # Supports SQLite (development) and PostgreSQL (production)
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./principal_v5.db")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dollardata.db")
 
 # Engine configuration differs by database type
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):

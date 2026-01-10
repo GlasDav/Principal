@@ -1,6 +1,6 @@
 # HTTPS Enforcement Guide
 
-This document outlines how to configure HTTPS enforcement for the Principal Finance application in production.
+This document outlines how to configure HTTPS enforcement for the DollarData application in production.
 
 ## Current Security Headers
 
@@ -23,7 +23,7 @@ Use a reverse proxy like **Nginx** or **Caddy** to handle SSL termination.
 ```nginx
 server {
     listen 80;
-    server_name principal.yourdomain.com;
+    server_name dollardata.yourdomain.com;
     
     # Redirect all HTTP to HTTPS
     return 301 https://$host$request_uri;
@@ -31,11 +31,11 @@ server {
 
 server {
     listen 443 ssl http2;
-    server_name principal.yourdomain.com;
+    server_name dollardata.yourdomain.com;
     
     # SSL Certificate (Let's Encrypt recommended)
-    ssl_certificate /etc/letsencrypt/live/principal.yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/principal.yourdomain.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/dollardata.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dollardata.yourdomain.com/privkey.pem;
     
     # Modern SSL Configuration
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -68,7 +68,7 @@ server {
 Caddy automatically provisions SSL certificates from Let's Encrypt:
 
 ```caddyfile
-principal.yourdomain.com {
+dollardata.yourdomain.com {
     reverse_proxy /api/* localhost:8000 {
         header_up X-Forwarded-Proto {scheme}
     }
@@ -117,7 +117,7 @@ services:
     build: ./backend
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`principal.yourdomain.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.rule=Host(`dollardata.yourdomain.com`) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
     environment:
@@ -133,7 +133,7 @@ Ensure these are set in production:
 ```bash
 # .env.production
 ENVIRONMENT=production
-CORS_ORIGINS=https://principal.yourdomain.com
+CORS_ORIGINS=https://dollardata.yourdomain.com
 SECRET_KEY=<strong-random-key>
 ```
 
@@ -147,7 +147,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 # Only allow requests to your domain
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["principal.yourdomain.com", "localhost"]
+    allowed_hosts=["dollardata.yourdomain.com", "localhost"]
 )
 ```
 

@@ -6,33 +6,33 @@ This document outlines the recommended backup strategy for production deployment
 
 ### Daily Backup Script
 
-Create `/opt/principal/backup.sh`:
+Create `/opt/dollardata/backup.sh`:
 
 ```bash
 #!/bin/bash
-# Principal Finance - Daily Backup Script
+# DollarData - Daily Backup Script
 
-BACKUP_DIR="/var/backups/principal"
+BACKUP_DIR="/var/backups/dollardata"
 DATE=$(date +%Y-%m-%d)
 RETENTION_DAYS=7
 
 # Create backup
-pg_dump -U principal principal | gzip > "$BACKUP_DIR/principal_$DATE.sql.gz"
+pg_dump -U dollardata dollardata | gzip > "$BACKUP_DIR/dollardata_$DATE.sql.gz"
 
 # Delete backups older than retention period
 find "$BACKUP_DIR" -name "*.sql.gz" -mtime +$RETENTION_DAYS -delete
 
 # Log
-echo "$(date): Backup completed - principal_$DATE.sql.gz" >> /var/log/principal-backup.log
+echo "$(date): Backup completed - dollardata_$DATE.sql.gz" >> /var/log/dollardata-backup.log
 ```
 
 ### Cron Schedule
 
-Add to `/etc/cron.d/principal-backup`:
+Add to `/etc/cron.d/dollardata-backup`:
 
 ```
 # Daily backup at 2 AM
-0 2 * * * root /opt/principal/backup.sh
+0 2 * * * root /opt/dollardata/backup.sh
 ```
 
 ## Restore Procedure
@@ -42,7 +42,7 @@ Add to `/etc/cron.d/principal-backup`:
 docker-compose down
 
 # Restore from backup
-gunzip -c /var/backups/principal/principal_YYYY-MM-DD.sql.gz | psql -U principal principal
+gunzip -c /var/backups/dollardata/dollardata_YYYY-MM-DD.sql.gz | psql -U dollardata dollardata
 
 # Restart
 docker-compose up -d

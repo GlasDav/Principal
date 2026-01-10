@@ -1,4 +1,4 @@
-# Principal Finance - Feature Roadmap
+# DollarData - Feature Roadmap
 
 ## Phase 1: 🔴 Critical - Security & Production Readiness ✅
 

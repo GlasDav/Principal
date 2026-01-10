@@ -48,18 +48,23 @@ This document outlines the planned features, improvements, and future direction 
 ## ⚙️ Account & Settings
 
 - [x] **Supabase Auth Migration:** Migrated to Supabase authentication with ES256 JWT verification and JIT user provisioning.
-- [ ] **Complete Name Migration (Principal → DollarData):**
+- [x] **Complete Name Migration (Principal → DollarData):**
   - [x] Frontend branding (index.html, App.jsx, Login.jsx, Footer, FeedbackModal)
   - [x] Legal pages (TermsOfService, PrivacyPolicy)
   - [x] Backend API (main.py title, contact, welcome message)
   - [x] AI assistant prompt (ai_assistant.py)
   - [x] Documentation (ROADMAP.md, CONTEXT_MAP.md)
-  - [ ] Rename local folder: `Projects/Principal` → `Projects/DollarData`
-  - [ ] Rename GitHub repo: Settings → General → Repository name
-  - [ ] Update local remote: `git remote set-url origin https://github.com/GlasDav/DollarData.git`
+  - [x] Rename local folder: `Projects/Principal` → `Projects/DollarData`
+  - [x] Rename GitHub repo: Settings → General → Repository name
+  - [x] Update local remote: `git remote set-url origin https://github.com/GlasDav/DollarData.git`
   - [ ] Rename VPS folder: `mv /opt/principal /opt/dollardata`
-  - [ ] Update deploy workflow (`.agent/workflows/deploy.md`)
-- [ ] **Update Logo:** Replace placeholder logo with new DollarData branding assets.
+  - [x] Update deploy workflow (`.agent/workflows/deploy.md`)
+- [x] **Update Logo:** Replace placeholder logo with new DollarData branding assets.
+- [ ] **Configure dollardata.au Domain:**
+  - [ ] Complete GoDaddy ID verification
+  - [ ] Add A records pointing to VPS (43.224.182.196)
+  - [ ] Install Caddy on VPS for auto-SSL
+  - [ ] Update CORS_ORIGINS in .env
 - [ ] **Family Invites:** Email invitation flow for new household members (create own login for same account).
 - [ ] **Security (MFA):** Multi-Factor Authentication setup.
 - [ ] **Email Verification:** Verify user email addresses for security.

@@ -5,7 +5,7 @@ import { Lock, Mail, TrendingUp, Play } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 
 // Demo account credentials
-const DEMO_EMAIL = "demo@principal.finance";
+const DEMO_EMAIL = "demo@dollardata.app";
 const DEMO_PASSWORD = "demo123";
 
 export default function Login() {

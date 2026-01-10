@@ -226,7 +226,7 @@ erDiagram
 ## Recent Changes & Fixes
 - **Demo Account:**
   - Added `seed_demo_user.py` script for seeding demo data.
-  - "Try Demo" button on login page (`demo@principal.finance` / `demo123`).
+  - "Try Demo" button on login page (`demo@dollardata.app` / `demo123`).
   - Generates 12+ months of realistic transactions, categories, accounts, investments.
 - **Bug Fixes:**
   - Fixed Budget Categories page showing flat list on initial load (React Query cache key conflict).
@@ -387,7 +387,7 @@ npm run test:coverage    # With coverage
 docker-compose up
 
 # Seed Demo Data (VPS deployment)
-docker cp /opt/principal/scripts/seed_demo_user.py $(docker compose ps -q backend):/app/seed_demo_user.py
+docker cp /opt/dollardata/scripts/seed_demo_user.py $(docker compose ps -q backend):/app/seed_demo_user.py
 docker compose exec backend python /app/seed_demo_user.py
 ```
 
@@ -430,7 +430,7 @@ docker compose exec backend python /app/seed_demo_user.py
 4. **Drag-Drop** - Uses `@dnd-kit` for widget reordering and rule prioritization
 5. **Toast Notifications** - Custom `ToastContext` replaces browser alerts
 6. **Command Palette** - `Cmd/Ctrl+K` for quick navigation
-7. **Demo Account** - `demo@principal.finance` / `demo123` with realistic sample data
+7. **Demo Account** - `demo@dollardata.app` / `demo123` with realistic sample data
 
 ---
 

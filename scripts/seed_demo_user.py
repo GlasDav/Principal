@@ -29,7 +29,7 @@ from backend import models
 from backend.auth import get_password_hash
 
 # Demo user credentials
-DEMO_EMAIL = "demo@principal.finance"
+DEMO_EMAIL = "demo@dollardata.app"
 DEMO_PASSWORD = "demo123"
 DEMO_NAME = "Demo User"
 

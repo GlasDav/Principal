@@ -1,6 +1,6 @@
-# Principal Finance - Feature Documentation
+# DollarData - Feature Documentation
 
-This document provides a comprehensive overview of the features currently implemented in the Principal Finance application.
+This document provides a comprehensive overview of the features currently implemented in the DollarData application.
 
 ## 1. Dashboard & Analytics
 The dashboard serves as the central hub for financial oversight.

@@ -42,4 +42,4 @@ loglevel = os.getenv("LOG_LEVEL", "info")
 preload_app = True
 
 # Process naming
-proc_name = "principal-api"
+proc_name = "dollardata-api"

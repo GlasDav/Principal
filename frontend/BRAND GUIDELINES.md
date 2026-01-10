@@ -1,4 +1,4 @@
-# Principal Finance - Brand Guidelines
+# DollarData - Brand Guidelines
 
 Based on [Midfunnel by O/M Design](https://www.offmenu.design/projects/midfunnel).
 

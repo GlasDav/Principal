@@ -1,4 +1,4 @@
-# Principal Finance - Backend Dockerfile
+# DollarData - Backend Dockerfile
 FROM python:3.11-slim
 
 # Set environment variables

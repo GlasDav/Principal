@@ -1,5 +1,5 @@
 """
-Principal Finance - Configuration Settings
+DollarData - Configuration Settings
 
 Centralized configuration management with validation.
 Fails fast on startup if required environment variables are missing.
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     
     # Database
-    DATABASE_URL: str = "sqlite:///./principal.db"
+    DATABASE_URL: str = "sqlite:///./dollardata.db"
     
     # Authentication
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60

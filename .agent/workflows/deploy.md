@@ -1,5 +1,5 @@
 ---
-description: Deploy updates to the Principal Finance VPS on Binary Lane
+description: Deploy updates to the DollarData VPS on Binary Lane
 ---
 
 # Deploy to VPS
@@ -11,7 +11,7 @@ description: Deploy updates to the Principal Finance VPS on Binary Lane
 - **Username**: root
 - **Password**: mhLHTdULdHpz
 - **OS**: Ubuntu 24.04 LTS
-- **App Path**: /opt/principal
+- **App Path**: /opt/dollardata
 
 ## Connect to Server
 
@@ -28,7 +28,7 @@ Once connected, run these commands:
 
 3. Navigate to the app directory:
 ```bash
-cd /opt/principal
+cd /opt/dollardata
 ```
 
 4. Pull latest changes from GitHub:
@@ -43,12 +43,12 @@ docker compose down && docker compose up -d --build
 
 # If running directly:
 # Frontend: cd frontend && npm run build
-# Backend: systemctl restart principal-backend (or pm2 restart all)
+# Backend: systemctl restart dollardata-backend (or pm2 restart all)
 ```
 
 ## Quick One-Liner (after finding app path)
 ```bash
-cd /opt/principal && git pull origin main && docker compose down && docker compose up -d --build
+cd /opt/dollardata && git pull origin main && docker compose down && docker compose up -d --build
 ```
 
 ## Troubleshooting
