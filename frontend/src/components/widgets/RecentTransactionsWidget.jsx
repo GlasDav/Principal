@@ -42,11 +42,11 @@ export default function RecentTransactionsWidget({ formatCurrency }) {
 
     if (isLoading) {
         return (
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+            <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark">
                 <div className="animate-pulse space-y-3">
-                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
+                    <div className="h-4 bg-surface dark:bg-card-dark rounded w-1/3"></div>
                     {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="h-10 bg-slate-100 dark:bg-slate-700 rounded"></div>
+                        <div key={i} className="h-10 bg-surface dark:bg-card-dark rounded"></div>
                     ))}
                 </div>
             </div>
@@ -54,23 +54,23 @@ export default function RecentTransactionsWidget({ formatCurrency }) {
     }
 
     return (
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+        <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg">
                         <Receipt size={20} />
                     </div>
-                    <h2 className="text-lg font-bold text-slate-800 dark:text-white">Recent Transactions</h2>
+                    <h2 className="text-lg font-bold text-text-primary dark:text-text-primary-dark">Recent Transactions</h2>
                 </div>
-                <Link to="/transactions" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
+                <Link to="/transactions" className="text-sm text-primary hover:text-primary-hover font-medium flex items-center gap-1">
                     View All <ArrowRight size={14} />
                 </Link>
             </div>
 
             {transactions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-6 text-center space-y-2">
-                    <p className="text-slate-400 dark:text-slate-500 text-sm">No transactions yet</p>
-                    <Link to="/transactions" className="text-xs text-indigo-500 font-medium hover:underline">
+                    <p className="text-text-muted dark:text-text-muted-dark text-sm">No transactions yet</p>
+                    <Link to="/transactions" className="text-xs text-primary font-medium hover:underline">
                         Add Transaction
                     </Link>
                 </div>
@@ -81,21 +81,21 @@ export default function RecentTransactionsWidget({ formatCurrency }) {
                         const isIncome = tx.amount > 0;
 
                         return (
-                            <div key={tx.id} className="flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors">
+                            <div key={tx.id} className="flex items-center justify-between p-2 hover:bg-surface dark:hover:bg-card-dark/50 rounded-lg transition-colors">
                                 <div className="flex items-center gap-3">
-                                    <div className={`p-1.5 rounded-lg ${isIncome ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : 'bg-slate-100 dark:bg-slate-700 text-slate-500'}`}>
+                                    <div className={`p-1.5 rounded-lg ${isIncome ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : 'bg-surface dark:bg-card-dark text-text-muted dark:text-text-muted-dark'}`}>
                                         <Icon size={16} />
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-sm font-medium text-slate-800 dark:text-white truncate max-w-[180px]">
+                                        <p className="text-sm font-medium text-text-primary dark:text-text-primary-dark truncate max-w-[180px]">
                                             {tx.description}
                                         </p>
-                                        <p className="text-xs text-slate-400 truncate">
+                                        <p className="text-xs text-text-muted dark:text-text-muted-dark truncate">
                                             {tx.bucket_name || 'Uncategorized'}
                                         </p>
                                     </div>
                                 </div>
-                                <span className={`text-sm font-semibold whitespace-nowrap ${isIncome ? 'text-emerald-600' : 'text-slate-700 dark:text-slate-300'}`}>
+                                <span className={`text-sm font-semibold whitespace-nowrap ${isIncome ? 'text-emerald-600' : 'text-text-primary dark:text-text-primary-dark/70'}`}>
                                     {isIncome ? '+' : ''}{formatCurrency(tx.amount)}
                                 </span>
                             </div>

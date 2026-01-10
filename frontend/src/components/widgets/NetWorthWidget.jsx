@@ -33,8 +33,8 @@ export default function NetWorthWidget({ history: historyProp = [], formatCurren
             <div className="relative z-10">
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                        <Wallet size={18} className="text-slate-400" />
-                        <span className="text-sm font-medium text-slate-400">Net Worth</span>
+                        <Wallet size={18} className="text-text-muted dark:text-text-muted-dark" />
+                        <span className="text-sm font-medium text-text-muted dark:text-text-muted-dark">Net Worth</span>
                     </div>
                     {change !== 0 && (
                         <div className={`flex items-center gap-1 text-sm font-medium ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -67,8 +67,8 @@ export default function NetWorthWidget({ history: historyProp = [], formatCurren
                         </ResponsiveContainer>
                     </div>
                 ) : (
-                    <div className="h-16 flex items-center justify-center border-t border-slate-700 mt-2">
-                        <span className="text-xs text-slate-500">No history data yet</span>
+                    <div className="h-16 flex items-center justify-center border-t border-border dark:border-border-dark mt-2">
+                        <span className="text-xs text-text-muted dark:text-text-muted-dark">No history data yet</span>
                     </div>
                 )}
             </div>

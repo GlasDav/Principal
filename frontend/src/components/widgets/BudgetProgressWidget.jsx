@@ -39,19 +39,19 @@ export default function BudgetProgressWidget({ buckets: bucketsProp = [], format
             <Link
                 to={`/transactions?bucket_id=${bucket.id}&start_date=${startDate}&end_date=${endDate}`}
                 key={bucket.id}
-                className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow group"
+                className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark hover:shadow-md transition-shadow group"
             >
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300">
+                        <div className="p-2 bg-surface dark:bg-card-dark rounded-lg text-text-muted dark:text-text-muted-dark">
                             <Icon size={20} />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <h3 className="font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-1.5">
                                 {bucket.name}
-                                {bucket.is_rollover && <RefreshCw size={12} className="text-indigo-500" title="Rollover Fund" />}
+                                {bucket.is_rollover && <RefreshCw size={12} className="text-primary" title="Rollover Fund" />}
                             </h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                            <p className="text-xs text-text-muted dark:text-text-muted-dark font-medium">
                                 {bucket.is_over
                                     ? "Over Budget"
                                     : upcoming > 0
@@ -61,13 +61,13 @@ export default function BudgetProgressWidget({ buckets: bucketsProp = [], format
                             </p>
                         </div>
                     </div>
-                    <div className={`text-sm font-bold ${bucket.is_over ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}`}>
+                    <div className={`text-sm font-bold ${bucket.is_over ? 'text-red-500' : 'text-text-primary dark:text-text-primary-dark/70'}`}>
                         {Math.round(bucket.percent)}%
                     </div>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="relative h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex">
+                <div className="relative h-3 bg-surface dark:bg-card-dark rounded-full overflow-hidden flex">
                     {/* Spent */}
                     <div
                         className={`h-full rounded-l-full transition-all duration-500 ${barColor}`}
@@ -88,11 +88,11 @@ export default function BudgetProgressWidget({ buckets: bucketsProp = [], format
                 </div>
 
                 <div className="flex justify-between mt-3 text-sm">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium flex gap-1">
+                    <span className="text-text-muted dark:text-text-muted-dark font-medium flex gap-1">
                         {formatCurrency(bucket.spent)}
-                        {upcoming > 0 && <span className="text-slate-400 opacity-75">+ {formatCurrency(upcoming)}</span>}
+                        {upcoming > 0 && <span className="text-text-muted dark:text-text-muted-dark opacity-75">+ {formatCurrency(upcoming)}</span>}
                     </span>
-                    <span className="text-slate-400 dark:text-slate-500">Of {formatCurrency(bucket.limit)}</span>
+                    <span className="text-text-muted dark:text-text-muted-dark opacity-75">Of {formatCurrency(bucket.limit)}</span>
                 </div>
             </Link>
         );
@@ -102,8 +102,8 @@ export default function BudgetProgressWidget({ buckets: bucketsProp = [], format
         <div className="space-y-8">
             {/* Needs Section */}
             <section>
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                    <span className="p-1.5 bg-indigo-100 text-indigo-600 rounded-lg"><Utensils size={18} /></span>
+                <h2 className="text-xl font-bold text-text-primary dark:text-text-primary-dark mb-4 flex items-center gap-2">
+                    <span className="p-1.5 bg-primary/10 text-primary rounded-lg"><Utensils size={18} /></span>
                     Non-Discretionary (Needs)
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
