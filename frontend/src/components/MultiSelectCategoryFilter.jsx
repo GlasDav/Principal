@@ -141,7 +141,7 @@ export default function MultiSelectCategoryFilter({ categories = [], selectedIds
                         return (
                             <div key={group}>
                                 {/* Group Header - Clickable to select all */}
-                                <label className="sticky top-0 bg-slate-100 dark:bg-slate-900 px-3 py-2 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition">
+                                <label className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 px-3 py-2 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition">
                                     {/* Group Checkbox */}
                                     <div className="relative flex items-center justify-center">
                                         <input

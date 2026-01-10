@@ -25,9 +25,12 @@ export default function Reports() {
     const getDateRange = (type) => {
         const now = new Date();
         const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        let end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-        if (type === "Last 3 Months") {
+        if (type === "Last Month") {
+            start.setMonth(now.getMonth() - 1, 1);
+            end = new Date(now.getFullYear(), now.getMonth(), 0); // Last day of previous month
+        } else if (type === "Last 3 Months") {
             start.setMonth(now.getMonth() - 2);
         } else if (type === "Last 6 Months") {
             start.setMonth(now.getMonth() - 5);
@@ -305,6 +308,7 @@ export default function Reports() {
                     className="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                     <option>This Month</option>
+                    <option>Last Month</option>
                     <option>Last 3 Months</option>
                     <option>Last 6 Months</option>
                     <option>This Year</option>
