@@ -75,30 +75,26 @@ export default function Budget() {
     if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
 
     return (
-        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
-            {/* Header with Tabs */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <h1 className="text-2xl font-bold text-text-primary dark:text-text-primary-dark">Budget & Categories</h1>
-
-                {/* Tab Navigation */}
-                <div className="flex bg-surface dark:bg-card-dark rounded-lg p-1">
-                    {tabs.map(tab => {
-                        const Icon = tab.icon;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === tab.id
-                                    ? 'bg-card dark:bg-card-dark text-primary dark:text-primary-light shadow-sm'
-                                    : 'text-text-muted dark:text-text-muted-dark hover:text-text-primary dark:hover:text-text-primary-dark'
-                                    }`}
-                            >
-                                <Icon size={16} />
-                                {tab.label}
-                            </button>
-                        );
-                    })}
-                </div>
+        <div className="max-w-7xl mx-auto p-8">
+            {/* Tab Navigation - Same style as ReportsHub */}
+            <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700 mb-6">
+                {tabs.map(tab => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${isActive
+                                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                                : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                }`}
+                        >
+                            <Icon size={16} />
+                            {tab.label}
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Tab Content */}

@@ -1,21 +1,21 @@
-# App Rename Analysis: Principal -> Savvi
+# App Rename Analysis: Principal -> DollarData
 
-This document outlines the changes required to rename the application from **"Principal"** to **"Savvi"**. The changes are categorized by impact and component.
+This document outlines the changes required to rename the application from **"Principal"** to **"DollarData"**. The changes are categorized by impact and component.
 
 ## 1. Frontend Branding (High Visibility)
 These changes directly affect what the user sees.
 
 | File Path | Line(s) | Change Description |
 |-----------|---------|--------------------|
-| `frontend/index.html` | 10 | Change `<title>Principal Finance</title>` to `<title>Savvi</title>` (or Savvi Finance). |
-| `frontend/src/App.jsx` | 107 | `const title = ... || 'Principal';` -> `'Savvi'` |
-| `frontend/src/App.jsx` | 130 | `<img alt="Principal Finance" ...>` -> `alt="Savvi"` |
-| `frontend/src/App.jsx` | 131 | `<h1>Principal</h1>` -> `<h1>Savvi</h1>` |
-| `frontend/src/pages/Login.jsx` | 104 | `<h1>Principal</h1>` -> `<h1>Savvi</h1>` |
-| `frontend/src/components/Footer.jsx` | 7 | "Principal is a personal finance tool..." -> "Savvi is..." |
-| `frontend/src/components/FeedbackModal.jsx` | 123 | "...improve Principal!" -> "...improve Savvi!" |
-| `frontend/src/pages/TermsOfService.jsx` | 33, 41, 101 | Replace "Principal Finance" with "Savvi" or "Savvi Finance". |
-| `frontend/src/pages/PrivacyPolicy.jsx` | 33 | Replace "Principal Finance" with "Savvi". |
+| `frontend/index.html` | 10 | Change `<title>Principal Finance</title>` to `<title>DollarData</title>`. |
+| `frontend/src/App.jsx` | 107 | `const title = ... || 'Principal';` -> `'DollarData'` |
+| `frontend/src/App.jsx` | 130 | `<img alt="Principal Finance" ...>` -> `alt="DollarData"` |
+| `frontend/src/App.jsx` | 131 | `<h1>Principal</h1>` -> `<h1>DollarData</h1>` |
+| `frontend/src/pages/Login.jsx` | 104 | `<h1>Principal</h1>` -> `<h1>DollarData</h1>` |
+| `frontend/src/components/Footer.jsx` | 7 | "Principal is a personal finance tool..." -> "DollarData is..." |
+| `frontend/src/components/FeedbackModal.jsx" | 123 | "...improve Principal!" -> "...improve DollarData!" |
+| `frontend/src/pages/TermsOfService.jsx` | 33, 41, 101 | Replace "Principal Finance" with "DollarData". |
+| `frontend/src/pages/PrivacyPolicy.jsx` | 33 | Replace "Principal Finance" with "DollarData". |
 | `frontend/BRAND GUIDELINES.md` | 1 | Title update. |
 
 ## 2. Backend & System Logic
@@ -31,7 +31,7 @@ These changes affect API responses, logs, and self-identification.
 | `backend/config.py` | 2 | Docstring update. |
 | `backend/security.py` | 2 | Docstring update. |
 | `backend/requirements.txt` | 1 | Header update. |
-| `gunicorn.conf.py` | 45 | `proc_name = "principal-api"` -> `"savvi-api"` |
+| `gunicorn.conf.py` | 45 | `proc_name = "principal-api"` -> `"dollardata-api"` |
 
 ## 3. Infrastructure & DevOps (High Effort / Risk)
 Renaming these ensures consistency but requires careful execution, especially for databases and live environments.
@@ -39,7 +39,7 @@ Renaming these ensures consistency but requires careful execution, especially fo
 ### Docker & Networking
 *   **`docker-compose.yml`**:
     *   Service names (optional but recommended): `principal-postgres`, `principal-redis`.
-    *   Network names: `principal-network` -> `savvi-network`.
+    *   Network names: `principal-network` -> `dollardata-network`.
     *   Environment variables: `POSTGRES_USER=principal`, `POSTGRES_DB=principal` (Requires database migration/re-creation if changed).
 *   **`Dockerfile`**: Comment updates.
 
@@ -49,7 +49,7 @@ Renaming these ensures consistency but requires careful execution, especially fo
 
 ### Database Files (SQLite)
 *   The project uses SQLite files named `principal_v5.db`, `principal.db`.
-*   **Recommendation**: You can rename the file to `savvi_v5.db`, but you **MUST** update all script references.
+*   **Recommendation**: You can rename the file to `dollardata_v5.db`, but you **MUST** update all script references.
 *   **Impacted Scripts**:
     *   `scripts/debug_verify.py`
     *   `scripts/manage_users.py`
@@ -92,9 +92,9 @@ Test files often contain the app name in descriptions or specific assertions.
     *   *Risk: Low. Ensure tests pass.*
 
 3.  **Phase 3: Infrastructure & Data (High Risk)**
-    *   **Database**: If you rename `principal_v5.db` to `savvi.db`, you must grep and replace strings in the entire `scripts/` folder.
+    *   **Database**: If you rename `principal_v5.db` to `dollardata.db`, you must grep and replace strings in the entire `scripts/` folder.
     *   **Docker**: changing `POSTGRES_DB` or network names requires tearing down and rebuilding containers.
     *   **Recommendation**: For now, you might want to keep the internal database filename (`principal_v5.db`) to avoid breaking all utility scripts, or treat it as a dedicated "Migration" task.
 
 4.  **Phase 4: Directory Name**
-    *   Renaming the parent folder `.../Projects/Principal` to `.../Projects/Savvi` will break your local workspace paths if not handled carefully in your IDE.
+    *   Renaming the parent folder `.../Projects/Principal` to `.../Projects/DollarData` will break your local workspace paths if not handled carefully in your IDE.

@@ -30,8 +30,8 @@ export default function ReportsHub() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${isActive
-                                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                                : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                                 }`}
                         >
                             <Icon size={16} />
@@ -51,27 +51,15 @@ export default function ReportsHub() {
     );
 }
 
-// Wrapper to strip the page-level padding
+// Content components - no wrapper needed since pages removed their container styling
 function ReportsContent() {
-    return (
-        <div className="-m-8">
-            <Reports />
-        </div>
-    );
+    return <Reports />;
 }
 
 function CalendarContent() {
-    return (
-        <div className="-m-8">
-            <FinancialCalendar />
-        </div>
-    );
+    return <FinancialCalendar />;
 }
 
 function InsightsContent() {
-    return (
-        <div className="-m-8">
-            <Insights />
-        </div>
-    );
+    return <Insights />;
 }
