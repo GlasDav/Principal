@@ -57,18 +57,18 @@ const GoalModal = ({ isOpen, onClose, goal, accounts, onSave }) => {
         <Dialog open={isOpen} onClose={onClose} className="relative z-50">
             <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
             <div className="fixed inset-0 flex items-center justify-center p-4">
-                <Dialog.Panel className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6">
-                    <Dialog.Title className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                <Dialog.Panel className="w-full max-w-md bg-card dark:bg-card-dark rounded-2xl shadow-xl border border-border dark:border-border-dark p-6">
+                    <Dialog.Title className="text-lg font-bold text-text-primary dark:text-text-primary-dark mb-4">
                         {isEdit ? "Edit Goal" : "New Goal"}
                     </Dialog.Title>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Mode Selection */}
-                        <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-lg mb-4">
+                        <div className="flex gap-2 p-1 bg-surface dark:bg-card-dark rounded-lg mb-4">
                             <button
                                 type="button"
                                 onClick={() => setMode('linked')}
-                                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${mode === 'linked' ? 'bg-white dark:bg-slate-600 shadow-sm text-indigo-600 dark:text-white' : 'text-slate-500'}`}
+                                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${mode === 'linked' ? 'bg-card dark:bg-card-dark shadow-sm text-primary dark:text-text-primary-dark' : 'text-text-muted'}`}
                             >
                                 Link to Account
                             </button>
@@ -413,8 +413,8 @@ export default function Goals() {
         <div className="max-w-6xl mx-auto p-8 space-y-8">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Goals</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">Track your savings and spending habits</p>
+                    <h1 className="text-3xl font-bold text text-primary dark:text-text-primary-dark">Goals</h1>
+                    <p className="text-text-muted dark:text-text-muted-dark mt-1">Track your savings and spending habits</p>
                 </div>
                 <div className="flex gap-2">
                     <Button
@@ -520,7 +520,7 @@ export default function Goals() {
                             return (
                                 <div
                                     key={goal.id}
-                                    className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col justify-between relative group cursor-pointer hover:shadow-md transition-shadow"
+                                    className="bg-card dark:bg-card-dark rounded-2xl shadow-sm border border-border dark:border-border-dark p-6 flex flex-col justify-between relative group cursor-pointer hover:shadow-md transition-shadow"
                                     onClick={() => setSelectedGoal(goal)}
                                 >
                                     <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

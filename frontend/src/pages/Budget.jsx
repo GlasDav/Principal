@@ -72,16 +72,16 @@ export default function Budget() {
         { id: 'rules', label: 'Rules', icon: Zap },
     ];
 
-    if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>;
+    if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
 
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
             {/* Header with Tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Budget & Categories</h1>
+                <h1 className="text-2xl font-bold text-text-primary dark:text-text-primary-dark">Budget & Categories</h1>
 
                 {/* Tab Navigation */}
-                <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                <div className="flex bg-surface dark:bg-card-dark rounded-lg p-1">
                     {tabs.map(tab => {
                         const Icon = tab.icon;
                         return (
@@ -89,8 +89,8 @@ export default function Budget() {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === tab.id
-                                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                                    ? 'bg-card dark:bg-card-dark text-primary dark:text-primary-light shadow-sm'
+                                    : 'text-text-muted dark:text-text-muted-dark hover:text-text-primary dark:hover:text-text-primary-dark'
                                     }`}
                             >
                                 <Icon size={16} />
@@ -128,7 +128,7 @@ export default function Budget() {
 
             {activeTab === 'rules' && (
                 <section>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6">Smart Rules</h2>
+                    <h2 className="text-xl font-bold text-text-primary dark:text-text-primary-dark mb-6">Smart Rules</h2>
                     <RulesSection buckets={flatBuckets} />
                 </section>
             )}
