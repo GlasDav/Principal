@@ -39,17 +39,23 @@ async def get_supabase_jwks(supabase_url: str) -> Dict[str, Any]:
     if _jwks_cache:
         return _jwks_cache
 
-    jwks_url = f"{supabase_url.rstrip('/')}/auth/v1/jwks"
+    # Try the standard .well-known endpoint first
+    jwks_url = f"{supabase_url.rstrip('/')}/.well-known/jwks.json"
     
-    # Add API Key to headers to avoid 401
+    # Add API Key to headers just in case (though .well-known is usually public)
     headers = {}
-    api_key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    api_key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY") # fallback
     if api_key:
         headers["apikey"] = api_key
         
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(jwks_url, headers=headers)
+            if response.status_code == 404:
+                # Fallback to the other common Supabase path
+                jwks_url = f"{supabase_url.rstrip('/')}/auth/v1/jwks"
+                response = await client.get(jwks_url, headers=headers)
+            
             response.raise_for_status()
             _jwks_cache = response.json()
             return _jwks_cache
