@@ -277,6 +277,20 @@ erDiagram
   - **NotificationProvider:** Moved to `PrivateRoute.jsx` to prevent crashes on public routes.
   - **SummaryCardsWidget:** Added null checks for `totals` and `netWorth` props.
   - **NotificationContext:** Added `Array.isArray()` check before filtering notifications.
+- **Reports & Analytics Refinements (January 2026):**
+  - **Time Picker:** Added "Last Month" option to date range selector.
+  - **Category Filter UI:** Fixed z-index issue where checkboxes overlapped sticky group headers.
+  - **Category Filter Logic:** Added `exact_bucket_ids` backend parameter to prevent automatic hierarchy expansion when child categories are deselected.
+  - **Chart Labels:** Replaced inline pie chart labels with `Legend` component for better readability and no cutoff.
+- **UI Unification:**
+  - **Budget Page Tabs:** Changed from pill-style tabs (right-aligned) to underline-style tabs (left-aligned) to match Reports page.
+  - **Page Container Layout:** Removed inconsistent `-m-8` wrappers in ReportsHub; Reports and Calendar pages now use consistent container styling.
+- **App Rename (Principal → DollarData):**
+  - Updated frontend branding: `index.html`, `App.jsx`, `Login.jsx`, `Footer.jsx`, `FeedbackModal.jsx`.
+  - Updated legal pages: `TermsOfService.jsx`, `PrivacyPolicy.jsx`.
+  - Updated backend: `main.py` (API title, contact, welcome message).
+  - Updated AI assistant prompt in `ai_assistant.py`.
+  - Updated documentation: `ROADMAP.md`, `CONTEXT_MAP.md`.
 
 ## Known Issues
 - **Recent Transactions Widget:** Currently not displaying transactions on dashboard (Investigating).
