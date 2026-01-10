@@ -253,44 +253,64 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     
     SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
     SUPABASE_URL = os.getenv("SUPABASE_URL")
-
-    if not SUPABASE_URL:
-         logger.error("Missing SUPABASE_URL env var")
-         # We can try falling back to HS256-only if URL is missing but Secret exists
     
     try:
-        # 1. Inspect Header to determine Algorithm
+        # Inspect Header to determine Algorithm
         header = jwt.get_unverified_header(token)
         alg = header.get("alg")
         
         payload = None
         
-        if alg == "HS256":
-            if not SUPABASE_JWT_SECRET:
-                logger.error("Missing SUPABASE_JWT_SECRET for HS256 token")
+        # Strategy: Always try HS256 first with the JWT secret (Supabase's standard approach)
+        # Only fall back to JWKS if HS256 fails and token uses RS256/ES256
+        
+        if SUPABASE_JWT_SECRET:
+            try:
+                payload = jwt.decode(
+                    token, 
+                    SUPABASE_JWT_SECRET, 
+                    algorithms=["HS256"], 
+                    audience="authenticated"
+                )
+                logger.debug("JWT verified successfully with HS256")
+            except JWTError as hs256_error:
+                logger.debug(f"HS256 verification failed: {hs256_error}, trying JWKS...")
+                # HS256 failed, try JWKS if algorithm is RS256/ES256
+                if alg in ["RS256", "ES256"] and SUPABASE_URL:
+                    try:
+                        jwks = await get_supabase_jwks(SUPABASE_URL)
+                        payload = jwt.decode(
+                            token, 
+                            jwks, 
+                            algorithms=["RS256", "ES256"], 
+                            audience="authenticated",
+                        )
+                        logger.debug(f"JWT verified successfully with {alg} via JWKS")
+                    except Exception as jwks_error:
+                        logger.error(f"JWKS verification also failed: {jwks_error}")
+                        raise credentials_exception
+                else:
+                    # No fallback available
+                    logger.error(f"HS256 failed and no JWKS fallback (alg={alg})")
+                    raise credentials_exception
+        elif alg in ["RS256", "ES256"] and SUPABASE_URL:
+            # No JWT secret, try JWKS directly
+            try:
+                jwks = await get_supabase_jwks(SUPABASE_URL)
+                payload = jwt.decode(
+                    token, 
+                    jwks, 
+                    algorithms=["RS256", "ES256"], 
+                    audience="authenticated",
+                )
+            except Exception as e:
+                logger.error(f"JWKS verification failed: {e}")
                 raise credentials_exception
-            
-            payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
-            
-        elif alg in ["RS256", "ES256"]:
-            if not SUPABASE_URL:
-                logger.error(f"Received {alg} token but SUPABASE_URL is not set")
-                raise credentials_exception
-            
-            # Fetch JWKS
-            jwks = await get_supabase_jwks(SUPABASE_URL)
-            
-            # Verify with Key
-            payload = jwt.decode(
-                token, 
-                jwks, 
-                algorithms=["RS256", "ES256"], 
-                audience="authenticated",
-                # Python-Jose with JWKS dict automatically finds key by 'kid'
-            )
-            
         else:
-            logger.error(f"Unsupported JWT Algorithm: {alg}")
+            logger.error(f"No SUPABASE_JWT_SECRET and cannot use JWKS (alg={alg}, URL set={bool(SUPABASE_URL)})")
+            raise credentials_exception
+        
+        if payload is None:
             raise credentials_exception
 
         user_id: str = payload.get("sub")
