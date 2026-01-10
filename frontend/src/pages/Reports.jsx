@@ -481,19 +481,17 @@ export default function Reports() {
                     <div className="space-y-8">
                         <div>
                             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Expenses by Group</p>
-                            <div className="h-48 w-full flex justify-center">
+                            <div className="h-48 w-full flex justify-center overflow-hidden">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <RePieChart>
                                         <Pie
                                             data={pieChartData}
                                             cx="50%"
                                             cy="50%"
-                                            innerRadius={40}
-                                            outerRadius={65}
+                                            innerRadius={35}
+                                            outerRadius={55}
                                             paddingAngle={3}
                                             dataKey="value"
-                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                            labelLine={false}
                                         >
                                             {pieChartData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -503,6 +501,18 @@ export default function Reports() {
                                             formatter={(val) => formatCurrency(val)}
                                             contentStyle={{ borderRadius: '8px', border: 'none' }}
                                         />
+                                        <Legend
+                                            layout="vertical"
+                                            align="right"
+                                            verticalAlign="middle"
+                                            wrapperStyle={{ fontSize: '10px', lineHeight: '16px' }}
+                                            formatter={(value, entry) => {
+                                                const item = pieChartData.find(d => d.name === value);
+                                                const total = pieChartData.reduce((sum, d) => sum + d.value, 0);
+                                                const pct = total > 0 ? Math.round((item?.value / total) * 100) : 0;
+                                                return `${value} ${pct}%`;
+                                            }}
+                                        />
                                     </RePieChart>
                                 </ResponsiveContainer>
                             </div>
@@ -511,19 +521,17 @@ export default function Reports() {
                         {incomeChartData.length > 0 && (
                             <div>
                                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Income by Type</p>
-                                <div className="h-48 w-full flex justify-center">
+                                <div className="h-48 w-full flex justify-center overflow-hidden">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RePieChart>
                                             <Pie
                                                 data={incomeChartData}
                                                 cx="50%"
                                                 cy="50%"
-                                                innerRadius={40}
-                                                outerRadius={65}
+                                                innerRadius={35}
+                                                outerRadius={55}
                                                 paddingAngle={3}
                                                 dataKey="value"
-                                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                                labelLine={false}
                                             >
                                                 {incomeChartData.map((entry, index) => (
                                                     <Cell key={`cell-income-${index}`} fill={['#10b981', '#34d399', '#6ee7b7', '#a7f3d0'][index % 4]} />
@@ -532,6 +540,18 @@ export default function Reports() {
                                             <Tooltip
                                                 formatter={(val) => formatCurrency(val)}
                                                 contentStyle={{ borderRadius: '8px', border: 'none' }}
+                                            />
+                                            <Legend
+                                                layout="vertical"
+                                                align="right"
+                                                verticalAlign="middle"
+                                                wrapperStyle={{ fontSize: '10px', lineHeight: '16px' }}
+                                                formatter={(value, entry) => {
+                                                    const item = incomeChartData.find(d => d.name === value);
+                                                    const total = incomeChartData.reduce((sum, d) => sum + d.value, 0);
+                                                    const pct = total > 0 ? Math.round((item?.value / total) * 100) : 0;
+                                                    return `${value} ${pct}%`;
+                                                }}
                                             />
                                         </RePieChart>
                                     </ResponsiveContainer>
