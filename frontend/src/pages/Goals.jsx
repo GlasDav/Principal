@@ -216,9 +216,9 @@ const GoalDetailsModal = ({ isOpen, onClose, goal }) => {
             <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
             <div className="fixed inset-0 z-50 overflow-y-auto">
                 <div className="flex min-h-full items-center justify-center p-4 py-8">
-                    <Dialog.Panel className="w-full max-w-5xl bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
+                    <Dialog.Panel className="w-full max-w-5xl bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                         {/* Header */}
-                        <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-start shrink-0">
+                        <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-start">
                             <div>
                                 <Dialog.Title className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                                     {goal.name}
@@ -237,7 +237,7 @@ const GoalDetailsModal = ({ isOpen, onClose, goal }) => {
                         </div>
 
                         {/* Content */}
-                        <div className="p-6 space-y-8 overflow-y-auto">
+                        <div className="p-6 space-y-8">
 
                             {/* 1. Projection Card */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
