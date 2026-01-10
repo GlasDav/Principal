@@ -30,7 +30,7 @@ export default function TermsOfService() {
                         <section>
                             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">1. Acceptance of Terms</h2>
                             <p className="text-slate-600 dark:text-slate-300">
-                                By accessing or using Principal Finance ("the Service"), you agree to be bound by these
+                                By accessing or using DollarData ("the Service"), you agree to be bound by these
                                 Terms of Service. If you do not agree to these terms, please do not use the Service.
                             </p>
                         </section>
@@ -38,7 +38,7 @@ export default function TermsOfService() {
                         <section>
                             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">2. Description of Service</h2>
                             <p className="text-slate-600 dark:text-slate-300">
-                                Principal Finance is a personal finance management application that helps you track
+                                DollarData is a personal finance management application that helps you track
                                 transactions, manage budgets, monitor net worth, and achieve financial goals. The
                                 Service is provided for personal, non-commercial use.
                             </p>
@@ -90,7 +90,7 @@ export default function TermsOfService() {
                             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">7. Intellectual Property</h2>
                             <p className="text-slate-600 dark:text-slate-300">
                                 The Service and its original content, features, and functionality are owned by
-                                Principal Finance and are protected by international copyright, trademark, and other
+                                DollarData and are protected by international copyright, trademark, and other
                                 intellectual property laws.
                             </p>
                         </section>
@@ -98,7 +98,7 @@ export default function TermsOfService() {
                         <section>
                             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">8. Limitation of Liability</h2>
                             <p className="text-slate-600 dark:text-slate-300">
-                                To the maximum extent permitted by law, Principal Finance shall not be liable for any
+                                To the maximum extent permitted by law, DollarData shall not be liable for any
                                 indirect, incidental, special, consequential, or punitive damages resulting from your
                                 use of the Service.
                             </p>
@@ -124,7 +124,7 @@ export default function TermsOfService() {
                         <section>
                             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">11. Contact</h2>
                             <p className="text-slate-600 dark:text-slate-300">
-                                For questions about these Terms, please contact us at legal@principalfinance.app.
+                                For questions about these Terms, please contact us at legal@dollardata.app.
                             </p>
                         </section>
                     </div>

@@ -17,7 +17,7 @@ logger = configure_logging(
     log_level=os.getenv("LOG_LEVEL", "INFO")
 )
 
-logger.info(f"Starting Principal Finance API in {ENVIRONMENT} mode")
+logger.info(f"Starting DollarData API in {ENVIRONMENT} mode")
 
 # Validate production configuration
 if ENVIRONMENT == "production":
@@ -72,7 +72,7 @@ run_migrations(engine)
 limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
-    title="Principal Finance API",
+    title="DollarData API",
     description="""
 ## Personal Finance Management API
 
@@ -108,8 +108,8 @@ Comprehensive API for managing personal finances including:
     """,
     version="1.0.0",
     contact={
-        "name": "Principal Finance",
-        "email": "support@principal.finance",
+        "name": "DollarData",
+        "email": "support@dollardata.app",
     },
     license_info={
         "name": "MIT",
@@ -184,7 +184,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # === CORS CONFIGURATION ===
 # IMPORTANT: In production, set CORS_ORIGINS to your actual frontend domain
-# Example: CORS_ORIGINS=https://principal.com
+# Example: CORS_ORIGINS=https://dollardata.app
 environment = os.getenv("ENVIRONMENT", "development")
 cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000")
 origins = [origin.strip() for origin in cors_origins.split(",")]
@@ -233,7 +233,7 @@ app.include_router(household.router)
 @app.get("/")
 def read_root():
     """Root endpoint."""
-    return {"message": "Welcome to Principal API"}
+    return {"message": "Welcome to DollarData API"}
 
 
 @app.get("/health")

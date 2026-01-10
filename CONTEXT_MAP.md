@@ -1,4 +1,4 @@
-# Principal Finance - System Architecture Map
+# DollarData - System Architecture Map
 
 > **Long-Term Context Memory** for AI-assisted development. Last updated: January 2026.
 > 
@@ -47,7 +47,7 @@ When adding a new column to any model:
 
 ## High-Level Summary
 
-**Principal Finance** is a comprehensive personal finance management application built for Australian users. It enables transaction tracking, budget management, net worth monitoring, investment portfolio tracking, and AI-powered financial insights. The platform supports multi-user household sharing with role-based access control, bank integration via Basiq.io, spending habits/category goals tracking, and a rich dashboard with customizable widgets.
+**DollarData** is a comprehensive personal finance management application built for Australian users. It enables transaction tracking, budget management, net worth monitoring, investment portfolio tracking, and AI-powered financial insights. The platform supports multi-user household sharing with role-based access control, bank integration via Basiq.io, spending habits/category goals tracking, and a rich dashboard with customizable widgets.
 
 ---
 

@@ -104,7 +104,7 @@ const PAGE_TITLES = {
 // Header with page title
 function Header() {
   const location = useLocation();
-  const title = PAGE_TITLES[location.pathname] || 'Principal';
+  const title = PAGE_TITLES[location.pathname] || 'DollarData';
 
   return (
     <header className="h-[72px] bg-card dark:bg-card-dark border-b border-border dark:border-border-dark flex items-center justify-between px-6 shadow-sm z-10">
@@ -127,8 +127,8 @@ function Layout() {
         {/* Logo */}
         <div className="h-[72px] px-4 border-b border-border dark:border-border-dark flex items-center">
           <div className="flex items-center gap-2.5">
-            <img src="/logo.svg" alt="Principal Finance" className="w-10 h-10" />
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">Principal</h1>
+            <img src="/logo.svg" alt="DollarData" className="w-10 h-10" />
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">DollarData</h1>
           </div>
         </div>
 

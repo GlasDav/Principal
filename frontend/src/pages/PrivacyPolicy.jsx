@@ -30,7 +30,7 @@ export default function PrivacyPolicy() {
                         <section>
                             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">1. Introduction</h2>
                             <p className="text-slate-600 dark:text-slate-300">
-                                Principal Finance ("we", "our", or "us") is committed to protecting your personal information
+                                DollarData ("we", "our", or "us") is committed to protecting your personal information
                                 and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and
                                 safeguard your information when you use our personal finance management application.
                             </p>
@@ -92,7 +92,7 @@ export default function PrivacyPolicy() {
                             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">7. Contact Us</h2>
                             <p className="text-slate-600 dark:text-slate-300">
                                 If you have any questions about this Privacy Policy or our data practices, please
-                                contact us at privacy@principalfinance.app.
+                                contact us at privacy@dollardata.app.
                             </p>
                         </section>
                     </div>

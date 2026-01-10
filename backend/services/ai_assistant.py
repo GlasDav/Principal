@@ -162,7 +162,7 @@ BUDGET CATEGORIES:
 {', '.join(c['name'] for c in context.get('categories', []))}
 """
         
-        prompt = f"""You are a helpful financial assistant for a personal finance app called Principal Finance.
+        prompt = f"""You are a helpful financial assistant for a personal finance app called DollarData.
         
 {context_summary}
 

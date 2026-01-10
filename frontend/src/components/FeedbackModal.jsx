@@ -120,7 +120,7 @@ export function FeedbackModal({ isOpen, onClose }) {
                                             </svg>
                                         </div>
                                         <p className="text-text-secondary dark:text-text-secondary-dark mb-4">
-                                            Your feedback has been received. We appreciate you taking the time to help improve Principal!
+                                            Your feedback has been received. We appreciate you taking the time to help improve DollarData!
                                         </p>
                                         <button
                                             onClick={handleClose}

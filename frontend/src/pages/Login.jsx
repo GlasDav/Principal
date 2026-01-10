@@ -101,7 +101,7 @@ export default function Login() {
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4 shadow-lg shadow-primary/30">
                         <TrendingUp className="text-white" size={32} />
                     </div>
-                    <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark mb-2">Principal</h1>
+                    <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark mb-2">DollarData</h1>
                     <p className="text-text-muted">Take control of your finances</p>
                 </div>
 

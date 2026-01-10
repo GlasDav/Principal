@@ -1,6 +1,6 @@
-# Principal Finance - Feature Roadmap
+# DollarData - Feature Roadmap
 
-This document outlines the planned features, improvements, and future direction for the Principal Finance application.
+This document outlines the planned features, improvements, and future direction for the DollarData application.
 
 > **Note:** This is a living document derived from project notes and user feedback.
 
