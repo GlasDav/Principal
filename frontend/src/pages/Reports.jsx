@@ -349,18 +349,6 @@ export default function Reports() {
                     ))}
                 </div>
 
-                {/* Account Filter */}
-                <select
-                    value={accountFilter}
-                    onChange={(e) => setAccountFilter(e.target.value)}
-                    className="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option>All Accounts</option>
-                    {accounts.map(acc => (
-                        <option key={acc.id} value={acc.id}>{acc.name}</option>
-                    ))}
-                </select>
-
                 {/* Category Filter */}
                 <div className="w-64">
                     {categoriesLoading ? (

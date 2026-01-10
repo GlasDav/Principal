@@ -78,7 +78,13 @@ This document outlines the planned features, improvements, and future direction 
 
 ## 📱 Mobile App
 
+
 - [ ] **Plan iOS and Android App:** Research and plan capabilities for native apps.
+
+## 📊 Data Enhancements
+
+- [ ] **Link Transactions to Accounts:** Capture `account_id` during CSV/bank imports to enable account-based filtering in Reports.
+- [ ] **Tag Management:** Build UI for creating and managing transaction tags.
 
 ## 🐛 Known Issues
 
