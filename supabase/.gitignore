@@ -1,0 +1,8 @@
+# Supabase
+# See: https://supabase.com/docs/guides/cli/getting-started
+
+# Generated types from Supabase
+supabase/types/
+
+# Local Supabase instance
+.supabase/
