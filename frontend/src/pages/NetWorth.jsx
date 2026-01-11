@@ -11,6 +11,7 @@ import AccountDetailsModal from '../components/AccountDetailsModal';
 import AddInvestmentModal from '../components/AddInvestmentModal';
 import InvestmentsTab from '../components/InvestmentsTab';
 import ImportNetWorthModal from '../components/ImportNetWorthModal';
+import AccountsHistoryTab from '../components/AccountsHistoryTab';
 import { CHART_COLORS, CHART_TOOLTIP_STYLE } from '../constants/chartColors';
 
 const getCategoryIcon = (category, type) => {
@@ -237,6 +238,12 @@ export default function NetWorth() {
                     Overview
                 </button>
                 <button
+                    onClick={() => setActiveTab('accounts')}
+                    className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${activeTab === 'accounts' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text-primary dark:text-text-muted-dark dark:hover:text-text-primary-dark'}`}
+                >
+                    Accounts
+                </button>
+                <button
                     onClick={() => setActiveTab('investments')}
                     className={`px-4 py-2 border-b-2 font-medium text-sm transition-colors ${activeTab === 'investments' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text-primary dark:text-text-muted-dark dark:hover:text-text-primary-dark'}`}
                 >
@@ -276,127 +283,126 @@ export default function NetWorth() {
                         </div>
                     </div>
 
-                    {/* Main Content Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Left Col: Chart & History */}
-                        <div className="lg:col-span-2 space-y-8">
-                            <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark h-96 flex flex-col">
-                                <div className="flex justify-between items-center mb-6 shrink-0">
-                                    <h3 className="text-lg font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-2">
-                                        <LineChart size={20} className="text-primary" />
-                                        History
-                                    </h3>
-                                    <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
-                                        <button
-                                            onClick={() => setChartMode('net_worth')}
-                                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${chartMode === 'net_worth' ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}
-                                        >
-                                            Net Worth
-                                        </button>
-                                        <button
-                                            onClick={() => setChartMode('investments')}
-                                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${chartMode === 'investments' ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}
-                                        >
-                                            Investments
-                                        </button>
-                                    </div>
-                                    {chartMode === 'net_worth' && (
-                                        <div className="flex items-center gap-2 ml-4">
-                                            <label className="flex items-center cursor-pointer relative">
-                                                <input type="checkbox" checked={showProjection} onChange={(e) => setShowProjection(e.target.checked)} className="sr-only peer" />
-                                                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                                                <span className="ml-2 text-xs font-medium text-slate-600 dark:text-slate-400">Projection</span>
-                                            </label>
-                                        </div>
-                                    )}
+                    {/* Charts Section */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Net Worth History Chart */}
+
+                        <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark h-96 flex flex-col">
+                            <div className="flex justify-between items-center mb-6 shrink-0">
+                                <h3 className="text-lg font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-2">
+                                    <LineChart size={20} className="text-primary" />
+                                    History
+                                </h3>
+                                <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
+                                    <button
+                                        onClick={() => setChartMode('net_worth')}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${chartMode === 'net_worth' ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                                    >
+                                        Net Worth
+                                    </button>
+                                    <button
+                                        onClick={() => setChartMode('investments')}
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${chartMode === 'investments' ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}
+                                    >
+                                        Investments
+                                    </button>
                                 </div>
-                                <div className="flex-1 min-h-0 w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={activeData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                            <defs>
-                                                <linearGradient id="colorNw" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor={chartColor} stopOpacity={0.2} />
-                                                    <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                                            <XAxis
-                                                dataKey="date"
-                                                tickFormatter={(str) => new Date(str).toLocaleDateString('en-AU', { month: 'short', year: '2-digit' })}
-                                                stroke="#94A3B8"
-                                                fontSize={12}
-                                                tickLine={false}
-                                                axisLine={false}
-                                                dy={10}
-                                            />
-                                            <YAxis
-                                                stroke="#94A3B8"
-                                                fontSize={12}
-                                                tickLine={false}
-                                                axisLine={false}
-                                                tickFormatter={(val) => `$${val / 1000}k`}
-                                            />
-                                            <Tooltip
-                                                content={({ active, payload, label }) => {
-                                                    if (active && payload && payload.length) {
-                                                        const data = payload[0].payload;
-                                                        return (
-                                                            <div className="bg-card dark:bg-card-dark p-4 border border-border dark:border-border-dark shadow-xl rounded-xl">
-                                                                <p className="text-sm font-medium text-text-muted mb-2">{new Date(label).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}</p>
-                                                                <div className="space-y-1">
-                                                                    <p className="text-lg font-bold text-indigo-600 flex justify-between gap-8">
-                                                                        <span>{chartMode === 'net_worth' ? 'Net Worth' : 'Value'}</span>
-                                                                        <span>{formatCurrency(data[chartDataKey])}</span>
-                                                                    </p>
-                                                                    {chartMode === 'net_worth' && (
-                                                                        <>
-                                                                            <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
-                                                                            <p className="text-sm text-emerald-600 flex justify-between gap-8">
-                                                                                <span>Assets</span>
-                                                                                <span>+{formatCurrency(data.total_assets)}</span>
-                                                                            </p>
-                                                                            <p className="text-sm text-red-500 flex justify-between gap-8">
-                                                                                <span>Liabilities</span>
-                                                                                <span>-{formatCurrency(data.total_liabilities)}</span>
-                                                                            </p>
-                                                                        </>
-                                                                    )}
-                                                                </div>
+                                {chartMode === 'net_worth' && (
+                                    <div className="flex items-center gap-2 ml-4">
+                                        <label className="flex items-center cursor-pointer relative">
+                                            <input type="checkbox" checked={showProjection} onChange={(e) => setShowProjection(e.target.checked)} className="sr-only peer" />
+                                            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                            <span className="ml-2 text-xs font-medium text-slate-600 dark:text-slate-400">Projection</span>
+                                        </label>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-1 min-h-0 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={activeData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="colorNw" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={chartColor} stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                        <XAxis
+                                            dataKey="date"
+                                            tickFormatter={(str) => new Date(str).toLocaleDateString('en-AU', { month: 'short', year: '2-digit' })}
+                                            stroke="#94A3B8"
+                                            fontSize={12}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            dy={10}
+                                        />
+                                        <YAxis
+                                            stroke="#94A3B8"
+                                            fontSize={12}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            tickFormatter={(val) => `$${val / 1000}k`}
+                                        />
+                                        <Tooltip
+                                            content={({ active, payload, label }) => {
+                                                if (active && payload && payload.length) {
+                                                    const data = payload[0].payload;
+                                                    return (
+                                                        <div className="bg-card dark:bg-card-dark p-4 border border-border dark:border-border-dark shadow-xl rounded-xl">
+                                                            <p className="text-sm font-medium text-text-muted mb-2">{new Date(label).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}</p>
+                                                            <div className="space-y-1">
+                                                                <p className="text-lg font-bold text-indigo-600 flex justify-between gap-8">
+                                                                    <span>{chartMode === 'net_worth' ? 'Net Worth' : 'Value'}</span>
+                                                                    <span>{formatCurrency(data[chartDataKey])}</span>
+                                                                </p>
+                                                                {chartMode === 'net_worth' && (
+                                                                    <>
+                                                                        <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
+                                                                        <p className="text-sm text-emerald-600 flex justify-between gap-8">
+                                                                            <span>Assets</span>
+                                                                            <span>+{formatCurrency(data.total_assets)}</span>
+                                                                        </p>
+                                                                        <p className="text-sm text-red-500 flex justify-between gap-8">
+                                                                            <span>Liabilities</span>
+                                                                            <span>-{formatCurrency(data.total_liabilities)}</span>
+                                                                        </p>
+                                                                    </>
+                                                                )}
                                                             </div>
-                                                        );
-                                                    }
-                                                    return null;
-                                                }}
-                                            />
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
+                                        <Area
+                                            type="monotone"
+                                            dataKey={chartMode === 'net_worth' ? 'net_worth' : 'value'}
+                                            stroke={chartColor}
+                                            strokeWidth={3}
+                                            fillOpacity={1}
+                                            fill="url(#colorNw)"
+                                        />
+                                        {showProjection && chartMode === 'net_worth' && (
                                             <Area
                                                 type="monotone"
-                                                dataKey={chartMode === 'net_worth' ? 'net_worth' : 'value'}
+                                                dataKey="projected_net_worth"
                                                 stroke={chartColor}
                                                 strokeWidth={3}
-                                                fillOpacity={1}
-                                                fill="url(#colorNw)"
+                                                strokeDasharray="5 5"
+                                                fillOpacity={0.1}
+                                                fill={chartColor}
+                                                connectNulls={true}
+                                                activeDot={{ r: 6, fill: chartColor, stroke: "#fff", strokeWidth: 2 }}
                                             />
-                                            {showProjection && chartMode === 'net_worth' && (
-                                                <Area
-                                                    type="monotone"
-                                                    dataKey="projected_net_worth"
-                                                    stroke={chartColor}
-                                                    strokeWidth={3}
-                                                    strokeDasharray="5 5"
-                                                    fillOpacity={0.1}
-                                                    fill={chartColor}
-                                                    connectNulls={true}
-                                                    activeDot={{ r: 6, fill: chartColor, stroke: "#fff", strokeWidth: 2 }}
-                                                />
-                                            )}
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
+                                        )}
+                                    </AreaChart>
+                                </ResponsiveContainer>
                             </div>
                         </div>
 
-                        {/* Allocation Chart */}
-                        <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark">
+                        {/* Asset Allocation Chart */}
+                        <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark h-96 flex flex-col">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-lg font-bold text-text-primary dark:text-text-primary-dark flex items-center gap-2">
                                     <Wallet size={20} className="text-emerald-500" />
@@ -449,175 +455,6 @@ export default function NetWorth() {
                         </div>
                     </div>
 
-                    {/* Right Col: Accounts List */}
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-center">
-                            <h3 className="text-xl font-bold text-text-primary dark:text-text-primary-dark">Accounts</h3>
-                            <button
-                                onClick={() => setIsAddAccountOpen(!isAddAccountOpen)}
-                                className="text-sm text-primary font-medium hover:text-primary-hover"
-                            >
-                                {isAddAccountOpen ? 'Cancel' : '+ Add Account'}
-                            </button>
-                        </div>
-
-                        {
-                            isAddAccountOpen && (
-                                <div className="bg-card dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border dark:border-border-dark animate-in fade-in slide-in-from-top-2">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-sm font-bold text-text-primary dark:text-text-primary-dark uppercase tracking-wider">New Account</h3>
-                                        <button onClick={() => setIsAddAccountOpen(false)} className="text-text-muted hover:text-text-primary">
-                                            <X size={18} />
-                                        </button>
-                                    </div>
-                                    <form onSubmit={(e) => {
-                                        e.preventDefault();
-                                        if (newAccountCategory === 'Investment') {
-                                            setIsAddAccountOpen(false);
-                                            setIsInvestmentModalOpen(true);
-                                            setNewAccountName("");
-                                            return;
-                                        }
-                                        createAccountMutation.mutate({
-                                            name: newAccountName,
-                                            type: newAccountType,
-                                            category: newAccountCategory
-                                        });
-                                        setNewAccountName("");
-                                    }} className="flex flex-col md:flex-row gap-4">
-                                        <div className="w-full md:w-96">
-                                            <label className="block text-xs font-medium text-text-muted mb-1">Account Name</label>
-                                            <input
-                                                type="text"
-                                                placeholder="e.g. Chase Checkings"
-                                                required={newAccountCategory !== 'Investment'}
-                                                className="w-full rounded-lg border-input dark:border-border-dark bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
-                                                value={newAccountName}
-                                                onChange={(e) => setNewAccountName(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="w-full md:w-28">
-                                            <label className="block text-xs font-medium text-text-muted mb-1">Type</label>
-                                            <select
-                                                className="w-full rounded-lg border-input dark:border-border-dark bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
-                                                value={newAccountType}
-                                                onChange={(e) => {
-                                                    setNewAccountType(e.target.value);
-                                                    setNewAccountCategory(e.target.value === 'Asset' ? 'Cash' : 'Loan');
-                                                }}
-                                            >
-                                                <option value="Asset">Asset</option>
-                                                <option value="Liability">Liability</option>
-                                            </select>
-                                        </div>
-                                        <div className="w-full md:w-48">
-                                            <label className="block text-xs font-medium text-text-muted mb-1">Category</label>
-                                            <select
-                                                className="w-full rounded-lg border-input dark:border-border-dark bg-surface dark:bg-surface-dark text-text-primary dark:text-text-primary-dark px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
-                                                value={newAccountCategory}
-                                                onChange={(e) => setNewAccountCategory(e.target.value)}
-                                            >
-                                                {newAccountType === 'Asset' ? (
-                                                    <>
-                                                        <option value="Cash">Cash</option>
-                                                        <option value="Investment">Investment (Stocks)</option>
-                                                        <option value="Superannuation">Superannuation</option>
-                                                        <option value="Property">Property</option>
-                                                        <option value="Other">Other</option>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <option value="Loan">Loan</option>
-                                                        <option value="Mortgage">Mortgage</option>
-                                                        <option value="Credit Card">Credit Card</option>
-                                                        <option value="Other">Other</option>
-                                                    </>
-                                                )}
-                                            </select>
-                                        </div>
-                                        <div className="flex items-end">
-                                            <button type="submit" className="w-full md:w-auto bg-primary hover:bg-primary-hover text-white rounded-lg px-6 py-2 text-sm font-medium transition flex items-center gap-2 justify-center">
-                                                <Plus size={18} />
-                                                {newAccountCategory === 'Investment' ? 'Add Holdings' : 'Create'}
-                                            </button>
-                                        </div>
-                                    </form>
-                                    {newAccountType === 'Asset' && newAccountCategory === 'Investment' && (
-                                        <p className="mt-3 text-xs text-primary bg-primary/10 px-3 py-2 rounded-lg">
-                                            💡 Click <strong>Add Holdings</strong> to search for and add stocks, ETFs, and track their prices!
-                                        </p>
-                                    )}
-                                </div>
-                            )
-                        }
-
-                        <div className="space-y-4">
-                            {loadingAccounts ? (
-                                <div className="text-center text-text-muted py-8">Loading accounts...</div>
-                            ) : (
-                                <>
-                                    <div>
-                                        <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                            Assets
-                                        </h4>
-                                        <div className="space-y-2">
-                                            {accounts.filter(a => a.type === 'Asset').map(account => {
-                                                const Icon = getCategoryIcon(account.category, 'Asset');
-                                                return (
-                                                    <div key={account.id} onClick={() => { setSelectedAccount(account); setIsDetailsOpen(true); }} className="bg-card dark:bg-card-dark p-3 rounded-xl border border-border dark:border-border-dark hover:border-primary/30 transition-colors flex items-center justify-between group cursor-pointer hover:shadow-md">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-lg group-hover:bg-emerald-100 transition-colors">
-                                                                <Icon size={18} />
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-semibold text-text-primary dark:text-text-primary-dark text-sm">{account.name}</p>
-                                                                <p className="text-[10px] text-text-muted uppercase tracking-wide font-medium">{account.category}</p>
-                                                            </div>
-                                                        </div>
-                                                        <p className="text-sm font-semibold text-emerald-600">
-                                                            {formatCurrency(accountBalances[account.id] || 0)}
-                                                        </p>
-                                                    </div>
-                                                );
-                                            })}
-                                            {accounts.filter(a => a.type === 'Asset').length === 0 && <p className="text-sm text-text-muted italic pl-2">No assets yet.</p>}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                            Liabilities
-                                        </h4>
-                                        <div className="space-y-2">
-                                            {accounts.filter(a => a.type === 'Liability').map(account => {
-                                                const Icon = getCategoryIcon(account.category, 'Liability');
-                                                return (
-                                                    <div key={account.id} onClick={() => { setSelectedAccount(account); setIsDetailsOpen(true); }} className="bg-card dark:bg-card-dark p-3 rounded-xl border border-border dark:border-border-dark hover:border-red-100 transition-colors flex items-center justify-between group cursor-pointer hover:shadow-md">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="p-2 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg group-hover:bg-red-100 transition-colors">
-                                                                <Icon size={18} />
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-semibold text-text-primary dark:text-text-primary-dark text-sm">{account.name}</p>
-                                                                <p className="text-[10px] text-text-muted uppercase tracking-wide font-medium">{account.category}</p>
-                                                            </div>
-                                                        </div>
-                                                        <p className="text-sm font-semibold text-red-500">
-                                                            -{formatCurrency(accountBalances[account.id] || 0)}
-                                                        </p>
-                                                    </div>
-                                                );
-                                            })}
-                                            {accounts.filter(a => a.type === 'Liability').length === 0 && <p className="text-sm text-text-muted italic pl-2">No liabilities yet.</p>}
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
-
                     <CheckInModal
                         isOpen={isCheckInOpen}
                         onClose={() => setIsCheckInOpen(false)}
@@ -641,6 +478,8 @@ export default function NetWorth() {
                         onClose={() => setIsImportModalOpen(false)}
                     />
                 </>
+            ) : activeTab === 'accounts' ? (
+                <AccountsHistoryTab onAddAccount={() => setIsAddAccountOpen(true)} />
             ) : (
                 <InvestmentsTab />
             )

@@ -277,6 +277,93 @@ def get_accounts(db: Session = Depends(get_db), current_user: models.User = Depe
     
     return accounts
 
+
+@router.get("/accounts-history")
+def get_accounts_history(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """
+    Get historical account balances organized by month.
+    Returns a matrix of account balances for display in a spreadsheet-style table.
+    """
+    from datetime import datetime
+    from dateutil.relativedelta import relativedelta
+    
+    # Get all snapshots for this user, ordered by date
+    snapshots = db.query(models.NetWorthSnapshot).filter(
+        models.NetWorthSnapshot.user_id == current_user.id
+    ).order_by(models.NetWorthSnapshot.date.asc()).all()
+    
+    if not snapshots:
+        return {"months": [], "accounts": [], "totals": {"assets_by_month": [], "liabilities_by_month": [], "net_worth_by_month": []}}
+    
+    # Get all active accounts for this user
+    accounts = db.query(models.Account).filter(
+        models.Account.user_id == current_user.id,
+        models.Account.is_active == True
+    ).order_by(models.Account.type, models.Account.category, models.Account.name).all()
+    
+    # Generate month labels from snapshots
+    months = []
+    snapshot_by_date = {}
+    for snapshot in snapshots:
+        month_label = snapshot.date.strftime("%b %y")
+        if month_label not in months:
+            months.append(month_label)
+        snapshot_by_date[snapshot.date] = snapshot
+    
+    # Build account balance matrix
+    account_data = []
+    for account in accounts:
+        balances = []
+        for snapshot in snapshots:
+            # Get the first snapshot of each unique month
+            month_label = snapshot.date.strftime("%b %y")
+            if months.count(month_label) > 1:
+                continue  # Skip duplicate months
+                
+            # Find balance for this account in this snapshot
+            balance_record = db.query(models.AccountBalance).filter(
+                models.AccountBalance.snapshot_id == snapshot.id,
+                models.AccountBalance.account_id == account.id
+            ).first()
+            
+            balances.append(balance_record.balance if balance_record else None)
+        
+        account_data.append({
+            "id": account.id,
+            "name": account.name,
+            "type": account.type,
+            "category": account.category,
+            "balances_by_month": balances
+        })
+    
+    # Calculate totals by month
+    assets_by_month = []
+    liabilities_by_month = []
+    net_worth_by_month = []
+    
+    # Use snapshot data for totals (already calculated correctly)
+    seen_months = set()
+    for snapshot in snapshots:
+        month_label = snapshot.date.strftime("%b %y")
+        if month_label in seen_months:
+            continue
+        seen_months.add(month_label)
+        
+        assets_by_month.append(snapshot.total_assets)
+        liabilities_by_month.append(snapshot.total_liabilities)
+        net_worth_by_month.append(snapshot.net_worth)
+    
+    return {
+        "months": list(dict.fromkeys(months)),  # Deduplicate while preserving order
+        "accounts": account_data,
+        "totals": {
+            "assets_by_month": assets_by_month,
+            "liabilities_by_month": liabilities_by_month,
+            "net_worth_by_month": net_worth_by_month
+        }
+    }
+
+
 @router.post("/accounts", response_model=schemas.Account)
 def create_account(account: schemas.AccountCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     db_account = models.Account(**account.dict())
