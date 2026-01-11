@@ -39,7 +39,7 @@ This document outlines the planned features, improvements, and future direction 
 - [x] **Superannuation:** Add default Superannuation account type/support.
 - [x] **Investments Tab:** Move Investments to a dedicated tab within Net Worth page (currently separate page).
 - [ ] **Asset Split (Overview):** Distinguish between ETFs and stocks in Asset Allocation chart.
-- [ ] **Chart UI:** Fix Asset Allocation chart UI in overview page.
+- [x] **Chart UI:** Fixed Asset Allocation chart UI and unified colors.
 - [ ] **Asset Split (Investments):** Distinguish between stocks and ETFs in Investments tab.
 - [ ] **HECS Debt:** Add HECS debt account type/calculator.
 - [ ] **Trade Logic:** Rename 'Add Investment' to 'Add Trade', add trade date, and implement Buy/Sell logic.
@@ -110,4 +110,5 @@ This document outlines the planned features, improvements, and future direction 
 - [x] **Spending Trends:** Category dropdown needs sorting and grouping.
 - [x] **Budget History:** 6 month history should include current month.
 - [x] **Budget Chart:** History chart numbers incorrect when switching months.
+- [x] **Net Worth Zero Balance:** Fixed issue where historical snapshots dropped to $0. Implemented "Gap Filling" logic.
 - [x] **Goal Modal:** Content spills out of modal container (fix attempted but failed).

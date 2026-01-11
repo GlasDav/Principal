@@ -72,3 +72,31 @@ Based on [Midfunnel by O/M Design](https://www.offmenu.design/projects/midfunnel
 | `text-slate-500` | `text-text-muted` |
 | `border-slate-200` | `border-border` |
 | `rounded-2xl` | `rounded-card` |
+
+---
+
+## Data Visualization
+
+All charts must use the unified color palette defined in `frontend/src/constants/chartColors.js`.
+
+| Concept | Color | Usage |
+|---------|-------|-------|
+| Assets | `#6366f1` (Indigo) | Asset lines, positive growth |
+| Liabilities | `#ef4444` (Red) | Debt lines, negative trends |
+| Net Worth | `#6366f1` (Indigo/Brand) | Net Worth area/line |
+| Categories | Rainbow Palette | Pie charts, bar charts (Expenses/Income) |
+
+**Usage:**
+```javascript
+import { CHART_COLORS, ASSET_COLOR, LIABILITY_COLOR } from '../constants/chartColors';
+
+// Pie/Bar Charts (Categories)
+<PieChart>
+  {data.map((_, i) => (
+    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+  ))}
+</PieChart>
+
+// Area/Line Charts
+<Area stroke={ASSET_COLOR} fill={ASSET_COLOR} ... />
+```

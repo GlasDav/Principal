@@ -472,6 +472,11 @@ docker compose exec backend python /app/seed_demo_user.py
 - Updated route decorators to handle both `/endpoint` and `/endpoint/` patterns
 - Affected routers: `transactions.py`, `goals.py`
 
+### **Net Worth Repair (Jan 2026)**
+- **Gap Filling:** Upgraded `recalculate_all_snapshots` to automatically backfill missing balance records from previous months.
+- **Chart Colors:** Standardized all charts to use `chartColors.js` palette (Indigo/Red/Rainbow).
+- **Files:** `backend/routers/net_worth.py`, `frontend/src/constants/chartColors.js`.
+
 ---
 
 *Generated for AI context. Do not commit to version control.*
