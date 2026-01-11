@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { TrendingDown, DollarSign, Calendar, Calculator, ArrowRight } from 'lucide-react';
 import * as api from '../services/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { ASSET_COLOR, LIABILITY_COLOR, NET_WORTH_COLOR, CHART_COLORS } from '../constants/chartColors';
 
 export default function DebtVisualizer() {
     const [inputs, setInputs] = useState({
@@ -172,10 +173,11 @@ export default function DebtVisualizer() {
                                         formatter={(value) => [`$${value.toLocaleString()}`, undefined]}
                                     />
                                     <Legend />
+
                                     <Line
                                         type="monotone"
                                         dataKey="Standard Plan"
-                                        stroke="#94a3b8"
+                                        stroke={CHART_COLORS[3]} // Red/Warn
                                         strokeWidth={2}
                                         dot={false}
                                         activeDot={{ r: 6 }}
@@ -183,7 +185,7 @@ export default function DebtVisualizer() {
                                     <Line
                                         type="monotone"
                                         dataKey="Accelerated Plan"
-                                        stroke="#4f46e5"
+                                        stroke={NET_WORTH_COLOR} // Indigo/Brand
                                         strokeWidth={3}
                                         dot={false}
                                         activeDot={{ r: 6 }}

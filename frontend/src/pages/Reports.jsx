@@ -460,8 +460,8 @@ export default function Reports() {
                                     formatter={(val) => [`$${val.toLocaleString()}`, ""]}
                                 />
                                 <Legend />
-                                <Bar dataKey="spent" name="Spent" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                                <Line type="monotone" dataKey="limit" name="Budget Limit" stroke="#ef4444" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                                <Bar dataKey="spent" name="Spent" fill={CHART_COLORS[0]} radius={[4, 4, 0, 0]} maxBarSize={50} />
+                                <Line type="monotone" dataKey="limit" name="Budget Limit" stroke={CHART_COLORS[3]} strokeWidth={2} dot={false} strokeDasharray="5 5" />
                             </ComposedChart>
                         </ResponsiveContainer>
                     </div>
@@ -532,7 +532,7 @@ export default function Reports() {
                                                 dataKey="value"
                                             >
                                                 {incomeChartData.map((entry, index) => (
-                                                    <Cell key={`cell-income-${index}`} fill={INCOME_COLORS[index % INCOME_COLORS.length]} />
+                                                    <Cell key={`cell-income-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                                 ))}
                                             </Pie>
                                             <Tooltip
