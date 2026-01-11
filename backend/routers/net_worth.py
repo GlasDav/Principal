@@ -514,6 +514,51 @@ def recalculate_all_snapshots(db: Session = Depends(get_db), current_user: model
         
     return {"recalculated": count, "repaired_entries": total_repaired}
 
+@router.get("/debug-data")
+def debug_net_worth_data(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """
+    Diagnostic endpoint to inspect snapshot data state.
+    Returns details about present, zero-valued, and missing account records for each snapshot.
+    """
+    snapshots = db.query(models.NetWorthSnapshot)\
+        .filter(models.NetWorthSnapshot.user_id == current_user.id)\
+        .order_by(models.NetWorthSnapshot.date.asc())\
+        .all()
+        
+    results = []
+    
+    # Get all active accounts to detect missing ones
+    all_accounts = db.query(models.Account).filter(models.Account.user_id == current_user.id).all()
+    all_acct_dict = {a.id: a.name for a in all_accounts}
+    
+    for s in snapshots:
+        bals = db.query(models.AccountBalance).filter(models.AccountBalance.snapshot_id == s.id).all()
+        bal_map = {b.account_id: b.balance for b in bals}
+        
+        missing = []
+        zeros = []
+        present = []
+        
+        for aid, name in all_acct_dict.items():
+            if aid not in bal_map:
+                missing.append(name)
+            elif bal_map[aid] == 0:
+                zeros.append(name)
+            else:
+                present.append(f"{name}: {bal_map[aid]}")
+                
+        results.append({
+            "date": s.date,
+            "net_worth": s.net_worth,
+            "total_assets": s.total_assets,
+            "record_count": len(bals),
+            "present_str": ", ".join(present),
+            "zeros_str": ", ".join(zeros),
+            "missing_str": ", ".join(missing)
+        })
+        
+    return results
+
 def update_account(account_id: int, account_update: schemas.AccountCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     db_account = db.query(models.Account).filter(models.Account.id == account_id, models.Account.user_id == current_user.id).first()
     if not db_account:
