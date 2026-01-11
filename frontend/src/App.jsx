@@ -15,6 +15,7 @@ import Review from './pages/Review';
 import Reports from './pages/Reports';
 import Insights from './pages/Insights';
 import Goals from './pages/Goals';
+import DebugNetWorth from './pages/DebugNetWorth';
 
 import TransactionsHub from './pages/TransactionsHub';
 import ReportsHub from './pages/ReportsHub';
@@ -248,6 +249,7 @@ function App() {
                   <Route path="/insights" element={<ReportsHub />} />
                   <Route path="/data-management" element={<DataManagement />} />
                   <Route path="/tools" element={<Settings />} />
+                  <Route path="/debug-net-worth" element={<DebugNetWorth />} />
                 </Route>
               </Routes>
             </Router>
