@@ -5,6 +5,7 @@ export default function DebugNetWorth() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [repairResult, setRepairResult] = useState(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -24,6 +25,28 @@ export default function DebugNetWorth() {
         }
     };
 
+    const executeRepair = async () => {
+        setLoading(true);
+        setError(null);
+        setRepairResult(null);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/net-worth/recalculate-all`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error(`API Error: ${res.status} ${res.statusText}`);
+            const json = await res.json();
+            setRepairResult(json);
+            // Refresh data after repair
+            fetchData();
+        } catch (e) {
+            setError("Repair Failed: " + e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -38,14 +61,28 @@ export default function DebugNetWorth() {
                 <br />
                 If it's in <strong>Missing</strong>, it means the snapshot has no record for that account (a Gap).
             </p>
-            <button
-                onClick={fetchData}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors mb-6 font-medium"
-            >
-                Refresh Data
-            </button>
+            <div className="flex gap-4 mb-6">
+                <button
+                    onClick={fetchData}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                >
+                    Refresh Data
+                </button>
+                <button
+                    onClick={executeRepair}
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                >
+                    Run Smart Repair
+                </button>
+            </div>
 
-            {loading && <div className="text-slate-500">Loading diagnostic data...</div>}
+            {repairResult && (
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 rounded-lg mb-4 border border-emerald-200 dark:border-emerald-800">
+                    <strong>Success!</strong> Recalculated {repairResult.recalculated} snapshots and repaired {repairResult.repaired_entries} gaps.
+                </div>
+            )}
+
+            {loading && <div className="text-slate-500">Processing...</div>}
             {error && <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg mb-4">Error: {error}</div>}
 
             {data && (
