@@ -98,10 +98,9 @@ export default function Login() {
             <div className="bg-card dark:bg-card-dark p-8 rounded-3xl shadow-2xl border border-border dark:border-border-dark w-full max-w-md relative z-10 transition-colors duration-300">
                 {/* Logo and branding */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4 shadow-lg shadow-primary/30">
-                        <TrendingUp className="text-white" size={32} />
+                    <div className="flex justify-center mb-6">
+                        <img src="/brand-logo.svg" alt="DollarData" className="h-16 w-auto" />
                     </div>
-                    <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark mb-2">DollarData</h1>
                     <p className="text-text-muted">Take control of your finances</p>
                 </div>
 

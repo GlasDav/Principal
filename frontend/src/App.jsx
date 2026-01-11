@@ -127,9 +127,8 @@ function Layout() {
       <div className="w-64 bg-card dark:bg-card-dark border-r border-border dark:border-border-dark flex flex-col">
         {/* Logo */}
         <div className="h-[72px] px-4 border-b border-border dark:border-border-dark flex items-center">
-          <div className="flex items-center gap-2.5">
-            <img src="/logo.svg" alt="DollarData" className="w-10 h-10" />
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">DollarData</h1>
+          <div className="flex items-center">
+            <img src="/brand-logo.svg" alt="DollarData" className="h-10 w-auto" />
           </div>
         </div>
 
